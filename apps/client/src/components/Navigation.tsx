@@ -1,8 +1,11 @@
 import { Link, useLocation } from 'react-router'
+import { authService } from '../services/auth'
 
 export const Navigation = () => {
     const location = useLocation()
     const page = location.pathname
+    const isAdmin = authService.isAdmin()
+    const isAuthenticated = authService.isAuthenticated()
 
     return (
         <header className="primary-container">
@@ -22,6 +25,20 @@ export const Navigation = () => {
                     <Link to="/settings" className={page === '/settings' ? 'active' : ''}>
                         <i>settings</i>
                     </Link>
+                    {isAdmin && (
+                        <Link to="/admin" className={page === '/admin' ? 'active' : ''}>
+                            <i>admin_panel_settings</i>
+                        </Link>
+                    )}
+                    {isAuthenticated ? (
+                        <Link to="/login" onClick={() => authService.logout()}>
+                            <i>logout</i>
+                        </Link>
+                    ) : (
+                        <Link to="/login">
+                            <i>login</i>
+                        </Link>
+                    )}
                 </nav>
             </nav>
         </header>

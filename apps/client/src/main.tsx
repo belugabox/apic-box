@@ -5,9 +5,19 @@ import { App } from './App.tsx'
 import { Home } from './pages/Home.tsx'
 import { Settings } from './pages/Settings.tsx'
 import { Events } from './pages/Events.tsx'
+import { Login } from './pages/Login.tsx'
+import { Admin } from './pages/Admin.tsx'
 import 'beercss'
 
 const router = createBrowserRouter([
+    {
+        path: '/login',
+        element: <Login />,
+    },
+    {
+        path: '/admin',
+        element: <Admin />,
+    },
     {
         path: '/',
         element: <App />,
