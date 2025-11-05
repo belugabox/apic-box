@@ -3,21 +3,20 @@ import ReactDOM from 'react-dom/client'
 import { RouterProvider, createBrowserRouter } from 'react-router'
 import { App } from './App.tsx'
 import { Home } from './pages/Home.tsx'
-import { Settings } from './pages/Settings.tsx'
 import { Events } from './pages/Events.tsx'
-import { Login } from './pages/Login.tsx'
 import { Admin } from './pages/Admin.tsx'
+import { authService } from './services/auth'
 import 'beercss'
 
+// On app startup, check if we have tokens and validate them
+// This helps clear invalid tokens (e.g., when JWT secret changes)
+console.log('[App] Starting up...')
+const hasTokens = authService.getAccessToken()
+if (hasTokens) {
+    console.log('[App] Found existing tokens, they will be validated on first API call')
+}
+
 const router = createBrowserRouter([
-    {
-        path: '/login',
-        element: <Login />,
-    },
-    {
-        path: '/admin',
-        element: <Admin />,
-    },
     {
         path: '/',
         element: <App />,
@@ -31,12 +30,13 @@ const router = createBrowserRouter([
                 element: <Events />,
             },
             {
-                path: 'settings',
-                element: <Settings />,
+                path: 'admin',
+                element: <Admin />,
             },
         ],
     },
 ])
+
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

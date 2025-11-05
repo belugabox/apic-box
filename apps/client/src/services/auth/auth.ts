@@ -1,9 +1,18 @@
 import { serverApi } from '../server';
 
 export const authService = {
+    // Clear all auth tokens (useful when tokens become invalid)
+    clearTokens: () => {
+        console.log('[Auth] Clearing invalid tokens from localStorage');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+    },
+
     // Login
     login: async (username: string, password: string) => {
         try {
+            console.log('[Auth] Attempting login for:', username);
             const response = await serverApi.auth.login.$post({
                 json: { username, password },
             });
@@ -11,6 +20,7 @@ export const authService = {
                 throw new Error('Login failed');
             }
             const data = await response.json();
+            console.log('[Auth] Login successful, storing tokens');
             // Store tokens in localStorage
             localStorage.setItem('accessToken', data.accessToken);
             localStorage.setItem('refreshToken', data.refreshToken);
@@ -18,6 +28,8 @@ export const authService = {
             return data;
         } catch (error) {
             console.error('Error logging in:', error);
+            // Clear any partial tokens on login failure
+            authService.clearTokens();
             throw error;
         }
     },

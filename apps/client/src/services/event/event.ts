@@ -58,6 +58,12 @@ export const eventService = {
                     body: JSON.stringify(event),
                 },
             );
+            if (response.status === 401) {
+                console.error('[EventService] Got 401 - token invalid');
+                const error = new Error('Unauthorized');
+                (error as any).status = 401;
+                throw error;
+            }
             if (!response.ok) {
                 throw new Error('Failed to create event');
             }
@@ -83,13 +89,19 @@ export const eventService = {
                     },
                 },
             );
+            if (response.status === 401) {
+                console.error('[EventService] Got 401 - token invalid');
+                const error = new Error('Unauthorized');
+                (error as any).status = 401;
+                throw error;
+            }
             if (!response.ok) {
                 throw new Error('Failed to fetch events');
             }
             return await response.json();
         } catch (error) {
             console.error('Error fetching events:', error);
-            return [];
+            throw error;
         }
     },
 
@@ -108,13 +120,19 @@ export const eventService = {
                     },
                 },
             );
+            if (response.status === 401) {
+                console.error('[EventService] Got 401 - token invalid');
+                const error = new Error('Unauthorized');
+                (error as any).status = 401;
+                throw error;
+            }
             if (!response.ok) {
                 throw new Error('Failed to fetch registrations');
             }
             return await response.json();
         } catch (error) {
             console.error('Error fetching registrations:', error);
-            return [];
+            throw error;
         }
     },
 };

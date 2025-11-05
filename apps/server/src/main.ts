@@ -6,6 +6,7 @@ import { cors } from 'hono/cors';
 import { join } from 'path';
 
 import { router } from './router';
+import { logger } from './tools/logger';
 
 const client_path = join(__dirname, '../../client/dist/');
 const client_index_html = join(client_path, 'index.html');
@@ -49,6 +50,6 @@ serve(
         port: Number(port),
     },
     (info) => {
-        console.log(`Server started on http://localhost:${info.port}`);
+        logger.info(`Server started on http://localhost:${info.port}`);
     },
 );

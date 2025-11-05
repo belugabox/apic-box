@@ -6,18 +6,22 @@ import {
     adminMiddleware,
     authMiddleware,
     authenticateUser,
+    createAdminIfNoneExists,
     generateTokens,
+    loadUsers,
     verifyRefreshToken,
-} from './auth';
-import { EventRegistrationSchema, EventSchema } from './types';
-import { createAdminIfNoneExists, loadUsers } from './users';
+} from './auth/auth';
+import {
+    addEvent,
+    addRegistration,
+    getEventById,
+    getRegistrationsByEventId,
+    loadEvents,
+} from './events/events';
+import { EventRegistrationSchema, EventSchema } from './events/events.types';
 
 // Initialize admin user if none exists
 createAdminIfNoneExists();
-
-// Mock database
-const events: any[] = [];
-const registrations: any[] = [];
 
 export const router = () =>
     new Hono()
@@ -67,7 +71,7 @@ export const router = () =>
         )
         // Events routes (PUBLIC)
         .get('/events', (c) => {
-            return c.json(events);
+            return c.json(loadEvents());
         })
         .post(
             '/events/:id/register',
@@ -77,26 +81,22 @@ export const router = () =>
             ),
             (c) => {
                 const eventId = c.req.param('id');
-                const event = events.find((e) => e.id === eventId);
+                const event = getEventById(eventId);
                 if (!event) {
                     return c.json({ message: 'Event not found' }, 404);
                 }
 
                 const data = c.req.valid('json');
-                const registration = {
+                const registration = addRegistration({
                     ...data,
-                    id: Math.random().toString(36).substring(7),
-                    registeredAt: new Date(),
-                };
-                registrations.push(registration);
+                    eventId,
+                });
                 return c.json(registration, 201);
             },
         )
         .get('/events/:id/registrations', (c) => {
             const eventId = c.req.param('id');
-            const eventRegistrations = registrations.filter(
-                (r) => r.eventId === eventId,
-            );
+            const eventRegistrations = getRegistrationsByEventId(eventId);
             return c.json(eventRegistrations);
         })
         // Admin routes (PROTECTED)
@@ -106,23 +106,17 @@ export const router = () =>
             adminMiddleware(),
             zValidator('json', EventSchema),
             (c) => {
-                const event = c.req.valid('json');
-                const newEvent = {
-                    ...event,
-                    id: Math.random().toString(36).substring(7),
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                };
-                events.push(newEvent);
+                const data = c.req.valid('json');
+                const newEvent = addEvent(data);
                 return c.json(newEvent, 201);
             },
         )
         .get('/admin/events', authMiddleware(), adminMiddleware(), (c) => {
-            return c.json(events);
+            return c.json(loadEvents());
         })
         .get('/admin/events/:id', authMiddleware(), adminMiddleware(), (c) => {
             const id = c.req.param('id');
-            const event = events.find((e) => e.id === id);
+            const event = getEventById(id);
             if (!event) {
                 return c.json({ message: 'Event not found' }, 404);
             }
