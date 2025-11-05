@@ -9,5 +9,10 @@
         "dev": "tsx watch ./src/main.ts",
         "gen:yggapi": "openapi-ts",
         "format": "prettier --write src/**/*.ts"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.3",
+        "express": "^5.1.0"
     }
 }

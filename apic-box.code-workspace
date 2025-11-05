@@ -3,6 +3,9 @@
         {
             "path": ".",
         },
+        {
+            "path": "../beluga-box",
+        },
     ],
     "settings": {
         "editor.formatOnSave": true,
