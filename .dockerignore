@@ -1,0 +1,12 @@
+# Ignorer les dossiers node_modules
+**/apps/client/node_modules
+**/apps/server/node_modules
+
+# Ignorer les fichiers de build locaux
+**/apps/client/dist
+**/apps/server/dist
+
+# Ignorer d'autres fichiers inutiles
+Dockerfile
+.dockerignore
+.env
