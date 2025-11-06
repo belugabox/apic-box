@@ -10,9 +10,11 @@ export const App = () => {
     return (
         <>
             <Navigation />
-            <main className="responsive large-width">
+            <main className="responsive">
                 <Outlet />
             </main>
         </>
     )
 }
+
+export default App

@@ -11,7 +11,7 @@ export default defineConfig({
     },
     plugins: [tsconfigPaths(), react()],
     server: {
-        port: 3000, // Remplacez 3001 par le port souhaité
+        port: 3000,
         proxy: {
             '/api': {
                 target: 'http://localhost:3001',

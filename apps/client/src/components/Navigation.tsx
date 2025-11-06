@@ -5,12 +5,15 @@ export const Navigation = () => {
     const page = location.pathname
 
     return (
-        <header className="primary-container">
+        <header>
             <nav>
-                <div className="max left-align">
+                <div className="shape sunny"><i>potted_plant</i></div>
+                <div className="left-align">
                     <Link to="/" className={page === '/' ? 'active' : ''}>
-                        <h6>APIC Box</h6>
+                        <h6>APIC Sentelette</h6>
                     </Link>
+                </div>
+                <div className="max center-align">
                 </div>
                 <nav className=''>
                     <Link to="/" className={page === '/' ? 'active' : ''}>

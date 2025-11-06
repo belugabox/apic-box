@@ -5,7 +5,9 @@ import { logger } from '@server/tools/logger';
 
 import { Event, EventRegistration } from './events.types';
 
-const DATA_DIR = path.resolve(process.env.CONFIG_FILE_PATH ?? './config');
+const DATA_DIR = path.resolve(
+    process.env.CONFIG_FILE_PATH ?? path.join(__dirname, '../../config'),
+);
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
 const REGISTRATIONS_FILE = path.join(DATA_DIR, 'registrations.json');
 

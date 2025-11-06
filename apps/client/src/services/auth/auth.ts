@@ -14,7 +14,6 @@ export class AuthService {
 
     // Clear all auth tokens (useful when tokens become invalid)
     clearTokens(): void {
-        console.log('[Auth] Clearing invalid tokens from localStorage');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
@@ -24,13 +23,11 @@ export class AuthService {
     // Login
     async login(username: string, password: string) {
         try {
-            console.log('[Auth] Attempting login for:', username);
             const data = await callRpc(
                 serverApi.auth.login.$post({
                     json: { username, password },
                 }) as any,
             );
-            console.log('[Auth] Login successful, storing tokens');
             localStorage.setItem('accessToken', (data as any).accessToken);
             localStorage.setItem('refreshToken', (data as any).refreshToken);
             localStorage.setItem('user', JSON.stringify((data as any).user));

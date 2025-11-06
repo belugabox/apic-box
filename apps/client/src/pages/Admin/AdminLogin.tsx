@@ -1,49 +1,62 @@
 import { useLogin } from "@/services/auth";
-import { useState } from "react";
+import { useForm } from 'react-hook-form';
 
 export const AdminLogin = () => {
-    const [login, , loginError] = useLogin();
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+    const [login, loading, loginError] = useLogin();
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            await login(username, password);
-            setUsername('');
-            setPassword('');
-        } catch (err) {
-            console.error('Login error:', err);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors }
+    } = useForm({
+        defaultValues: {
+            username: '',
+            password: ''
         }
+    });
+
+    const onSubmit = async (data: any) => {
+        await login(data.username, data.password);
     };
 
     return (
-        <article className="center medium-width padding">
-            <form onSubmit={handleLogin}>
+        <div className="center medium-width padding">
+            <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="field label border">
                     <input
+                        id="username"
                         type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
+                        {...register("username", {
+                            required: "L'identifiant est obligatoire."
+                        })}
+                        className={errors.username ? 'invalid' : ''}
                     />
                     <label>Identifiant</label>
+                    {errors.username && (
+                        <span className="error">{errors.username.message}</span>
+                    )}
                 </div>
                 <div className="field label border">
                     <input
                         type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
+                        {...register("password", {
+                            required: "Le mot de passe est obligatoire."
+                        })}
+                        className={errors.password ? 'invalid' : ''}
                     />
                     <label>Mot de passe</label>
+                    {errors.password && (
+                        <span className="error">{errors.password.message}</span>
+                    )}
                 </div>
-
                 <nav className="right-align">
-                    <button type="submit" className="primary">
+                    <span className="error-text">{loginError?.message}</span>
+                    <button type="submit">
+                        {!loading ? <i>login</i> : <progress className="circle small"></progress>}
                         Se connecter
                     </button>
                 </nav>
-            </form></article>
+            </form>
+        </div>
     );
 };
