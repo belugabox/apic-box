@@ -4,7 +4,7 @@ import { RouterProvider, createBrowserRouter } from 'react-router'
 import { App } from './App.tsx'
 import { Home } from './pages/Home.tsx'
 import { Events } from './pages/Events.tsx'
-import { Admin } from './pages/Admin.tsx'
+import { Admin } from './pages/Admin'
 import { authService } from './services/auth'
 import 'beercss'
 

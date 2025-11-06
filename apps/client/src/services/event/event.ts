@@ -1,138 +1,92 @@
+import { Observable } from 'rxjs';
+
+import { Wrapper, toWrapperObservable } from '@/utils/wrapperObs';
+
 import { authService } from '../auth';
 
-export const eventService = {
-    // Récupérer tous les événements (public)
-    getEvents: async () => {
-        try {
-            const response = await fetch(
-                `${window.location.origin}/api/events`,
-            );
-            if (!response.ok) {
-                throw new Error('Failed to fetch events');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching events:', error);
-            return [];
+const buildHeaders = (includeAuth = false): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    if (includeAuth) {
+        const authHeaders = authService.headers();
+        if (authHeaders.Authorization) {
+            headers['Authorization'] = authHeaders.Authorization;
         }
-    },
+    }
+    return headers;
+};
 
-    // S'inscrire à un événement (public)
-    registerEvent: async (eventId: string, registration: any) => {
-        try {
-            const response = await fetch(
-                `${window.location.origin}/api/events/${eventId}/register`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(registration),
+export class EventService {
+    // Public events stream
+    events(): Observable<Wrapper<any[]>> {
+        return toWrapperObservable(() =>
+            fetch(`${window.location.origin}/api/events`).then((r) => {
+                if (!r.ok) throw new Error('Failed to fetch events');
+                return r.json();
+            }),
+        );
+    }
+
+    // Register for an event
+    async registerEvent(eventId: string, registration: any) {
+        const response = await fetch(
+            `${window.location.origin}/api/events/${eventId}/register`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(registration),
+            },
+        );
+        if (!response.ok) throw new Error('Failed to register for event');
+        return response.json();
+    }
+
+    // Admin: Get all events
+    adminEvents(): Observable<Wrapper<any[]>> {
+        return toWrapperObservable(() =>
+            fetch(`${window.location.origin}/api/admin/events`, {
+                headers: buildHeaders(true),
+            }).then((r) => {
+                if (r.status === 401) {
+                    authService.clearTokens();
+                    throw new Error('Unauthorized - tokens cleared');
+                }
+                if (!r.ok) throw new Error('Failed to fetch events');
+                return r.json();
+            }),
+        );
+    }
+
+    // Admin: Create a new event
+    async createEvent(event: any) {
+        const response = await fetch(
+            `${window.location.origin}/api/admin/events`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...buildHeaders(true),
                 },
-            );
-            if (!response.ok) {
-                throw new Error('Failed to register for event');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Error registering for event:', error);
-            throw error;
-        }
-    },
+                body: JSON.stringify(event),
+            },
+        );
+        if (!response.ok) throw new Error('Failed to create event');
+        return response.json();
+    }
 
-    // Admin: Créer un nouvel événement
-    createEvent: async (event: any) => {
-        try {
-            const token = authService.getAccessToken();
-            if (!token) {
-                throw new Error('Not authenticated');
-            }
-            const response = await fetch(
-                `${window.location.origin}/api/admin/events`,
-                {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(event),
-                },
-            );
-            if (response.status === 401) {
-                console.error('[EventService] Got 401 - token invalid');
-                const error = new Error('Unauthorized');
-                (error as any).status = 401;
-                throw error;
-            }
-            if (!response.ok) {
-                throw new Error('Failed to create event');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Error creating event:', error);
-            throw error;
-        }
-    },
-
-    // Admin: Récupérer tous les événements
-    getAdminEvents: async () => {
-        try {
-            const token = authService.getAccessToken();
-            if (!token) {
-                throw new Error('Not authenticated');
-            }
-            const response = await fetch(
-                `${window.location.origin}/api/admin/events`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                },
-            );
-            if (response.status === 401) {
-                console.error('[EventService] Got 401 - token invalid');
-                const error = new Error('Unauthorized');
-                (error as any).status = 401;
-                throw error;
-            }
-            if (!response.ok) {
-                throw new Error('Failed to fetch events');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching events:', error);
-            throw error;
-        }
-    },
-
-    // Admin: Récupérer les inscriptions à un événement
-    getEventRegistrations: async (eventId: string) => {
-        try {
-            const token = authService.getAccessToken();
-            if (!token) {
-                throw new Error('Not authenticated');
-            }
-            const response = await fetch(
+    // Admin: Get registrations for an event
+    getEventRegistrations(eventId: string): Observable<Wrapper<any[]>> {
+        return toWrapperObservable(() =>
+            fetch(
                 `${window.location.origin}/api/events/${eventId}/registrations`,
                 {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: buildHeaders(true),
                 },
-            );
-            if (response.status === 401) {
-                console.error('[EventService] Got 401 - token invalid');
-                const error = new Error('Unauthorized');
-                (error as any).status = 401;
-                throw error;
-            }
-            if (!response.ok) {
-                throw new Error('Failed to fetch registrations');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching registrations:', error);
-            throw error;
-        }
-    },
-};
+            ).then((r) => {
+                if (!r.ok) throw new Error('Failed to fetch registrations');
+                return r.json();
+            }),
+        );
+    }
+}
+
+export const eventService = new EventService();

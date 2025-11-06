@@ -1,221 +1,243 @@
-import { EventCard } from '../components/EventCard'
-import { useState, useEffect } from 'react'
-import { eventService } from '../services/event'
-
-interface Event {
-    id: string
-    title: string
-    description: string
-    features: {
-        registration: boolean
-        photoGallery: boolean
-        orders: boolean
-    }
-    status: string
-}
-
-interface Registration {
-    name: string
-    email: string
-}
+import { useState } from 'react';
+import { useEvents, useRegisterEvent } from '../services/event';
 
 export const Events = () => {
-    const [events, setEvents] = useState<Event[]>([])
-    const [loading, setLoading] = useState(true)
-    const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
-    const [registrations, setRegistrations] = useState<Record<string, Registration[]>>({})
-    const [registrationForm, setRegistrationForm] = useState<Record<string, { name: string; email: string }>>({})
+    const [events, eventsLoading] = useEvents();
+    const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+    const [formData, setFormData] = useState<Record<string, any>>({});
+    const [registerEvent, registerLoading] = useRegisterEvent();
 
-    useEffect(() => {
-        loadEvents()
-    }, [])
-
-    const loadEvents = async () => {
-        try {
-            setLoading(true)
-            const data = await eventService.getEvents()
-            setEvents(data)
-            // Initialize registration forms for each event
-            const forms: Record<string, { name: string; email: string }> = {}
-            data.forEach((event: Event) => {
-                forms[event.id] = { name: '', email: '' }
-            })
-            setRegistrationForm(forms)
-        } catch (error) {
-            console.error('Error loading events:', error)
-        } finally {
-            setLoading(false)
+    const toggleEvent = (eventId: string) => {
+        setExpandedEventId(expandedEventId === eventId ? null : eventId);
+        if (!formData[eventId]) {
+            setFormData((prev) => ({
+                ...prev,
+                [eventId]: {
+                    parentName: '',
+                    parentEmail: '',
+                    children: [{ name: '', class: '' }],
+                },
+            }));
         }
-    }
+    };
 
-    const loadRegistrations = async (eventId: string) => {
-        try {
-            const data = await eventService.getEventRegistrations(eventId)
-            setRegistrations((prev) => ({ ...prev, [eventId]: data }))
-        } catch (error) {
-            console.error('Error loading registrations:', error)
-        }
-    }
+    const handleInputChange = (
+        eventId: string,
+        field: 'parentName' | 'parentEmail',
+        value: string,
+    ) => {
+        setFormData((prev) => ({
+            ...prev,
+            [eventId]: {
+                ...prev[eventId],
+                [field]: value,
+            },
+        }));
+    };
 
-    const toggleEventDetails = (eventId: string) => {
-        if (expandedEventId === eventId) {
-            setExpandedEventId(null)
-        } else {
-            setExpandedEventId(eventId)
-            if (!registrations[eventId]) {
-                loadRegistrations(eventId)
-            }
-        }
-    }
+    const handleChildChange = (
+        eventId: string,
+        childIndex: number,
+        field: 'name' | 'class',
+        value: string,
+    ) => {
+        setFormData((prev) => ({
+            ...prev,
+            [eventId]: {
+                ...prev[eventId],
+                children: prev[eventId].children.map((child: any, idx: number) =>
+                    idx === childIndex ? { ...child, [field]: value } : child,
+                ),
+            },
+        }));
+    };
+
+    const addChild = (eventId: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            [eventId]: {
+                ...prev[eventId],
+                children: [...prev[eventId].children, { name: '', class: '' }],
+            },
+        }));
+    };
+
+    const removeChild = (eventId: string, childIndex: number) => {
+        setFormData((prev) => ({
+            ...prev,
+            [eventId]: {
+                ...prev[eventId],
+                children: prev[eventId].children.filter((_: any, idx: number) => idx !== childIndex),
+            },
+        }));
+    };
 
     const handleRegister = async (eventId: string) => {
-        try {
-            const form = registrationForm[eventId]
-            if (!form.name || !form.email) {
-                alert('Veuillez remplir tous les champs')
-                return
-            }
-            await eventService.registerEvent(eventId, {
-                eventId,
-                name: form.name,
-                email: form.email,
-            })
-            alert('Inscription réussie!')
-            setRegistrationForm((prev) => ({
-                ...prev,
-                [eventId]: { name: '', email: '' },
-            }))
-            // Reload registrations
-            loadRegistrations(eventId)
-        } catch (error) {
-            console.error('Error registering for event:', error)
-            alert('Erreur lors de l\'inscription')
+        const form = formData[eventId];
+        if (
+            !form ||
+            !form.parentName ||
+            !form.parentEmail ||
+            form.children.some((c: any) => !c.name || !c.class)
+        ) {
+            alert('Veuillez remplir tous les champs');
+            return;
         }
+
+        try {
+            await registerEvent(eventId, form);
+            alert('Inscription réussie!');
+            setFormData((prev) => ({
+                ...prev,
+                [eventId]: {
+                    parentName: '',
+                    parentEmail: '',
+                    children: [{ name: '', class: '' }],
+                },
+            }));
+        } catch (error) {
+            console.error('Error registering:', error);
+            alert('Erreur lors de l\'inscription');
+        }
+    };
+
+    if (eventsLoading) {
+        return (
+            <div className="container">
+                <h1>Événements</h1>
+                <p>Chargement...</p>
+            </div>
+        );
     }
 
-    if (loading) {
-        return (
-            <div>
-                <h1>Événements en cours</h1>
-                <p>Chargement des événements...</p>
-            </div>
-        )
-    }
-
-    if (events.length === 0) {
-        return (
-            <div>
-                <h1>Événements en cours</h1>
-                <p>Aucun événement disponible pour le moment.</p>
-            </div>
-        )
-    }
+    const eventsList = Array.isArray(events) ? events : [];
 
     return (
-        <div>
-            <h1>Événements en cours</h1>
+        <div className="container">
+            <h1>Événements</h1>
 
-            <div className="grid">
-                {events.map((event) => (
-                    <EventCard
-                        key={event.id}
-                        title={event.title}
-                        icon="event"
-                        description={event.description}
-                    >
-                        <button
-                            className="primary round"
-                            onClick={() =>
-                                setRegistrationForm((prev) => ({
-                                    ...prev,
-                                    [event.id]: prev[event.id] || { username: '', email: '' },
-                                }))
-                            }
-                        >
-                            <i>person_add</i>
-                            S'inscrire
-                        </button>
-                        <button
-                            className="round"
-                            onClick={() => toggleEventDetails(event.id)}
-                        >
-                            <i>info</i>
-                            Détails
-                        </button>
-                    </EventCard>
-                ))}
-            </div>
+            {eventsList.length === 0 ? (
+                <p>Aucun événement disponible</p>
+            ) : (
+                <div>
+                    {eventsList.map((event: any) => (
+                        <article key={event.id} className="event-card">
+                            <header>
+                                <h2>{event.title}</h2>
+                                <p>{event.description}</p>
+                            </header>
 
-            {/* Formulaires d'inscription */}
-            {events.map((event) => (
-                registrationForm[event.id] && (
-                    <article key={`form-${event.id}`} className="fill">
-                        <h5>Inscription à {event.title}</h5>
-                        <input
-                            placeholder="Votre nom"
-                            type="text"
-                            value={registrationForm[event.id].name}
-                            onChange={(e) =>
-                                setRegistrationForm((prev) => ({
-                                    ...prev,
-                                    [event.id]: { ...prev[event.id], name: e.target.value },
-                                }))
-                            }
-                        />
-                        <input
-                            placeholder="Votre email"
-                            type="email"
-                            value={registrationForm[event.id].email}
-                            onChange={(e) =>
-                                setRegistrationForm((prev) => ({
-                                    ...prev,
-                                    [event.id]: { ...prev[event.id], email: e.target.value },
-                                }))
-                            }
-                        />
-                        <nav className="right-align">
-                            <button
-                                className="primary"
-                                onClick={() => handleRegister(event.id)}
-                            >
-                                S'inscrire
+                            <button onClick={() => toggleEvent(event.id)}>
+                                {expandedEventId === event.id ? 'Masquer' : 'Afficher'} le formulaire
                             </button>
-                            <button
-                                onClick={() =>
-                                    setRegistrationForm((prev) => ({
-                                        ...prev,
-                                        [event.id]: { name: '', email: '' },
-                                    }))
-                                }
-                            >
-                                Annuler
-                            </button>
-                        </nav>
-                    </article>
-                )
-            ))}
 
-            {/* Détails des événements et inscriptions */}
-            {expandedEventId && (
-                <article className="fill">
-                    <header>
-                        <h4>
-                            Inscriptions à {events.find((e) => e.id === expandedEventId)?.title}
-                        </h4>
-                    </header>
-                    {registrations[expandedEventId]?.length > 0 ? (
-                        <ul>
-                            {registrations[expandedEventId]?.map((reg: any, idx: number) => (
-                                <li key={idx}>
-                                    {reg.username} ({reg.email})
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p>Aucune inscription pour le moment.</p>
-                    )}
-                </article>
+                            {expandedEventId === event.id && event.config?.type === 'registration' && (
+                                <div className="registration-form">
+                                    <h3>Formulaire d'inscription</h3>
+
+                                    <div className="form-group">
+                                        <label>Nom du parent</label>
+                                        <input
+                                            type="text"
+                                            value={formData[event.id]?.parentName || ''}
+                                            onChange={(e) =>
+                                                handleInputChange(event.id, 'parentName', e.target.value)
+                                            }
+                                            placeholder="Entrez votre nom"
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>Email du parent</label>
+                                        <input
+                                            type="email"
+                                            value={formData[event.id]?.parentEmail || ''}
+                                            onChange={(e) =>
+                                                handleInputChange(event.id, 'parentEmail', e.target.value)
+                                            }
+                                            placeholder="Entrez votre email"
+                                        />
+                                    </div>
+
+                                    <div className="children-section">
+                                        <h4>Enfants</h4>
+                                        {formData[event.id]?.children.map((child: any, idx: number) => (
+                                            <div key={idx} className="child-form">
+                                                <div className="form-group">
+                                                    <label>Nom de l'enfant</label>
+                                                    <input
+                                                        type="text"
+                                                        value={child.name}
+                                                        onChange={(e) =>
+                                                            handleChildChange(
+                                                                event.id,
+                                                                idx,
+                                                                'name',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="Nom"
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Classe</label>
+                                                    <input
+                                                        type="text"
+                                                        value={child.class}
+                                                        onChange={(e) =>
+                                                            handleChildChange(
+                                                                event.id,
+                                                                idx,
+                                                                'class',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="Ex: CM1"
+                                                    />
+                                                </div>
+
+                                                {formData[event.id]?.children.length > 1 && (
+                                                    <button
+                                                        onClick={() => removeChild(event.id, idx)}
+                                                        type="button"
+                                                    >
+                                                        Supprimer cet enfant
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+
+                                        <button
+                                            onClick={() => addChild(event.id)}
+                                            type="button"
+                                            className="secondary"
+                                        >
+                                            + Ajouter un enfant
+                                        </button>
+                                    </div>
+
+                                    <button
+                                        onClick={() => handleRegister(event.id)}
+                                        disabled={registerLoading}
+                                        className="primary"
+                                    >
+                                        {registerLoading ? 'Envoi...' : 'S\'inscrire'}
+                                    </button>
+                                </div>
+                            )}
+
+                            {expandedEventId === event.id && event.config?.type === 'photoGallery' && (
+                                <div className="gallery-section">
+                                    <h3>Galerie photo</h3>
+                                    <p>Mot de passe requis pour accéder aux albums photos.</p>
+                                    {/* TODO: Implémenter accès galerie photo protégée */}
+                                </div>
+                            )}
+                        </article>
+                    ))}
+                </div>
             )}
         </div>
-    )
-}
+    );
+};

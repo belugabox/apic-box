@@ -1,88 +1,103 @@
+import { BehaviorSubject } from 'rxjs';
+
+import { callRpc } from '@/utils/rpc';
+
 import { serverApi } from '../server';
 
-export const authService = {
+export class AuthService {
+    user = new BehaviorSubject<any>(this.getStoredUser());
+
+    headers() {
+        const token = this.getAccessToken();
+        return token ? { Authorization: `Bearer ${token}` } : {};
+    }
+
     // Clear all auth tokens (useful when tokens become invalid)
-    clearTokens: () => {
+    clearTokens(): void {
         console.log('[Auth] Clearing invalid tokens from localStorage');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-    },
+        this.user.next(null);
+    }
 
     // Login
-    login: async (username: string, password: string) => {
+    async login(username: string, password: string) {
         try {
             console.log('[Auth] Attempting login for:', username);
-            const response = await serverApi.auth.login.$post({
-                json: { username, password },
-            });
-            if (!response.ok) {
-                throw new Error('Login failed');
-            }
-            const data = await response.json();
+            const data = await callRpc(
+                serverApi.auth.login.$post({
+                    json: { username, password },
+                }) as any,
+            );
             console.log('[Auth] Login successful, storing tokens');
-            // Store tokens in localStorage
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('refreshToken', data.refreshToken);
-            localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('accessToken', (data as any).accessToken);
+            localStorage.setItem('refreshToken', (data as any).refreshToken);
+            localStorage.setItem('user', JSON.stringify((data as any).user));
+            this.user.next((data as any).user);
             return data;
         } catch (error) {
             console.error('Error logging in:', error);
-            // Clear any partial tokens on login failure
-            authService.clearTokens();
+            this.clearTokens();
             throw error;
         }
-    },
+    }
 
     // Logout
-    logout: () => {
+    logout(): void {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-    },
+        this.user.next(null);
+    }
 
     // Get stored access token
-    getAccessToken: () => {
+    getAccessToken(): string | null {
         return localStorage.getItem('accessToken');
-    },
+    }
 
-    // Get stored user
-    getUser: () => {
+    // Get stored user (internal)
+    private getStoredUser(): any {
         const user = localStorage.getItem('user');
         return user ? JSON.parse(user) : null;
-    },
+    }
+
+    // Get stored user (public via BehaviorSubject)
+    getUser(): any {
+        return this.user.getValue();
+    }
 
     // Check if user is authenticated
-    isAuthenticated: () => {
+    isAuthenticated(): boolean {
         return !!localStorage.getItem('accessToken');
-    },
+    }
 
     // Check if user is admin
-    isAdmin: () => {
-        const user = authService.getUser();
+    isAdmin(): boolean {
+        const user = this.getUser();
         return user?.role === 'admin';
-    },
+    }
 
     // Refresh token
-    refreshToken: async () => {
+    async refreshToken() {
         try {
             const refreshToken = localStorage.getItem('refreshToken');
             if (!refreshToken) {
                 throw new Error('No refresh token');
             }
-            const response = await serverApi.auth.refresh.$post({
-                json: { refreshToken },
-            });
-            if (!response.ok) {
-                throw new Error('Token refresh failed');
-            }
-            const data = await response.json();
-            localStorage.setItem('accessToken', data.accessToken);
+            const data = await callRpc(
+                serverApi.auth.refresh.$post({
+                    json: { refreshToken },
+                }) as any,
+            );
+            localStorage.setItem('accessToken', (data as any).accessToken);
             return data;
         } catch (error) {
             console.error('Error refreshing token:', error);
-            authService.logout();
+            this.logout();
             throw error;
         }
-    },
-};
+    }
+}
+
+export const authService = new AuthService();
