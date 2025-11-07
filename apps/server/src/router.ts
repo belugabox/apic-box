@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { actionRoutes } from './action/action.router';
 import { authRoutes } from './auth/auth.router';
+import { galleryRoutes } from './gallery/gallery.router';
 import { logger } from './tools/logger';
 
 export const router = () =>
@@ -13,4 +14,5 @@ export const router = () =>
             return c.json({ name: err.name, message: err.message }, 500);
         })
         .route('/auth', authRoutes())
-        .route('/actions', actionRoutes());
+        .route('/actions', actionRoutes())
+        .route('/gallery', galleryRoutes());

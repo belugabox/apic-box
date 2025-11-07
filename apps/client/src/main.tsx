@@ -7,6 +7,7 @@ import { Admin } from './pages/Admin'
 import 'beercss'
 import "material-dynamic-colors";
 import { Actions } from './pages/Actions'
+import { Gallery } from './pages/Gallery'
 
 const router = createBrowserRouter([
     {
@@ -24,6 +25,14 @@ const router = createBrowserRouter([
             {
                 path: 'admin',
                 element: <Admin />,
+            },
+            {
+                path: 'gallery/:name',
+                element: <Gallery />,
+            },
+            {
+                path: '*',
+                element: <Home />,
             },
         ],
     },

@@ -1,6 +1,7 @@
 packages:
-  - apps/*
+    - apps/*
 ignoredBuiltDependencies:
-  - better-sqlite3
-  - esbuild
-  - sqlite3
+    - better-sqlite3
+    - esbuild
+    - sqlite3
+    - sharp
