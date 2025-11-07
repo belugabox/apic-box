@@ -4,7 +4,7 @@ import {
     readFile,
     readdir,
     rename,
-    rmdir,
+    rm,
     stat,
 } from 'node:fs/promises';
 import path from 'path';
@@ -142,7 +142,7 @@ export class GalleryManager {
 
     async delete(galleryName: string) {
         const galleryDirPath = path.join(GALLERY_DIR, galleryName);
-        await rmdir(galleryDirPath, { recursive: true });
+        await rm(galleryDirPath, { recursive: true });
     }
 
     async nextImageIndex(galleryDirPath: string) {
@@ -175,7 +175,7 @@ export class GalleryManager {
             await readdir(THUMBNAIL_DIR).then(async (thumbnails) => {
                 for (const thumbnail of thumbnails) {
                     const thumbnailPath = path.join(THUMBNAIL_DIR, thumbnail);
-                    await rmdir(thumbnailPath, { recursive: true });
+                    await rm(thumbnailPath, { recursive: true });
                 }
             });
         }

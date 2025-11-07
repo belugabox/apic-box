@@ -12,7 +12,7 @@ interface ImageCardProps {
 export const ImageCard = ({ image, children, className }: ImageCardProps) => {
     const [imageData, loading, error] = useGalleryImage("1", image.name);
     return (
-        <div className={className}>
+        <div className={className} style={{ width: '100%' }}>
             <div
                 className={"surface-dim" + (loading ? ` ${styles.pulse}` : "")}
                 style={{ aspectRatio: image.ratio }}

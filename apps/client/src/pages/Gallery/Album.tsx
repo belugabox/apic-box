@@ -1,6 +1,7 @@
 import { ImageCard } from "@/components/ImageCard";
 import { useGallery } from "@/services/gallery";
 import { useParams } from "react-router";
+import Masonry, { ResponsiveMasonry } from "react-responsive-masonry"
 
 export const Album = () => {
     const { galleryName } = useParams<{ galleryName: string }>();
@@ -22,11 +23,15 @@ export const Album = () => {
         <div>
             {error && (<span className="error-text">{error?.message}</span>)}
             <h5>{album.name}</h5>
-            <div className="grid">
-                {album.images.map((image) => (
-                    <ImageCard className="s12 m6 l4" key={image.name} image={image} />
-                ))}
-            </div>
+
+            <ResponsiveMasonry
+                columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}            >
+                <Masonry>
+                    {album.images.map((image) => (
+                        <ImageCard key={image.name} image={image} />
+                    ))}
+                </Masonry>
+            </ResponsiveMasonry>
         </div>
     );
 };
