@@ -1,19 +1,12 @@
 import bcrypt from 'bcryptjs';
-import fs from 'fs';
 import { Context } from 'hono';
 import { sign, verify } from 'hono/jwt';
-import jwt from 'jsonwebtoken';
-import path from 'path';
 
 import { db } from '@server/core';
 import { logger } from '@server/tools/logger';
 
 import { AuthRole, User } from './auth.types';
 
-const USERS_FILE = path.resolve(
-    process.env.CONFIG_FILE_PATH ?? './config',
-    'users.json',
-);
 export const JWT_SECRET =
     process.env.JWT_SECRET || 'apic-box-secret-key-change-in-production';
 export const JWT_REFRESH_SECRET =

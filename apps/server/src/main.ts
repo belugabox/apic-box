@@ -13,7 +13,7 @@ import { logger } from './tools/logger';
 // Handle unhandled rejections
 process.on('unhandledRejection', (err: Error) => {
     logger.error(err, 'unhandledRejection');
-    //process.exit(1);
+    process.exit(1);
 });
 const client_path = join(__dirname, '../../client/dist/');
 const client_index_html = join(client_path, 'index.html');
