@@ -2,6 +2,7 @@ import { Gallery } from '@server/gallery/gallery.types';
 
 import { callRpc } from '@/utils/rpc';
 
+import { authService } from '../auth';
 import { serverApi } from '../server';
 
 export class GalleryService {
@@ -22,6 +23,18 @@ export class GalleryService {
         const blob = this.uint8ArrayToBlob(response);
         const url = URL.createObjectURL(blob);
         return url;
+    };
+    add = async (galleryName: string, albumName: string, files: File[]) => {
+        await callRpc(
+            serverApi.gallery.add.$post(
+                {
+                    form: { galleryName, albumName, files },
+                },
+                {
+                    headers: authService.headers(),
+                },
+            ),
+        );
     };
 
     // Convertir Uint8Array en Blob

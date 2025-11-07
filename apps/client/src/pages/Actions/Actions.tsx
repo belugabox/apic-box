@@ -16,10 +16,10 @@ export const Actions = () => {
                 <ActionCard className="s12 m6 l3" key={action.id} action={action} >
                     {action.type === ActionType.GALLERY ? (
                         <button onClick={() => navigate(`/gallery/${action.id}`)}>
-                            View Gallery
+                            Voir la galerie
                         </button>
                     ) : (
-                        <button>View Event</button>
+                        <button>Voir l'événement</button>
                     )}
                 </ActionCard>
             ))}

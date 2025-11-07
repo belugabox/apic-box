@@ -1,27 +1,24 @@
-import { ImageCard } from "@/components/ImageCard";
+import { AlbumCard } from "@/components/AlbumCard";
 import { useGallery } from "@/services/gallery";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 export const Gallery = () => {
-    const { name } = useParams<{ name: string }>();
+    const navigate = useNavigate();
+    const { galleryName } = useParams<{ galleryName: string }>();
 
-    if (!name) {
+    if (!galleryName) {
         return <div>Gallery not found</div>;
     }
-    const galleryName = name;
 
     const [gallery, _, error,] = useGallery(galleryName);
 
     return (
-        <div>
+        <div className="grid">
             {error && (<span className="error-text">{error?.message}</span>)}
             {gallery?.albums.map((album) => (
-                <div key={album.name}>
-                    <h2>{album.name}</h2>
-                    {album.images.map((image) => (
-                        <ImageCard key={image.name} image={image} />
-                    ))}
-                </div>
+                <AlbumCard className="s12 m6 l3" key={album.name} album={album}>
+                    <button onClick={() => navigate(`/gallery/${galleryName}/${album.name}`)}>Voir l'album</button>
+                </AlbumCard>
             ))}
         </div>
     );

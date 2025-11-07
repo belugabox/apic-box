@@ -1,4 +1,5 @@
 import { useActionAdd, useActionUpdate } from "@/services/action";
+import { useGallery } from "@/services/gallery";
 import { Action, ActionStatus, ActionType } from "@server/action/action.types";
 import { useForm } from "react-hook-form";
 
@@ -13,6 +14,8 @@ export const ActionAddUpdate = ({ action, onClose, onSuccess }: ActionAddUpdateP
 
     const [addAction, addLoading, addError] = useActionAdd();
     const [updateAction, updateLoading, updateError] = useActionUpdate();
+
+    const [gallery, galleryLoading, galleryError] = useGallery(action?.type === ActionType.GALLERY ? action?.id.toString() : undefined);
 
     const {
         register,
@@ -104,6 +107,20 @@ export const ActionAddUpdate = ({ action, onClose, onSuccess }: ActionAddUpdateP
                         <option value={ActionStatus.COMPLETED}>Terminé</option>
                     </select>
                     <label>Statut</label>
+                </div>
+                <div>
+                    {gallery && (
+                        <div>
+                            <h6>Galerie associée</h6>
+                            <div className="grid ">
+                                {gallery?.albums.map((album) => (
+                                    <div className="s12 m6 l4" key={album.name}>
+                                        {album.name} : {album.images.length} images
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <span className="error-text">{addError?.message ?? updateError?.message}</span>
                 <nav className="right-align">

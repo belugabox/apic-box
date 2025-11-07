@@ -1,7 +1,16 @@
-import { copyFile, mkdir, readFile, readdir, stat } from 'node:fs/promises';
+import {
+    copyFile,
+    mkdir,
+    readFile,
+    readdir,
+    rename,
+    rmdir,
+    stat,
+} from 'node:fs/promises';
 import path from 'path';
 import sharp from 'sharp';
 import unzipper from 'unzipper';
+import { de } from 'zod/v4/locales';
 
 import { logger } from '@server/tools/logger';
 
@@ -11,6 +20,11 @@ const GALLERY_DIR = path.resolve(
     process.env.DATA_FILE_PATH ?? './data',
     'gallery',
 );
+const THUMBNAIL_DIR = path.resolve(GALLERY_DIR, 'thumbnails');
+
+const IMAGE_THUMBNAIL_SIZE = 400;
+
+const IMAGE_NAME_PATTERN = new RegExp(`^(\\d+)\\.jpg$`, 'i');
 
 export class GalleryManager {
     galleries: Gallery[] = [];
@@ -18,100 +32,180 @@ export class GalleryManager {
     constructor() {}
 
     async init() {
-        await readdir(GALLERY_DIR).then(async (files) => {
-            for (const file of files) {
-                const stats = await stat(path.join(GALLERY_DIR, file));
+        await mkdir(GALLERY_DIR, {
+            recursive: true,
+        });
+        await mkdir(THUMBNAIL_DIR, {
+            recursive: true,
+        });
+
+        // Charger les galeries existantes
+        this.galleries = [];
+        await readdir(GALLERY_DIR).then(async (galleries) => {
+            for (const galleryName of galleries.filter(
+                (name) => name !== 'thumbnails',
+            )) {
+                const galleryPath = path.join(GALLERY_DIR, galleryName);
+                const stats = await stat(galleryPath);
                 if (stats.isDirectory()) {
-                    await readdir(path.join(GALLERY_DIR, file)).then(
-                        async (albums) => {
-                            const albumList: Album[] = [];
-                            for (const album of albums) {
-                                const albumStats = await stat(
-                                    path.join(GALLERY_DIR, file, album),
-                                );
-                                if (albumStats.isDirectory()) {
-                                    const thumbnailDir = path.join(
-                                        GALLERY_DIR,
-                                        file,
-                                        album,
-                                        'thumbnails',
+                    await readdir(galleryPath).then(async (albums) => {
+                        const albumList: Album[] = [];
+                        for (const album of albums) {
+                            const albumPath = path.join(galleryPath, album);
+                            const albumStats = await stat(albumPath);
+                            if (albumStats.isDirectory()) {
+                                const imageList: Image[] = [];
+                                const images = await readdir(albumPath);
+                                for (const image of images) {
+                                    const imagePath = path.join(
+                                        albumPath,
+                                        image,
                                     );
-                                    await mkdir(thumbnailDir, {
-                                        recursive: true,
-                                    });
-                                    const imageList: Image[] = [];
+                                    const imageStats = await stat(imagePath);
+                                    if (imageStats.isFile()) {
+                                        const isJpg = image
+                                            .toLowerCase()
+                                            .endsWith('.jpg');
+                                        if (isJpg) {
+                                            const name = path.parse(image).name;
 
-                                    const images = await readdir(thumbnailDir);
-                                    for (const image of images) {
-                                        const imageStats = await stat(
-                                            path.join(thumbnailDir, image),
-                                        );
-                                        if (imageStats.isFile()) {
-                                            const isJpg = image
-                                                .toLowerCase()
-                                                .endsWith('.jpg');
-                                            if (isJpg) {
-                                                const imageName =
-                                                    path.parse(image).name;
-                                                let ratio = 1;
+                                            const ratio =
+                                                await this.getImageRatio(
+                                                    imagePath,
+                                                );
 
-                                                // Charger le ratio depuis les métadonnées
-                                                try {
-                                                    const metadata =
-                                                        await sharp(
-                                                            path.join(
-                                                                thumbnailDir,
-                                                                image,
-                                                            ),
-                                                        ).metadata();
-                                                    if (
-                                                        metadata.width &&
-                                                        metadata.height
-                                                    ) {
-                                                        ratio =
-                                                            metadata.width /
-                                                            metadata.height;
-                                                    }
-                                                } catch (metaErr) {
-                                                    logger.warn(
-                                                        `Could not read metadata for ${imageName}`,
-                                                    );
-                                                }
-
-                                                imageList.push({
-                                                    name: imageName,
-                                                    ratio,
-                                                });
-                                            }
+                                            imageList.push({
+                                                name,
+                                                ratio,
+                                            });
                                         }
                                     }
-
-                                    albumList.push({
-                                        name: album,
-                                        images: imageList,
-                                    });
                                 }
+
+                                albumList.push({
+                                    name: album,
+                                    images: imageList,
+                                });
                             }
-                            this.galleries.push({
-                                name: file,
-                                albums: albumList,
-                            });
-                        },
-                    );
+                        }
+                        this.galleries.push({
+                            name: galleryName,
+                            albums: albumList,
+                        });
+                    });
                 }
             }
         });
+
+        // Renommer les images pour qu'elles aient des noms séquentiels
+        /*this.galleries.forEach(async (gallery) => {
+            let index = await this.nextImageIndex(
+                path.join(GALLERY_DIR, gallery.name),
+            );
+            gallery.albums.forEach(async (album) => {
+                for (const image of album.images) {
+                    const match = image.name.match(IMAGE_NAME_PATTERN);
+                    if (!match) {
+                        const oldPath = path.join(
+                            GALLERY_DIR,
+                            gallery.name,
+                            album.name,
+                            `${image.name}.jpg`,
+                        );
+                        const newName = String(index).padStart(4, '0');
+                        const newPath = path.join(
+                            GALLERY_DIR,
+                            gallery.name,
+                            album.name,
+                            `${newName}.jpg`,
+                        );
+                        await rename(oldPath, newPath);
+                        index++;
+                    }
+                }
+            });
+        });*/
+
+        // Générer les vignettes pour les images existantes
+        this.generateThumbnails(true);
+    }
+
+    async add(galleryName: string) {
+        const galleryDirPath = path.join(GALLERY_DIR, galleryName);
+        await mkdir(galleryDirPath, { recursive: true });
+
+        this.galleries.push({
+            name: galleryName,
+            albums: [],
+        });
+    }
+
+    async delete(galleryName: string) {
+        const galleryDirPath = path.join(GALLERY_DIR, galleryName);
+        await rmdir(galleryDirPath, { recursive: true });
+    }
+
+    async nextImageIndex(galleryDirPath: string) {
+        // Trouver le prochain numéro séquentiel basé sur les fichiers existants dans la galerie
+        const existingFiles = await readdir(galleryDirPath).catch(() => []);
+        let maxIndex = 0;
+
+        // Scanner tous les albums de la galerie pour trouver le plus grand index
+        for (const galleryItem of existingFiles) {
+            const itemPath = path.join(galleryDirPath, galleryItem);
+            const itemStats = await stat(itemPath).catch(() => null);
+            if (itemStats?.isDirectory()) {
+                const itemFiles = await readdir(itemPath).catch(() => []);
+                for (const itemFile of itemFiles) {
+                    const match = itemFile.match(IMAGE_NAME_PATTERN);
+                    if (match) {
+                        const index = parseInt(match[1], 10);
+                        if (index > maxIndex) maxIndex = index;
+                    }
+                }
+            }
+        }
+        let currentIndex = maxIndex + 1;
+        return currentIndex;
+    }
+
+    async generateThumbnails(force: boolean = false) {
+        if (force) {
+            // Clear existing thumbnails
+            await readdir(THUMBNAIL_DIR).then(async (thumbnails) => {
+                for (const thumbnail of thumbnails) {
+                    const thumbnailPath = path.join(THUMBNAIL_DIR, thumbnail);
+                    await rmdir(thumbnailPath, { recursive: true });
+                }
+            });
+        }
+        for (const gallery of this.galleries) {
+            for (const album of gallery.albums) {
+                const albumPath = path.join(
+                    GALLERY_DIR,
+                    gallery.name,
+                    album.name,
+                );
+                const thumbnailDirPath = path.join(
+                    THUMBNAIL_DIR,
+                    gallery.name,
+                    album.name,
+                );
+                await mkdir(thumbnailDirPath, { recursive: true });
+
+                for (const image of album.images) {
+                    const imagePath = path.join(albumPath, `${image.name}.jpg`);
+                    const thumbnailPath = path.join(
+                        thumbnailDirPath,
+                        `${image.name}.jpg`,
+                    );
+                    await this.generateThumbnail(imagePath, thumbnailPath);
+                }
+            }
+        }
     }
 
     async health() {
-        this.galleries.forEach((gallery) => {
-            logger.info(`Loaded gallery ${gallery.name}`);
-            gallery.albums.forEach((album) => {
-                logger.info(
-                    `Loaded album ${album.name} with ${album.images.length} images`,
-                );
-            });
-        });
         return readdir(GALLERY_DIR).then(() => {
             return;
         });
@@ -125,6 +219,7 @@ export class GalleryManager {
     async getImage(
         galleryName: string,
         filename: string,
+        raw: boolean = false,
     ): Promise<Buffer | null> {
         const gallery = this.galleries.find((g) => g.name === galleryName);
         if (!gallery) return null;
@@ -134,13 +229,11 @@ export class GalleryManager {
                 // Ajouter l'extension .jpg pour construire le chemin du fichier
                 const imageFilename = `${filename}.jpg`;
                 const imagePath = path.join(
-                    GALLERY_DIR,
+                    raw ? GALLERY_DIR : THUMBNAIL_DIR,
                     galleryName,
                     album.name,
-                    'thumbnails',
                     imageFilename,
                 );
-                console.log('Image path:', imagePath);
 
                 // Vérification de sécurité
                 if (!imagePath.startsWith(GALLERY_DIR)) {
@@ -157,41 +250,6 @@ export class GalleryManager {
         return null;
     }
 
-    async getImageRatio(
-        galleryName: string,
-        filename: string,
-    ): Promise<number> {
-        const gallery = this.galleries.find((g) => g.name === galleryName);
-        if (!gallery) return 1;
-
-        for (const album of gallery.albums) {
-            const image = album.images.find((img) => img.name === filename);
-            if (image) {
-                try {
-                    const imageFilename = `${filename}.jpg`;
-                    const imagePath = path.join(
-                        GALLERY_DIR,
-                        galleryName,
-                        album.name,
-                        'thumbnails',
-                        imageFilename,
-                    );
-
-                    const metadata = await sharp(imagePath).metadata();
-                    if (metadata.width && metadata.height) {
-                        const ratio = metadata.width / metadata.height;
-                        // Mettre à jour le ratio dans la galerie en cache
-                        image.ratio = ratio;
-                        return ratio;
-                    }
-                } catch (error) {
-                    logger.warn(`Could not get ratio for ${filename}`);
-                }
-            }
-        }
-        return 1;
-    }
-
     async addImages(
         galleryName: string,
         albumName: string,
@@ -199,33 +257,17 @@ export class GalleryManager {
     ): Promise<void> {
         const galleryDirPath = path.join(GALLERY_DIR, galleryName);
         const albumDirPath = path.join(galleryDirPath, albumName);
-        const thumbnailDirPath = path.join(albumDirPath, 'thumbnails');
+        const thumbnailDirPath = path.join(
+            THUMBNAIL_DIR,
+            galleryName,
+            albumName,
+        );
 
         // Ensure the album directory exists
         await mkdir(albumDirPath, { recursive: true });
         await mkdir(thumbnailDirPath, { recursive: true });
 
-        // Trouver le prochain numéro séquentiel basé sur les fichiers existants dans la galerie
-        const existingFiles = await readdir(galleryDirPath).catch(() => []);
-        const pattern = new RegExp(`^(\\d+)\\.jpg$`, 'i');
-        let maxIndex = 0;
-
-        // Scanner tous les albums de la galerie pour trouver le plus grand index
-        for (const galleryItem of existingFiles) {
-            const itemPath = path.join(galleryDirPath, galleryItem);
-            const itemStats = await stat(itemPath).catch(() => null);
-            if (itemStats?.isDirectory()) {
-                const itemFiles = await readdir(itemPath).catch(() => []);
-                for (const itemFile of itemFiles) {
-                    const match = itemFile.match(pattern);
-                    if (match) {
-                        const index = parseInt(match[1], 10);
-                        if (index > maxIndex) maxIndex = index;
-                    }
-                }
-            }
-        }
-        let currentIndex = maxIndex + 1;
+        let currentIndex = await this.nextImageIndex(galleryDirPath);
 
         // Copy each image to the album directory
         for (const file of files) {
@@ -236,25 +278,43 @@ export class GalleryManager {
             // Convertir File en Buffer
             const buffer = await file.arrayBuffer();
 
-            // Thumbnail generation
-            const thumbnailPath = path.join(thumbnailDirPath, filename);
-            await this.generateThumbnail(buffer, thumbnailPath);
-
             // Copy the image file to the album directory
             const imagePath = path.join(albumDirPath, filename);
             await this.saveImageBuffer(buffer, imagePath);
+
+            // Generate thumbnail
+            const thumbnailPath = path.join(thumbnailDirPath, filename);
+            await this.generateThumbnail(imagePath, thumbnailPath);
+
+            // Update internal state
+            this.galleries
+                .find((g) => g.name === galleryName)
+                ?.albums.find((a) => a.name === albumName)
+                ?.images.push({
+                    name: path.parse(filename).name,
+                    ratio: await this.getImageRatio(imagePath),
+                });
         }
-        this.init();
     }
 
     private async generateThumbnail(
-        buffer: ArrayBuffer,
+        imagePath: string,
         thumbnailPath: string,
     ): Promise<void> {
-        await sharp(Buffer.from(buffer))
-            .resize(200, 200, { fit: 'cover' })
+        await sharp(imagePath)
+            .resize(IMAGE_THUMBNAIL_SIZE, IMAGE_THUMBNAIL_SIZE, {
+                fit: 'inside',
+            })
             .jpeg({ quality: 80 })
             .toFile(thumbnailPath);
+    }
+
+    private async getImageRatio(imagePath: string): Promise<number> {
+        const metadata = await sharp(imagePath).metadata();
+        if (metadata.width && metadata.height) {
+            return Math.round((metadata.width / metadata.height) * 100) / 100;
+        }
+        return 1;
     }
 
     private async saveImageBuffer(

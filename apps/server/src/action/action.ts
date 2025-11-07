@@ -1,4 +1,4 @@
-import { db } from '@server/core';
+import { db, galleryManager } from '@server/core';
 import { logger } from '@server/tools/logger';
 
 import { Action } from './action.types';
@@ -53,7 +53,11 @@ export class ActionManager {
                 new Date().toISOString(),
             ],
         );
-        logger.info(`Added action result: ${JSON.stringify(result)}`);
+
+        if (action.type === 'gallery') {
+            await galleryManager.add(`${result.lastID}`);
+        }
+
         return { ...action, id: result.lastID ?? 0 };
     };
 
@@ -69,11 +73,16 @@ export class ActionManager {
                 action.id,
             ],
         );
-        logger.info(`Updated action result: ${JSON.stringify(result)}`);
         return { ...action };
     };
 
     delete = async (id: number): Promise<void> => {
-        await db.run('DELETE FROM actions WHERE id = ?', [id]);
+        const action = await this.get(id);
+
+        await db.run('DELETE FROM actions WHERE id = ?', [action.id]);
+
+        if (action.type === 'gallery') {
+            await galleryManager.delete(`${action.id}`);
+        }
     };
 }
