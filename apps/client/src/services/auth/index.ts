@@ -1,4 +1,4 @@
-import { useAction, useBehaviourSubject } from '@/utils/Hooks';
+import { useBehaviourSubject, usePromiseFunc } from '@/utils/Hooks';
 
 import { authService } from './auth';
 
@@ -13,11 +13,11 @@ export const useUser = () => {
 };
 
 export const useLogin = () =>
-    useAction(async (username: string, password: string) => {
+    usePromiseFunc(async (username: string, password: string) => {
         await authService.login(username, password);
     });
 
 export const useLogout = () =>
-    useAction(async () => {
+    usePromiseFunc(async () => {
         authService.logout();
     });

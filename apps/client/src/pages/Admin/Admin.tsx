@@ -1,15 +1,13 @@
-import { useState } from 'react';
 import { useUser, useLogout } from '../../services/auth';
-import { useAdminEvents, useCreateEvent } from '../../services/event';
-import { AdminLogin } from './AdminLogin';
-import { AdminActions } from './AdminActions';
+import { Login } from './Login';
+import { Actions } from './Actions';
 
 export const Admin = () => {
     const [user] = useUser();
     const [logout] = useLogout();
 
     if (user?.role !== 'admin') {
-        return <AdminLogin />;
+        return <Login />;
     }
 
     return (
@@ -18,7 +16,7 @@ export const Admin = () => {
                 <a className="active">Actions</a>
             </div>
             <div className="page padding active">
-                <AdminActions />
+                <Actions />
             </div>
 
             {user && user.role === 'admin' && (

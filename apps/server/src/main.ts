@@ -5,51 +5,58 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { join } from 'path';
 
+import { health, init, start } from './core';
 import { router } from './router';
+import { isValid } from './tools/config';
 import { logger } from './tools/logger';
 
+// Handle unhandled rejections
+process.on('unhandledRejection', (err: Error) => {
+    logger.error(err, 'unhandledRejection');
+    //process.exit(1);
+});
 const client_path = join(__dirname, '../../client/dist/');
 const client_index_html = join(client_path, 'index.html');
 
 const app = new Hono();
 
-// CORS middleware
+// ---
 app.use('/api/*', cors());
-
-// API routes
 const routes = app.basePath('/api').route('/', router());
 export type ServerType = typeof routes;
 
-// Serve static files
+// ---
 app.use(
     '/*',
     serveStatic({
         root: './../client/dist/',
     }),
 );
-
-// Fallback to index.html for SPA
 app.get('*', async (c) => {
-    try {
-        const htmlContent = await fs.promises.readFile(
-            client_index_html,
-            'utf-8',
-        );
-        return c.html(htmlContent);
-    } catch (error) {
-        return c.text('Not found', 404);
-    }
+    const htmlContent = await fs.promises.readFile(client_index_html, 'utf-8');
+    return c.html(htmlContent);
 });
 
-// Start server
-const port = process.env.PORT || 3001;
+// ---
+const startServer = () => {
+    const server = serve(
+        {
+            fetch: app.fetch,
+            port: 3001,
+        },
+        (info) =>
+            logger.info(`Server started on http://localhost:${info.port}`),
+    );
+    //initWS(server);
+};
 
-serve(
-    {
-        fetch: app.fetch,
-        port: Number(port),
-    },
-    (info) => {
-        logger.info(`Server started on http://localhost:${info.port}`);
-    },
-);
+if (isValid) {
+    init().then(() => {
+        health().then(() => {
+            start().then(() => {
+                startServer();
+            });
+        });
+        63;
+    });
+}

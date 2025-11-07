@@ -3,10 +3,10 @@ import ReactDOM from 'react-dom/client'
 import { RouterProvider, createBrowserRouter } from 'react-router'
 import { App } from './App'
 import { Home } from './pages/Home'
-import { Events } from './pages/Events'
 import { Admin } from './pages/Admin'
 import 'beercss'
 import "material-dynamic-colors";
+import { Actions } from './pages/Actions'
 
 const router = createBrowserRouter([
     {
@@ -18,8 +18,8 @@ const router = createBrowserRouter([
                 element: <Home />,
             },
             {
-                path: 'events',
-                element: <Events />,
+                path: 'actions',
+                element: <Actions />,
             },
             {
                 path: 'admin',

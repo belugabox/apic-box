@@ -1,17 +1,26 @@
+import { Action, ActionType } from "@server/action/action.types";
 import { ReactNode } from "react";
 
 interface ActionCardProps {
-    name: string;
-    desc: string;
-    children: ReactNode;
+    action: Action;
+    children?: ReactNode;
     className?: string;
 }
 
-export const ActionCard = ({ name, desc, children, className }: ActionCardProps) => {
+export const ActionCard = ({ action, children, className }: ActionCardProps) => {
     return (
         <article className={className}>
-            <h5>{name}</h5>
-            <p>{desc}</p>
+            <div className="row top-align">
+                <div className="max">
+                    <h5>{action.title}</h5>
+                    <p className="secondary-text">{action.description}</p>
+                </div>
+                <div>
+                    <i className="extra secondary-text">
+                        {action.type === ActionType.GALLERY ? 'photo' : 'event'}
+                    </i>
+                </div>
+            </div>
             <nav className="right-align">{children}</nav>
         </article>
     )

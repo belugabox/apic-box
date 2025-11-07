@@ -19,7 +19,7 @@ export const Navigation = () => {
                     <Link to="/" className={page === '/' ? 'active' : ''}>
                         <i>home</i>
                     </Link>
-                    <Link to="/events" className={page === '/events' ? 'active' : ''}>
+                    <Link to="/actions" className={page === '/actions' ? 'active' : ''}>
                         <i>event</i>
                     </Link>
                     <Link to="/admin" className={page === '/admin' ? 'active' : ''}>

@@ -1,139 +1,162 @@
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
+import { Context } from 'hono';
+import { sign, verify } from 'hono/jwt';
 import jwt from 'jsonwebtoken';
 import path from 'path';
 
+import { db } from '@server/core';
 import { logger } from '@server/tools/logger';
 
-import { JWT_REFRESH_SECRET, JWT_SECRET } from '../config';
-
-export interface User {
-    username: string;
-    password: string;
-    role: 'admin' | 'user';
-}
+import { AuthRole, User } from './auth.types';
 
 const USERS_FILE = path.resolve(
     process.env.CONFIG_FILE_PATH ?? './config',
     'users.json',
 );
+export const JWT_SECRET =
+    process.env.JWT_SECRET || 'apic-box-secret-key-change-in-production';
+export const JWT_REFRESH_SECRET =
+    process.env.JWT_REFRESH_SECRET ||
+    'apic-box-refresh-secret-key-change-in-production';
 
-// Ensure config directory and file exist
-const ensureUsersFile = () => {
-    const dir = path.dirname(USERS_FILE);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-    if (!fs.existsSync(USERS_FILE)) {
-        fs.writeFileSync(USERS_FILE, JSON.stringify([]));
-    }
-};
-
-export const loadUsers = (): User[] => {
-    ensureUsersFile();
-    try {
-        const data = fs.readFileSync(USERS_FILE, 'utf-8');
-        return JSON.parse(data);
-    } catch (error) {
-        logger.error(error, 'Error loading users:');
-        return [];
-    }
-};
-
-export const saveUsers = (users: User[]) => {
-    ensureUsersFile();
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-};
-
-export const createAdminIfNoneExists = () => {
-    const users = loadUsers();
-    if (users.length === 0) {
-        logger.info('No users found. Creating default admin user...');
-        const hashedPassword = bcrypt.hashSync('admin', 10);
-        users.push({
-            username: 'admin',
-            password: hashedPassword,
-            role: 'admin',
-        });
-        saveUsers(users);
-        logger.info(
-            'Admin user created with username: "admin" and password: "admin"',
+export class AuthManager {
+    constructor() {}
+    init = async () => {
+        await db.run(
+            `CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY, 
+                username TEXT NOT NULL, 
+                password TEXT NOT NULL,
+                role TEXT NOT NULL
+            );`,
         );
-    }
-};
+        const emptyTable = await db.get<{ count: number }>(
+            'SELECT COUNT(*) as count FROM users',
+        );
+        if (emptyTable.count <= 0) {
+            const result = await this.add({
+                id: 0,
+                username: 'admin',
+                password: 'admin',
+                role: AuthRole.ADMIN,
+            });
+            logger.info(
+                `Default admin user created with username: "admin" and password: "admin"`,
+            );
+        }
+    };
 
-export const findUser = (username: string): User | undefined => {
-    const users = loadUsers();
-    return users.find((u) => u.username === username);
-};
+    health = async () => {
+        return await db.run('SELECT id FROM users LIMIT 1').then(() => {
+            return;
+        });
+    };
 
-export const authenticateUser = (
-    username: string,
-    password: string,
-): User | null => {
-    const user = findUser(username);
-    if (!user) {
-        return null;
-    }
-    if (bcrypt.compareSync(password, user.password)) {
+    all = async (): Promise<User[]> => {
+        const users = await db.all<User>(
+            'SELECT id, username, password, role FROM users',
+        );
+        return users;
+    };
+
+    get = async (username: string): Promise<User | null> => {
+        const user = await db.get<User>(
+            'SELECT id, username, password, role FROM users WHERE username = ?',
+            [username],
+        );
+        return user || null;
+    };
+
+    add = async (user: User): Promise<User> => {
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+        const result = await db.run(
+            'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+            [user.username, hashedPassword, user.role],
+        );
+        logger.info(`Added user result: ${JSON.stringify(result)}`);
+        return { ...user, id: result.lastID ?? 0, password: hashedPassword };
+    };
+
+    update = async (user: User): Promise<User> => {
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+        const result = await db.run(
+            'UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?',
+            [user.username, hashedPassword, user.role, user.id],
+        );
+        logger.info(`Updated user result: ${JSON.stringify(result)}`);
+        return { ...user, password: hashedPassword };
+    };
+
+    delete = async (id: number): Promise<void> => {
+        await db.run('DELETE FROM users WHERE id = ?', [id]);
+    };
+
+    // ---
+    login = async (
+        username: string,
+        password: string,
+    ): Promise<User | null> => {
+        const user = await this.get(username);
+        if (!user) {
+            return null;
+        }
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+            return null;
+        }
         return user;
-    }
-    return null;
-};
-
-export const generateTokens = (user: User) => {
-    const payload = { username: user.username, role: user.role };
-
-    const accessToken = jwt.sign(payload, JWT_SECRET, {
-        expiresIn: '15m',
-    });
-
-    const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {
-        expiresIn: '7d',
-    });
-
-    return {
-        accessToken,
-        refreshToken,
-        user: { username: user.username, role: user.role },
     };
-};
 
-export const verifyRefreshToken = (token: string): User | null => {
-    try {
-        const decoded = jwt.verify(token, JWT_REFRESH_SECRET) as any;
-        return findUser(decoded.username) || null;
-    } catch (error) {
-        return null;
-    }
-};
-
-export const authMiddleware = () => {
-    return async (c: any, next: any) => {
-        const authHeader = c.req.header('Authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return c.json({ message: 'Unauthorized' }, 401);
-        }
-
-        const token = authHeader.substring(7);
-        try {
-            const decoded = jwt.verify(token, JWT_SECRET) as any;
-            c.set('user', { username: decoded.username, role: decoded.role });
-        } catch (error) {
-            logger.error(error, 'Token verification failed:');
-            return c.json({ message: 'Unauthorized' }, 401);
-        }
-
-        await next();
+    generateTokens = async (user: User) => {
+        const accessToken = await sign(
+            { username: user.username, role: user.role },
+            JWT_SECRET,
+        );
+        const refreshToken = await sign(
+            { username: user.username },
+            JWT_REFRESH_SECRET,
+        );
+        return { accessToken, refreshToken };
     };
-};
 
-export const adminMiddleware = () => {
-    return async (c: any, next: any) => {
-        const user = c.get('user');
-        if (!user || user.role !== 'admin') {
-            return c.json({ message: 'Forbidden' }, 403);
-        }
-        await next();
+    verifyAccessToken = async (token: string) => {
+        const payload = await verify(token, JWT_SECRET);
+        return payload as { username: string; role: AuthRole };
     };
-};
+
+    verifyRefreshToken = async (token: string) => {
+        const payload = await verify(token, JWT_REFRESH_SECRET);
+        return payload as { username: string; role: AuthRole };
+    };
+
+    // ---
+    authMiddleware =
+        (role?: AuthRole) => async (c: Context, next: () => Promise<void>) => {
+            const authHeader = c.req.header('Authorization');
+            if (!authHeader) {
+                return c.json({ message: 'Unauthorized' }, 401);
+            }
+
+            const token = authHeader.split(' ')[1];
+            if (!token) {
+                return c.json({ message: 'Unauthorized' }, 401);
+            }
+
+            try {
+                const payload = await this.verifyAccessToken(token);
+                if (!payload || !payload.role) {
+                    return c.json({ message: 'Invalid token payload' }, 401);
+                }
+                if (role && payload.role !== role) {
+                    return c.json({ message: 'Forbidden' }, 403);
+                }
+                c.set('user', payload);
+            } catch (err) {
+                logger.error(err, 'Token verification failed');
+                return c.json({ message: 'Invalid or expired token' }, 401);
+            }
+
+            return await next();
+        };
+}

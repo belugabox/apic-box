@@ -1,7 +1,7 @@
 import { useLogin } from "@/services/auth";
 import { useForm } from 'react-hook-form';
 
-export const AdminLogin = () => {
+export const Login = () => {
     const [login, loading, loginError] = useLogin();
 
     const {

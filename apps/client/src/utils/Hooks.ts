@@ -95,8 +95,8 @@ export const useBehaviourSubject = <T>(
     return [state, setState, loading, error];
 };
 
-export function useAction<P extends unknown[]>(
-    action: (...args: P) => Promise<void | string>,
+export function usePromiseFunc<P extends unknown[]>(
+    func: (...args: P) => Promise<void | string>,
 ): [(...args: P) => Promise<void | string>, boolean, Error | undefined] {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error>();
@@ -105,9 +105,10 @@ export function useAction<P extends unknown[]>(
         setLoading(true);
         setError(undefined);
         try {
-            await action(...args);
+            await func(...args);
         } catch (err) {
             setError(err as Error);
+            return Promise.reject(err);
         } finally {
             setLoading(false);
         }

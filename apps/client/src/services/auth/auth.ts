@@ -1,15 +1,17 @@
 import { BehaviorSubject } from 'rxjs';
 
+import { User } from '@server/auth/auth.types';
+
 import { callRpc } from '@/utils/rpc';
 
 import { serverApi } from '../server';
 
 export class AuthService {
-    user = new BehaviorSubject<any>(this.getStoredUser());
+    user = new BehaviorSubject<User | null>(this.getStoredUser());
 
-    headers() {
-        const token = this.getAccessToken();
-        return token ? { Authorization: `Bearer ${token}` } : {};
+    headers(): Record<string, string> {
+        const accessToken = localStorage.getItem('accessToken');
+        return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
     }
 
     // Clear all auth tokens (useful when tokens become invalid)
@@ -23,16 +25,16 @@ export class AuthService {
     // Login
     async login(username: string, password: string) {
         try {
-            const data = await callRpc(
+            const { accessToken, refreshToken, user } = await callRpc(
                 serverApi.auth.login.$post({
-                    json: { username, password },
-                }) as any,
+                    form: { username, password },
+                }),
             );
-            localStorage.setItem('accessToken', (data as any).accessToken);
-            localStorage.setItem('refreshToken', (data as any).refreshToken);
-            localStorage.setItem('user', JSON.stringify((data as any).user));
-            this.user.next((data as any).user);
-            return data;
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+            localStorage.setItem('user', JSON.stringify(user));
+            this.user.next(user);
+            return { accessToken, refreshToken, user };
         } catch (error) {
             console.error('Error logging in:', error);
             this.clearTokens();
@@ -46,11 +48,6 @@ export class AuthService {
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         this.user.next(null);
-    }
-
-    // Get stored access token
-    getAccessToken(): string | null {
-        return localStorage.getItem('accessToken');
     }
 
     // Get stored user (internal)
@@ -73,27 +70,6 @@ export class AuthService {
     isAdmin(): boolean {
         const user = this.getUser();
         return user?.role === 'admin';
-    }
-
-    // Refresh token
-    async refreshToken() {
-        try {
-            const refreshToken = localStorage.getItem('refreshToken');
-            if (!refreshToken) {
-                throw new Error('No refresh token');
-            }
-            const data = await callRpc(
-                serverApi.auth.refresh.$post({
-                    json: { refreshToken },
-                }) as any,
-            );
-            localStorage.setItem('accessToken', (data as any).accessToken);
-            return data;
-        } catch (error) {
-            console.error('Error refreshing token:', error);
-            this.logout();
-            throw error;
-        }
     }
 }
 
