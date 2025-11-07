@@ -33,7 +33,7 @@ RUN pnpm install --filter=server --prod
 # Exposer les ports pour le client et le serveur
 EXPOSE 3001
 
-ENV CONFIG_FILE_PATH=/config
+ENV DATA_FILE_PATH=/data
 
 # Commande pour démarrer les deux applications
 CMD ["pnpm", "run", "start"]

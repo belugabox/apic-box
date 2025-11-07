@@ -3,8 +3,8 @@ import path from 'path';
 import initSqlJs, { Database } from 'sql.js';
 
 const DB_FILE = path.resolve(
-    process.env.DB_FILE_PATH ?? './config',
-    'data.sqlite',
+    process.env.DATA_FILE_PATH ?? './data',
+    'db.sqlite',
 );
 
 export interface RunResult {

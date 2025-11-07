@@ -6,7 +6,7 @@ import path from 'path';
 dotenv.config();
 
 const CONFIG_FILE = path.resolve(
-    process.env.CONFIG_FILE_PATH ?? './config',
+    process.env.DATA_FILE_PATH ?? './data',
     'config.json',
 );
 
