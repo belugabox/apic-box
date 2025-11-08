@@ -11,25 +11,14 @@ export enum ActionType {
     GALLERY = 'gallery',
 }
 
-export type BaseAction = {
+export type Action = {
     id: number;
     title: string;
     description: string;
     status: ActionStatus;
+    type: ActionType;
     createdAt: Date;
     updatedAt: Date;
-};
-
-export type SimpleAction = BaseAction & {
-    type: ActionType.SIMPLE;
-    galleryId?: never;
-    gallery?: never;
-};
-
-export type GalleryAction = BaseAction & {
-    type: ActionType.GALLERY;
-    galleryId: string | null;
+    galleryId?: string;
     gallery?: Gallery;
 };
-
-export type Action = SimpleAction | GalleryAction;

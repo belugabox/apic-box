@@ -507,12 +507,12 @@ export class GalleryManager {
 
         // Galerie protégée, vérifier le token
         if (!token) {
-            return c.json({ message: 'Gallery is protected' }, 401);
+            throw new Error('No token provided');
         }
 
         const payload = await this.verifyToken(token);
         if (!payload || payload.galleryId !== galleryId) {
-            return c.json({ message: 'Invalid or expired token' }, 401);
+            throw new Error('Invalid or expired token');
         }
 
         // Token valide, continuer

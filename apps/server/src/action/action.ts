@@ -1,12 +1,7 @@
 import { db, galleryManager } from '@server/core';
 import { MappedRepository } from '@server/db';
 
-import {
-    Action,
-    ActionType,
-    GalleryAction,
-    SimpleAction,
-} from './action.types';
+import { Action, ActionType } from './action.types';
 
 type ActionRow = Omit<Action, 'createdAt' | 'updatedAt' | 'gallery'> & {
     createdAt: string;
@@ -35,7 +30,7 @@ export class ActionManager extends MappedRepository<ActionRow, Action> {
                 gallery,
                 createdAt: new Date(row.createdAt),
                 updatedAt: new Date(row.updatedAt),
-            } as GalleryAction;
+            } satisfies Action;
         }
 
         // Sinon, c'est une action simple
@@ -44,7 +39,7 @@ export class ActionManager extends MappedRepository<ActionRow, Action> {
             type: ActionType.SIMPLE,
             createdAt: new Date(row.createdAt),
             updatedAt: new Date(row.updatedAt),
-        } as SimpleAction;
+        } satisfies Action;
     }
 
     init = async () => {
@@ -79,10 +74,10 @@ export class ActionManager extends MappedRepository<ActionRow, Action> {
         action: Omit<Action, 'id' | 'createdAt' | 'updatedAt'>,
     ): Promise<Action> => {
         // Valider : galleryId ne doit être fourni que pour les actions GALLERY
-        let galleryId: string | null = null;
+        let galleryId: string | undefined;
 
         if (action.type === ActionType.GALLERY) {
-            galleryId = (action as GalleryAction).galleryId || null;
+            galleryId = action.galleryId;
 
             // Si pas de galleryId, en générer un basé sur le titre de l'action
             if (!galleryId) {
@@ -125,10 +120,10 @@ export class ActionManager extends MappedRepository<ActionRow, Action> {
         }
 
         // Valider : galleryId ne doit être fourni que pour les actions GALLERY
-        let galleryId: string | null = null;
+        let galleryId: string | undefined;
 
         if (action.type === ActionType.GALLERY) {
-            galleryId = (action as GalleryAction).galleryId || null;
+            galleryId = action.galleryId;
 
             // Si c'est une conversion SIMPLE → GALLERY, créer une nouvelle galerie
             if (existing.type === ActionType.SIMPLE) {

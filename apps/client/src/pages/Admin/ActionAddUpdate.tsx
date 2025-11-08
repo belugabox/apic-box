@@ -34,15 +34,15 @@ export const ActionAddUpdate = ({ action, onClose, onSuccess }: ActionAddUpdateP
         }
     });
 
-    const onSubmit = async (data: Action) => {
+    const onSubmit = async (action: Action) => {
         if (isUpdate) {
-            await updateAction(data).then(() => {
+            await updateAction(action).then(() => {
                 reset();
                 onSuccess?.();
                 onClose?.();
             });
         } else {
-            await addAction(data).then(() => {
+            await addAction(action).then(() => {
                 reset();
                 onSuccess?.();
                 onClose?.();

@@ -6,7 +6,7 @@ export const useGallery = (galleryName?: string) =>
     usePromise(
         () =>
             galleryName
-                ? galleryService.gallery(galleryName)
+                ? galleryService.get(galleryName)
                 : Promise.resolve(null),
         [galleryName],
     );
@@ -20,4 +20,7 @@ export const useAddGalleryImages = (
     galleryName: string,
     albumName: string,
     files: File[],
-) => usePromiseFunc(() => galleryService.add(galleryName, albumName, files));
+) =>
+    usePromiseFunc(() =>
+        galleryService.addImages(galleryName, albumName, files),
+    );

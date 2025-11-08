@@ -6,7 +6,7 @@ import { authService } from '../auth';
 import { serverApi } from '../server';
 
 export class GalleryService {
-    gallery = async (galleryName: string): Promise<Gallery> => {
+    get = async (galleryName: string): Promise<Gallery> => {
         return await callRpc(
             serverApi.gallery[':galleryName'].$get({ param: { galleryName } }),
         );
@@ -24,9 +24,13 @@ export class GalleryService {
         const url = URL.createObjectURL(blob);
         return url;
     };
-    add = async (galleryName: string, albumName: string, files: File[]) => {
+    addImages = async (
+        galleryName: string,
+        albumName: string,
+        files: File[],
+    ) => {
         await callRpc(
-            serverApi.gallery.add.$post(
+            serverApi.gallery.addImages.$post(
                 {
                     form: { galleryName, albumName, files },
                 },

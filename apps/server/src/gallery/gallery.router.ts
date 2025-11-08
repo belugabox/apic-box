@@ -62,24 +62,28 @@ export const galleryRoutes = () =>
                 return c.body(new Uint8Array(file));
             },
         )
-        .post('/add', authManager.authMiddleware(AuthRole.ADMIN), async (c) => {
-            const formData = await c.req.formData();
-            const galleryName = formData.get('galleryName') as string;
-            const albumName = formData.get('albumName') as string;
-            const files = formData.getAll('files') as File[];
+        .post(
+            '/addImages',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            async (c) => {
+                const formData = await c.req.formData();
+                const galleryName = formData.get('galleryName') as string;
+                const albumName = formData.get('albumName') as string;
+                const files = formData.getAll('files') as File[];
 
-            if (!galleryName || !albumName || files.length === 0) {
-                throw new Error('Missing required fields');
-            }
+                if (!galleryName || !albumName || files.length === 0) {
+                    throw new Error('Missing required fields');
+                }
 
-            await galleryManager.addImages(galleryName, albumName, files);
-            return c.json({
-                message: 'Images added',
-                gallery: galleryName,
-                album: albumName,
-                count: files.length,
-            });
-        })
+                await galleryManager.addImages(galleryName, albumName, files);
+                return c.json({
+                    message: 'Images added',
+                    gallery: galleryName,
+                    album: albumName,
+                    count: files.length,
+                });
+            },
+        )
         // Routes de protection des galeries
         .post(
             '/:galleryName/protect',
