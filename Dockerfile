@@ -1,6 +1,11 @@
 # Étape 1 : Construction
 FROM node:slim AS build
 
+# Installer les dépendances de compilation pour better-sqlite3
+RUN apt-get update && apt-get install -y python3 make g++ \
+    && ln -sf python3 /usr/bin/python \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copier les fichiers
 WORKDIR /build
 COPY package.json pnpm-workspace.yaml ./
