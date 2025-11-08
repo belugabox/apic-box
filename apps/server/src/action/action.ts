@@ -1,5 +1,4 @@
 import { db, galleryManager } from '@server/core';
-import { logger } from '@server/tools/logger';
 
 import { Action } from './action.types';
 
@@ -62,7 +61,7 @@ export class ActionManager {
     };
 
     update = async (action: Action): Promise<Action> => {
-        const result = await db.run(
+        await db.run(
             'UPDATE actions SET title = ?, description = ?, type = ?, status = ?, updatedAt = ? WHERE id = ?',
             [
                 action.title,

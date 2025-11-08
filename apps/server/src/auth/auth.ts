@@ -28,7 +28,7 @@ export class AuthManager {
             'SELECT COUNT(*) as count FROM users',
         );
         if (emptyTable.count <= 0) {
-            const result = await this.add({
+            await this.add({
                 id: 0,
                 username: 'admin',
                 password: 'admin',

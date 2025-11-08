@@ -9,7 +9,7 @@ export const GalleryEdit = () => {
     const [uploadMessage, setUploadMessage] = useState<string>("");
 
     // Hook pour l'upload
-    const [addImages, addImagesLoading, addImagesError] = useAddGalleryImages(
+    const [addImages, addImagesLoading] = useAddGalleryImages(
         selectedGallery,
         selectedAlbum,
         files

@@ -15,7 +15,7 @@ export const ActionAddUpdate = ({ action, onClose, onSuccess }: ActionAddUpdateP
     const [addAction, addLoading, addError] = useActionAdd();
     const [updateAction, updateLoading, updateError] = useActionUpdate();
 
-    const [gallery, galleryLoading, galleryError] = useGallery(action?.type === ActionType.GALLERY ? action?.id.toString() : undefined);
+    const [gallery] = useGallery(action?.type === ActionType.GALLERY ? action?.id.toString() : undefined);
 
     const {
         register,

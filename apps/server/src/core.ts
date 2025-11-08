@@ -1,4 +1,4 @@
-import { ActionManager, ActionStatus } from './action';
+import { ActionManager } from './action';
 import { AuthManager } from './auth';
 import { DbManager } from './db';
 import { GalleryManager } from './gallery';

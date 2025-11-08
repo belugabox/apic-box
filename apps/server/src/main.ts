@@ -39,7 +39,7 @@ app.get('*', async (c) => {
 
 // ---
 const startServer = () => {
-    const server = serve(
+    serve(
         {
             fetch: app.fetch,
             port: 3001,

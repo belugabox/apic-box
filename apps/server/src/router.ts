@@ -1,6 +1,4 @@
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import { z } from 'zod';
 
 import { actionRoutes } from './action/action.router';
 import { authRoutes } from './auth/auth.router';

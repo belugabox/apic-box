@@ -1,18 +1,6 @@
-import {
-    copyFile,
-    mkdir,
-    readFile,
-    readdir,
-    rename,
-    rm,
-    stat,
-} from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, stat } from 'node:fs/promises';
 import path from 'path';
 import sharp from 'sharp';
-import unzipper from 'unzipper';
-import { de } from 'zod/v4/locales';
-
-import { logger } from '@server/tools/logger';
 
 import { Album, Gallery, Image } from './gallery.types';
 
