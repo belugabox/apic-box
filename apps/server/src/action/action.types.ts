@@ -9,7 +9,7 @@ export interface Action {
     createdAt: Date;
     updatedAt: Date;
 
-    gallery: Gallery | null;
+    gallery?: Gallery;
 }
 
 export enum ActionStatus {

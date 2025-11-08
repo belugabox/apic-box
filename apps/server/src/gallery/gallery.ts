@@ -199,9 +199,9 @@ export class GalleryManager {
         });
     }
 
-    async get(name: string): Promise<Gallery | null> {
+    async get(name: string): Promise<Gallery | undefined> {
         const gallery = this.galleries.find((g) => g.name === name);
-        return gallery || null;
+        return gallery;
     }
 
     async getImage(

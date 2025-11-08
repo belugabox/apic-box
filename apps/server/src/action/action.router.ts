@@ -28,16 +28,11 @@ export const actionRoutes = () =>
                     description: z.string(),
                     type: z.enum(ActionType),
                     status: z.enum(ActionStatus),
-                    createdAt: z.coerce.date(),
-                    updatedAt: z.coerce.date(),
                 }),
             ),
             async (c) => {
                 const action = c.req.valid('form');
-                const newAction = await actionManager.add({
-                    ...action,
-                    id: 0,
-                });
+                const newAction = await actionManager.add(action);
                 return c.json({ message: 'Action created', action: newAction });
             },
         )
@@ -52,15 +47,11 @@ export const actionRoutes = () =>
                     description: z.string(),
                     type: z.enum(ActionType),
                     status: z.enum(ActionStatus),
-                    createdAt: z.coerce.date(),
-                    updatedAt: z.coerce.date(),
                 }),
             ),
             async (c) => {
                 const action = c.req.valid('form');
-                const updatedAction = await actionManager.update({
-                    ...action,
-                });
+                const updatedAction = await actionManager.updateAction(action);
                 return c.json({
                     message: 'Action updated',
                     action: updatedAction,
@@ -72,7 +63,7 @@ export const actionRoutes = () =>
             authManager.authMiddleware(AuthRole.ADMIN),
             async (c) => {
                 const id = Number(c.req.param('id'));
-                await actionManager.delete(id);
+                await actionManager.deleteAction(id);
                 return c.json({ message: 'Action deleted' });
             },
         );

@@ -3,9 +3,14 @@ import { Context } from 'hono';
 import { sign, verify } from 'hono/jwt';
 
 import { db } from '@server/core';
+import { MappedRepository } from '@server/db';
 import { logger } from '@server/tools/logger';
 
 import { AuthRole, User } from './auth.types';
+
+type UserRow = Omit<User, 'role'> & {
+    role: string;
+};
 
 export const JWT_SECRET =
     process.env.JWT_SECRET || 'apic-box-secret-key-change-in-production';
@@ -13,8 +18,18 @@ export const JWT_REFRESH_SECRET =
     process.env.JWT_REFRESH_SECRET ||
     'apic-box-refresh-secret-key-change-in-production';
 
-export class AuthManager {
-    constructor() {}
+export class AuthManager extends MappedRepository<UserRow, User> {
+    constructor() {
+        super(db, 'users');
+    }
+
+    protected mapToDomain(row: UserRow): User {
+        return {
+            ...row,
+            role: row.role as AuthRole,
+        };
+    }
+
     init = async () => {
         await db.run(
             `CREATE TABLE IF NOT EXISTS users (
@@ -27,7 +42,7 @@ export class AuthManager {
         const emptyTable = await db.get<{ count: number }>(
             'SELECT COUNT(*) as count FROM users',
         );
-        if (emptyTable.count <= 0) {
+        if (emptyTable && emptyTable.count <= 0) {
             await this.add({
                 id: 0,
                 username: 'admin',
@@ -41,48 +56,47 @@ export class AuthManager {
     };
 
     health = async () => {
-        return await db.run('SELECT id FROM users LIMIT 1').then(() => {
-            return;
-        });
+        const result = await this.findOne({});
+        return result ? 'healthy' : 'healthy';
     };
 
     all = async (): Promise<User[]> => {
-        const users = await db.all<User>(
-            'SELECT id, username, password, role FROM users',
-        );
-        return users;
+        return this.findAll();
     };
 
     get = async (username: string): Promise<User | null> => {
-        const user = await db.get<User>(
-            'SELECT id, username, password, role FROM users WHERE username = ?',
-            [username],
-        );
+        const user = await this.findOne({ username });
         return user || null;
     };
 
     add = async (user: User): Promise<User> => {
         const hashedPassword = await bcrypt.hash(user.password, 10);
-        const result = await db.run(
-            'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-            [user.username, hashedPassword, user.role],
-        );
+        const result = await this.repo.create({
+            username: user.username,
+            password: hashedPassword,
+            role: user.role,
+        });
         logger.info(`Added user result: ${JSON.stringify(result)}`);
-        return { ...user, id: result.lastID ?? 0, password: hashedPassword };
+        return {
+            ...user,
+            id: result.lastID ?? 0,
+            password: hashedPassword,
+        };
     };
 
-    update = async (user: User): Promise<User> => {
+    updateUser = async (user: User): Promise<User> => {
         const hashedPassword = await bcrypt.hash(user.password, 10);
-        const result = await db.run(
-            'UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?',
-            [user.username, hashedPassword, user.role, user.id],
-        );
+        const result = await this.repo.update(user.id, {
+            username: user.username,
+            password: hashedPassword,
+            role: user.role,
+        });
         logger.info(`Updated user result: ${JSON.stringify(result)}`);
         return { ...user, password: hashedPassword };
     };
 
-    delete = async (id: number): Promise<void> => {
-        await db.run('DELETE FROM users WHERE id = ?', [id]);
+    deleteUser = async (id: number): Promise<void> => {
+        await this.repo.delete(id);
     };
 
     // ---

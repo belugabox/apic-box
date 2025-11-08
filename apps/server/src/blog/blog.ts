@@ -1,9 +1,25 @@
 import { db } from '@server/core';
+import { MappedRepository } from '@server/db';
 
 import { Blog } from './blog.types';
 
-export class BlogManager {
-    constructor() {}
+type BlogRow = Omit<Blog, 'createdAt' | 'updatedAt'> & {
+    createdAt: string;
+    updatedAt: string;
+};
+
+export class BlogManager extends MappedRepository<BlogRow, Blog> {
+    constructor() {
+        super(db, 'blogs');
+    }
+
+    protected async mapToDomain(row: BlogRow): Promise<Blog> {
+        return {
+            ...row,
+            createdAt: new Date(row.createdAt),
+            updatedAt: new Date(row.updatedAt),
+        };
+    }
 
     init = async () => {
         await db.run(
@@ -19,59 +35,43 @@ export class BlogManager {
     };
 
     health = async () => {
-        return await db.run('SELECT id FROM blogs LIMIT 1').then(() => {
-            return;
-        });
+        const result = await this.findOne({});
+        return result ? 'healthy' : 'healthy';
     };
 
     all = async (): Promise<Blog[]> => {
-        const blogs = await db.all<Blog>(
-            'SELECT id, title, content, author, createdAt, updatedAt FROM blogs',
-        );
-        return blogs;
+        return this.findAll();
     };
 
-    get = async (id: string): Promise<Blog | null> => {
-        const blog = await db.get<Blog>(
-            'SELECT id, title, content, author, createdAt, updatedAt FROM blogs WHERE id = ?',
-            [id],
-        );
-        return blog || null;
+    get = async (id: string): Promise<Blog | undefined> => {
+        const blog = await this.findById(id);
+        return blog;
     };
 
-    add = async (blog: {
-        id: string;
-        title: string;
-        content: string;
-        author: string;
-    }): Promise<void> => {
-        await db.run(
-            'INSERT INTO blogs (id, title, content, author, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
-            [
-                blog.id,
-                blog.title,
-                blog.content,
-                blog.author,
-                new Date().toISOString(),
-                new Date().toISOString(),
-            ],
-        );
+    add = async (
+        blog: Omit<Blog, 'id' | 'createdAt' | 'updatedAt'>,
+    ): Promise<void> => {
+        await this.repo.create({
+            title: blog.title,
+            content: blog.content,
+            author: blog.author,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        } as any);
     };
 
-    update = async (blog: Blog): Promise<void> => {
-        await db.run(
-            'UPDATE blogs SET title = ?, content = ?, author = ?, updatedAt = ? WHERE id = ?',
-            [
-                blog.title,
-                blog.content,
-                blog.author,
-                new Date().toISOString(),
-                blog.id,
-            ],
-        );
+    updateBlog = async (
+        blog: Omit<Blog, 'createdAt' | 'updatedAt'>,
+    ): Promise<void> => {
+        await this.repo.update(blog.id, {
+            title: blog.title,
+            content: blog.content,
+            author: blog.author,
+            updatedAt: new Date().toISOString(),
+        });
     };
 
-    delete = async (id: string): Promise<void> => {
-        await db.run('DELETE FROM blogs WHERE id = ?', [id]);
+    deleteBlog = async (id: number): Promise<void> => {
+        await this.repo.delete(id);
     };
 }

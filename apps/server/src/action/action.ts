@@ -1,9 +1,29 @@
 import { db, galleryManager } from '@server/core';
+import { MappedRepository } from '@server/db';
 
 import { Action } from './action.types';
 
-export class ActionManager {
-    constructor() {}
+type ActionRow = Omit<Action, 'createdAt' | 'updatedAt' | 'gallery'> & {
+    createdAt: string;
+    updatedAt: string;
+};
+
+export class ActionManager extends MappedRepository<ActionRow, Action> {
+    constructor() {
+        super(db, 'actions');
+    }
+
+    protected async mapToDomain(row: ActionRow): Promise<Action> {
+        return {
+            ...row,
+            createdAt: new Date(row.createdAt),
+            updatedAt: new Date(row.updatedAt),
+            gallery:
+                row.type === 'gallery'
+                    ? await galleryManager.get(`${row.id}`)
+                    : undefined,
+        };
+    }
 
     init = async () => {
         await db.run(
@@ -20,82 +40,61 @@ export class ActionManager {
     };
 
     health = async () => {
-        return await db.run('SELECT id FROM actions LIMIT 1').then(() => {
-            return;
-        });
+        return await this.findOne({});
     };
 
     all = async (): Promise<Action[]> => {
-        const actions = await db.all<Action>(
-            'SELECT id, title, description, type, status, createdAt, updatedAt FROM actions',
-        );
-
-        for (const action of actions) {
-            if (action.type === 'gallery') {
-                action.gallery = await galleryManager.get(`${action.id}`);
-            }
-        }
-
-        return actions;
+        return this.findAll();
     };
 
-    get = async (id: number): Promise<Action> => {
-        const action = await db.get<Action>(
-            'SELECT id, title, description, type, status, createdAt, updatedAt FROM actions WHERE id = ?',
-            [id],
-        );
-
-        if (action.type === 'gallery') {
-            action.gallery = await galleryManager.get(`${action.id}`);
-        }
-
-        return action;
+    get = async (id: number): Promise<Action | undefined> => {
+        return this.findById(id);
     };
 
-    add = async (action: Action): Promise<Action> => {
-        const result = await db.run(
-            'INSERT INTO actions (title, description, type, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
-            [
-                action.title,
-                action.description,
-                action.type,
-                action.status,
-                new Date().toISOString(),
-                new Date().toISOString(),
-            ],
-        );
+    add = async (
+        action: Omit<Action, 'id' | 'createdAt' | 'updatedAt'>,
+    ): Promise<Action> => {
+        const result = await this.repo.create({
+            title: action.title,
+            description: action.description,
+            type: action.type,
+            status: action.status,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        });
 
-        if (action.type === 'gallery') {
+        if (action.type === 'gallery' && result.lastID) {
             await galleryManager.add(`${result.lastID}`);
         }
 
-        return { ...action, id: result.lastID ?? 0 };
+        const created = await this.findById(result.lastID);
+        return created!;
     };
 
-    update = async (action: Action): Promise<Action> => {
-        await db.run(
-            'UPDATE actions SET title = ?, description = ?, type = ?, status = ?, updatedAt = ? WHERE id = ?',
-            [
-                action.title,
-                action.description,
-                action.type,
-                action.status,
-                new Date().toISOString(),
-                action.id,
-            ],
-        );
+    updateAction = async (
+        action: Omit<Action, 'createdAt' | 'updatedAt'>,
+    ): Promise<Action> => {
+        await this.repo.update(action.id, {
+            title: action.title,
+            description: action.description,
+            type: action.type,
+            status: action.status,
+            updatedAt: new Date().toISOString(),
+        });
 
         if (action.type === 'gallery') {
             await galleryManager.add(`${action.id}`);
         }
 
-        return { ...action };
+        const updated = await this.findById(action.id);
+        return updated!;
     };
 
-    delete = async (id: number): Promise<void> => {
+    deleteAction = async (id: number): Promise<void> => {
         const action = await this.get(id);
+        if (!action) return;
 
-        await db.run('DELETE FROM actions WHERE id = ?', [action.id]);
+        await this.repo.delete(id);
 
         if (action.type === 'gallery') {
             await galleryManager.delete(`${action.id}`);

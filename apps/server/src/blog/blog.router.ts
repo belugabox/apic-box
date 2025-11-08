@@ -1,4 +1,6 @@
+import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
+import z from 'zod';
 
 import { AuthRole } from '@server/auth';
 import { authManager, blogManager } from '@server/core';
@@ -17,26 +19,47 @@ export const blogRoutes = () =>
             }
             return c.json(blog);
         })
-        .post('/add', authManager.authMiddleware(AuthRole.ADMIN), async (c) => {
-            const { id, title, content, author } = await c.req.json();
-            await blogManager.add({ id, title, content, author });
-            return c.json({ message: 'Blog added' });
-        })
         .post(
-            '/update',
+            '/add',
             authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'form',
+                z.object({
+                    title: z.string(),
+                    content: z.string(),
+                    author: z.string(),
+                }),
+            ),
             async (c) => {
-                const blog = await c.req.json();
-                await blogManager.update(blog);
-                return c.json({ message: 'Blog updated' });
+                const blog = c.req.valid('form');
+                const newBlog = await blogManager.add(blog);
+                return c.json({ message: 'Blog added', blog: newBlog });
             },
         )
         .post(
-            '/delete',
+            '/update',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'form',
+                z.object({
+                    id: z.coerce.number(),
+                    title: z.string(),
+                    content: z.string(),
+                    author: z.string(),
+                }),
+            ),
+            async (c) => {
+                const blog = c.req.valid('form');
+                const updatedBlog = await blogManager.updateBlog(blog);
+                return c.json({ message: 'Blog updated', blog: updatedBlog });
+            },
+        )
+        .post(
+            '/delete/:id',
             authManager.authMiddleware(AuthRole.ADMIN),
             async (c) => {
-                const { id } = await c.req.json();
-                await blogManager.delete(id);
+                const id = Number(c.req.param('id'));
+                await blogManager.deleteBlog(id);
                 return c.json({ message: 'Blog deleted' });
             },
         );
