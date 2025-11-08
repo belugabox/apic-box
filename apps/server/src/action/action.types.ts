@@ -1,3 +1,5 @@
+import { Gallery } from '@server/gallery/gallery.types';
+
 export interface Action {
     id: number;
     title: string;
@@ -6,6 +8,8 @@ export interface Action {
     status: ActionStatus;
     createdAt: Date;
     updatedAt: Date;
+
+    gallery: Gallery | null;
 }
 
 export enum ActionStatus {

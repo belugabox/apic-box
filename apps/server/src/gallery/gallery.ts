@@ -199,7 +199,7 @@ export class GalleryManager {
         });
     }
 
-    async gallery(name: string): Promise<Gallery | null> {
+    async get(name: string): Promise<Gallery | null> {
         const gallery = this.galleries.find((g) => g.name === name);
         return gallery || null;
     }

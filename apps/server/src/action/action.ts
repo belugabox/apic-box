@@ -29,6 +29,13 @@ export class ActionManager {
         const actions = await db.all<Action>(
             'SELECT id, title, description, type, status, createdAt, updatedAt FROM actions',
         );
+
+        for (const action of actions) {
+            if (action.type === 'gallery') {
+                action.gallery = await galleryManager.get(`${action.id}`);
+            }
+        }
+
         return actions;
     };
 
@@ -37,6 +44,11 @@ export class ActionManager {
             'SELECT id, title, description, type, status, createdAt, updatedAt FROM actions WHERE id = ?',
             [id],
         );
+
+        if (action.type === 'gallery') {
+            action.gallery = await galleryManager.get(`${action.id}`);
+        }
+
         return action;
     };
 
@@ -72,6 +84,11 @@ export class ActionManager {
                 action.id,
             ],
         );
+
+        if (action.type === 'gallery') {
+            await galleryManager.add(`${action.id}`);
+        }
+
         return { ...action };
     };
 
