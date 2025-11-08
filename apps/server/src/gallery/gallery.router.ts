@@ -1,4 +1,6 @@
+import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
+import { z } from 'zod';
 
 import { AuthRole } from '@server/auth';
 import { authManager, galleryManager } from '@server/core';
@@ -14,7 +16,7 @@ export const galleryRoutes = () =>
             const galleries = galleryManager.galleries;
             return c.json(galleries);
         })
-        .get('/:galleryName', async (c) => {
+        .get('/:galleryName', galleryManager.checkAccess(), async (c) => {
             const { galleryName } = c.req.param();
 
             const gallery = galleryManager.galleries.find(
@@ -25,16 +27,23 @@ export const galleryRoutes = () =>
             }
             return c.json(gallery);
         })
-        .get('/:galleryName/:filename', async (c) => {
-            const { galleryName, filename } = c.req.param();
-            const file = await galleryManager.getImage(galleryName, filename);
-            if (!file) {
-                throw new Error('Image not found');
-            }
-            c.header('Content-Type', 'image/jpeg');
-            c.header('Cache-Control', 'public, max-age=31536000');
-            return c.body(new Uint8Array(file));
-        })
+        .get(
+            '/:galleryName/:filename',
+            galleryManager.checkAccess(),
+            async (c) => {
+                const { galleryName, filename } = c.req.param();
+                const file = await galleryManager.getImage(
+                    galleryName,
+                    filename,
+                );
+                if (!file) {
+                    throw new Error('Image not found');
+                }
+                c.header('Content-Type', 'image/jpeg');
+                c.header('Cache-Control', 'public, max-age=31536000');
+                return c.body(new Uint8Array(file));
+            },
+        )
         .get(
             '/:galleryName/:filename/raw',
             authManager.authMiddleware(AuthRole.ADMIN),
@@ -70,4 +79,77 @@ export const galleryRoutes = () =>
                 album: albumName,
                 count: files.length,
             });
-        });
+        })
+        // Routes de protection des galeries
+        .post(
+            '/:galleryName/protect',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'json',
+                z.object({
+                    password: z.string().min(4, 'Password too short'),
+                }),
+            ),
+            async (c) => {
+                const { galleryName } = c.req.param();
+                const { password } = c.req.valid('json');
+
+                await galleryManager.setPassword(galleryName, password);
+                return c.json({
+                    message: 'Gallery protected',
+                    gallery: galleryName,
+                });
+            },
+        )
+        .post(
+            '/:galleryName/unprotect',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            async (c) => {
+                const { galleryName } = c.req.param();
+
+                await galleryManager.removePassword(galleryName);
+                return c.json({
+                    message: 'Gallery unprotected',
+                    gallery: galleryName,
+                });
+            },
+        )
+        .get('/:galleryName/is-protected', async (c) => {
+            const { galleryName } = c.req.param();
+
+            const isProtected = await galleryManager.isProtected(galleryName);
+            return c.json({
+                gallery: galleryName,
+                isProtected,
+            });
+        })
+        .post(
+            '/:galleryName/unlock',
+            zValidator(
+                'json',
+                z.object({
+                    password: z.string(),
+                }),
+            ),
+            async (c) => {
+                const { galleryName } = c.req.param();
+                const { password } = c.req.valid('json');
+
+                const token = await galleryManager.login(galleryName, password);
+
+                if (!token) {
+                    return c.json(
+                        {
+                            message:
+                                'Invalid password or gallery not protected',
+                        },
+                        401,
+                    );
+                }
+
+                return c.json({
+                    message: 'Gallery unlocked',
+                    token,
+                });
+            },
+        );
