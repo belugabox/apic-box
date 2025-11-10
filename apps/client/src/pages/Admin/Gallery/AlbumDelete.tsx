@@ -1,20 +1,20 @@
-import { useActionDelete } from "@/services/action";
-import { Action } from "@server/action/action.types";
+import { useGalleryDeleteAlbum } from "@/services/gallery";
+import { Album } from "@server/gallery/gallery.types";
 
-interface ActionDeleteProps {
-    action?: Action;
+interface AdminGalleryAlbumDeleteProps {
+    album?: Album;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-export const ActionDelete = ({ action, onClose, onSuccess }: ActionDeleteProps) => {
+export const AdminGalleryAlbumDelete = ({ album, onClose, onSuccess }: AdminGalleryAlbumDeleteProps) => {
 
-    const [deleteAction, loading, error] = useActionDelete();
+    const [deleteAlbum, loading, error] = useGalleryDeleteAlbum();
 
     const handleConfirmDelete = async () => {
         try {
-            if (action) {
-                await deleteAction(action);
+            if (album) {
+                await deleteAlbum(album.id);
             }
             onSuccess();
             onClose();
@@ -26,7 +26,7 @@ export const ActionDelete = ({ action, onClose, onSuccess }: ActionDeleteProps) 
     return (
         <div>
             <h5>Confirmer la suppression</h5>
-            <p>Êtes-vous sûr de vouloir supprimer l'action <strong>"{action?.title}"</strong> ?</p>
+            <p>Êtes-vous sûr de vouloir supprimer l'album <strong>"{album?.name}"</strong> ({album?.images.length} photos) ?</p>
             <span className="error-text">{error?.message}</span>
             <nav className="right-align">
                 <button className="border" onClick={onClose}>

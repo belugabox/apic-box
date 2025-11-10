@@ -112,6 +112,7 @@ export function usePromiseFunc<P extends unknown[]>(
         } finally {
             setLoading(false);
         }
+        return Promise.resolve();
     };
 
     return [execute, loading, error];

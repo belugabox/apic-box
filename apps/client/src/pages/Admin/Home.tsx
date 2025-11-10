@@ -1,10 +1,9 @@
 import { useUser, useLogout } from '../../services/auth';
 import { Login } from './Login';
-import { Actions } from './Actions';
-import { GalleryEdit } from './GalleryEdit';
 import { useState } from 'react';
+import { Link, Outlet } from 'react-router';
 
-export const Admin = () => {
+export const AdminHome = () => {
     const [user] = useUser();
     const [logout] = useLogout();
     const [activeTab, setActiveTab] = useState<'actions' | 'gallery'>('actions');
@@ -16,22 +15,17 @@ export const Admin = () => {
     return (
         <>
             <div className="tabs left-align">
-                <a
+                <Link
+                    to="/admin/action"
                     className={activeTab === 'actions' ? 'active' : ''}
                     onClick={() => setActiveTab('actions')}
                 >
                     Actions
-                </a>
-                <a
-                    className={activeTab === 'gallery' ? 'active' : ''}
-                    onClick={() => setActiveTab('gallery')}
-                >
-                    Gallery
-                </a>
+                </Link>
             </div>
-            <div className="page padding active">
-                {activeTab === 'actions' && <Actions />}
-                {activeTab === 'gallery' && <GalleryEdit />}
+
+            <div className='padding'>
+                <Outlet />
             </div>
 
             {user && user.role === 'admin' && (

@@ -110,7 +110,10 @@ export abstract class MappedRepository<
 
     constructor(db: DbManager, tableName: string) {
         this.repo = db.repository<DBRow>(tableName);
+        this.initializeSchema();
     }
+
+    protected abstract initializeSchema(): void | Promise<void>;
 
     protected abstract mapToDomain(
         row: DBRow,

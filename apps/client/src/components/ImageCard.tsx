@@ -10,9 +10,9 @@ interface ImageCardProps {
 }
 
 export const ImageCard = ({ image, children, className }: ImageCardProps) => {
-    const [imageData, loading, error] = useGalleryImage("1", image.name);
+    const [imageData, loading, error] = useGalleryImage(image.id);
     return (
-        <div className={className} style={{ width: '100%' }}>
+        <div className={className}>
             <div
                 className={"surface-dim" + (loading ? ` ${styles.pulse}` : "")}
                 style={{ aspectRatio: image.ratio }}
@@ -20,7 +20,7 @@ export const ImageCard = ({ image, children, className }: ImageCardProps) => {
                 {imageData && (
                     <img
                         src={imageData}
-                        alt={image.name}
+                        alt={image.code}
                         style={{
                             width: '100%',
                             aspectRatio: image.ratio
@@ -29,7 +29,7 @@ export const ImageCard = ({ image, children, className }: ImageCardProps) => {
                 )}
                 {error && <p>Error: {error.message}</p>}
             </div>
-            <nav className="center-align tiny-margin">{image.name} {children}</nav>
+            {children && <nav className="center-align tiny-margin">{children}</nav>}
         </div>
     );
 };

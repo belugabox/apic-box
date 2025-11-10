@@ -1,22 +1,26 @@
 export type Gallery = {
+    id: number;
     name: string;
     albums: Album[];
+    createdAt: Date;
+    updatedAt: Date;
 };
 
 export type Album = {
+    id: number;
     name: string;
     images: Image[];
+    createdAt: Date;
+    updatedAt: Date;
+    galleryId: number;
 };
 
 export type Image = {
-    name: string;
+    id: number;
+    filename: string;
+    code: string;
     ratio: number;
-};
-
-export type GalleryRow = {
-    id: string;
-    name: string;
-    password: string | null;
-    createdAt: string;
-    updatedAt: string;
+    createdAt: Date;
+    updatedAt: Date;
+    albumId: number;
 };

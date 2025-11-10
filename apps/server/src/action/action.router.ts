@@ -24,7 +24,7 @@ export const actionRoutes = () =>
             zValidator(
                 'form',
                 z.object({
-                    title: z.string(),
+                    name: z.string(),
                     description: z.string(),
                     type: z.enum(ActionType),
                     status: z.enum(ActionStatus),
@@ -43,7 +43,7 @@ export const actionRoutes = () =>
                 'form',
                 z.object({
                     id: z.coerce.number(),
-                    title: z.string(),
+                    name: z.string(),
                     description: z.string(),
                     type: z.enum(ActionType),
                     status: z.enum(ActionStatus),

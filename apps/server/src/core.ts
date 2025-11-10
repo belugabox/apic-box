@@ -13,6 +13,7 @@ export const blogManager = new BlogManager();
 
 export const init = async () => {
     await db.health();
+
     await authManager.init();
     await blogManager.init();
     await actionManager.init();

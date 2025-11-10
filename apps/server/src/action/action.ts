@@ -1,112 +1,47 @@
-import { db, galleryManager } from '@server/core';
-import { MappedRepository } from '@server/db';
+import { galleryManager } from '@server/core';
 
+import { ActionRepository } from './action.repo';
 import { Action, ActionType } from './action.types';
 
-type ActionRow = Omit<Action, 'createdAt' | 'updatedAt' | 'gallery'> & {
-    createdAt: string;
-    updatedAt: string;
-};
+export class ActionManager {
+    private repo!: ActionRepository;
 
-export class ActionManager extends MappedRepository<ActionRow, Action> {
-    constructor() {
-        super(db, 'actions');
-    }
-
-    protected async mapToDomain(row: ActionRow): Promise<Action> {
-        // Si l'action est de type gallery
-        if (row.type === ActionType.GALLERY) {
-            let gallery = undefined;
-
-            // Charger la galerie si galleryId existe
-            if ((row as any).galleryId) {
-                gallery = await galleryManager.get((row as any).galleryId);
-            }
-
-            return {
-                ...row,
-                type: ActionType.GALLERY,
-                galleryId: (row as any).galleryId || null,
-                gallery,
-                createdAt: new Date(row.createdAt),
-                updatedAt: new Date(row.updatedAt),
-            } satisfies Action;
-        }
-
-        // Sinon, c'est une action simple
-        return {
-            ...row,
-            type: ActionType.SIMPLE,
-            createdAt: new Date(row.createdAt),
-            updatedAt: new Date(row.updatedAt),
-        } satisfies Action;
-    }
+    constructor() {}
 
     init = async () => {
-        await db.run(
-            `CREATE TABLE IF NOT EXISTS actions (
-                id INTEGER PRIMARY KEY, 
-                title TEXT NOT NULL, 
-                description TEXT,
-                type TEXT NOT NULL,
-                status TEXT NOT NULL,
-                galleryId TEXT,
-                createdAt TEXT NOT NULL,
-                updatedAt TEXT NOT NULL,
-                FOREIGN KEY (galleryId) REFERENCES galleries(id) ON DELETE SET NULL
-            );`,
-        );
+        this.repo = new ActionRepository();
     };
 
     health = async () => {
-        return await this.findOne({});
+        return await this.repo.findOne({});
     };
 
     all = async (): Promise<Action[]> => {
-        return this.findAll();
+        return this.repo.findAll();
     };
 
     get = async (id: number): Promise<Action | undefined> => {
-        return this.findById(id);
+        return this.repo.findById(id);
     };
 
     add = async (
         action: Omit<Action, 'id' | 'createdAt' | 'updatedAt'>,
     ): Promise<Action> => {
-        // Valider : galleryId ne doit être fourni que pour les actions GALLERY
-        let galleryId: string | undefined;
-
+        let galleryId: number | undefined;
         if (action.type === ActionType.GALLERY) {
-            galleryId = action.galleryId;
-
-            // Si pas de galleryId, en générer un basé sur le titre de l'action
-            if (!galleryId) {
-                // Générer un ID unique pour la galerie
-                galleryId = `gallery-${action.title
-                    .toLowerCase()
-                    .replace(/\s+/g, '-')
-                    .replace(/[^\w-]/g, '')}-${Date.now()}`;
-            }
-
-            // Créer la galerie associée
-            await galleryManager.add(galleryId);
-        } else if ((action as any).galleryId !== undefined) {
-            throw new Error(
-                'galleryId can only be set for actions with type=GALLERY',
-            );
+            galleryId = await galleryManager.add(action.name);
         }
 
         const result = await this.repo.create({
-            title: action.title,
+            name: action.name,
             description: action.description,
-            type: action.type,
             status: action.status,
             galleryId,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         });
 
-        const created = await this.findById(result.lastID);
+        const created = await this.repo.findById(result.lastID);
         return created!;
     };
 
@@ -114,43 +49,33 @@ export class ActionManager extends MappedRepository<ActionRow, Action> {
         action: Omit<Action, 'createdAt' | 'updatedAt'>,
     ): Promise<Action> => {
         // Récupérer l'action existante
-        const existing = await this.findById(action.id);
+        const existing = await this.repo.findById(action.id);
         if (!existing) {
             throw new Error(`Action ${action.id} not found`);
         }
 
-        // Valider : galleryId ne doit être fourni que pour les actions GALLERY
-        let galleryId: string | undefined;
+        // Si c'est une conversion OTHER → GALLERY, créer une nouvelle galerie
+        let galleryId: number | undefined;
+        if (
+            existing.type !== action.type &&
+            action.type === ActionType.GALLERY
+        ) {
+            galleryId = await galleryManager.add(action.name);
+        }
 
-        if (action.type === ActionType.GALLERY) {
-            galleryId = action.galleryId;
-
-            // Si c'est une conversion SIMPLE → GALLERY, créer une nouvelle galerie
-            if (existing.type === ActionType.SIMPLE) {
-                if (!galleryId) {
-                    galleryId = `gallery-${action.title
-                        .toLowerCase()
-                        .replace(/\s+/g, '-')
-                        .replace(/[^\w-]/g, '')}-${Date.now()}`;
-                }
-                await galleryManager.add(galleryId);
-            }
-        } else if ((action as any).galleryId !== undefined) {
-            throw new Error(
-                'galleryId can only be set for actions with type=GALLERY',
-            );
+        if (existing.type === ActionType.GALLERY) {
+            galleryId = existing.galleryId;
         }
 
         await this.repo.update(action.id, {
-            title: action.title,
+            name: action.name,
             description: action.description,
-            type: action.type,
             status: action.status,
             galleryId,
             updatedAt: new Date().toISOString(),
         });
 
-        const updated = await this.findById(action.id);
+        const updated = await this.repo.findById(action.id);
         return updated!;
     };
 
@@ -160,8 +85,8 @@ export class ActionManager extends MappedRepository<ActionRow, Action> {
 
         await this.repo.delete(id);
 
-        if (action.type === 'gallery') {
-            await galleryManager.delete(`${action.id}`);
+        if (action.galleryId) {
+            await galleryManager.delete(action.galleryId);
         }
     };
 }

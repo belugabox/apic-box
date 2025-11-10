@@ -1,5 +1,3 @@
-import { Gallery } from '@server/gallery/gallery.types';
-
 export enum ActionStatus {
     PENDING = 'pending',
     IN_PROGRESS = 'in-progress',
@@ -13,12 +11,11 @@ export enum ActionType {
 
 export type Action = {
     id: number;
-    title: string;
+    name: string;
     description: string;
     status: ActionStatus;
     type: ActionType;
     createdAt: Date;
     updatedAt: Date;
-    galleryId?: string;
-    gallery?: Gallery;
+    galleryId?: number;
 };

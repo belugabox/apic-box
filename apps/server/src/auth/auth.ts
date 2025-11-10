@@ -20,7 +20,18 @@ export const JWT_REFRESH_SECRET =
 
 export class AuthManager extends MappedRepository<UserRow, User> {
     constructor() {
-        super(db, 'users');
+        super(db, 'user');
+    }
+
+    protected async initializeSchema(): Promise<void> {
+        await db.run(`
+            CREATE TABLE IF NOT EXISTS user (
+                id INTEGER PRIMARY KEY, 
+                username TEXT NOT NULL, 
+                password TEXT NOT NULL,
+                role TEXT NOT NULL
+            );
+        `);
     }
 
     protected mapToDomain(row: UserRow): User {
@@ -31,16 +42,8 @@ export class AuthManager extends MappedRepository<UserRow, User> {
     }
 
     init = async () => {
-        await db.run(
-            `CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY, 
-                username TEXT NOT NULL, 
-                password TEXT NOT NULL,
-                role TEXT NOT NULL
-            );`,
-        );
         const emptyTable = await db.get<{ count: number }>(
-            'SELECT COUNT(*) as count FROM users',
+            'SELECT COUNT(*) as count FROM user',
         );
         if (emptyTable && emptyTable.count <= 0) {
             await this.add({

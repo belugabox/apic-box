@@ -8,11 +8,7 @@ import { serverApi } from '../server';
 export class ActionService {
     all = async (): Promise<Action[]> => {
         const data = await callRpc(serverApi.actions.all.$get());
-        return data.map((action) => ({
-            ...action,
-            createdAt: new Date(action.createdAt),
-            updatedAt: new Date(action.updatedAt),
-        }));
+        return data.map((action) => this.transformAction(action));
     };
     add = async (action: Action): Promise<string> => {
         return await callRpc(
@@ -58,7 +54,7 @@ export class ActionService {
     private serializeAction = (action: Action) => {
         return {
             id: String(action.id),
-            title: action.title,
+            name: action.name,
             description: action.description,
             type: action.type,
             status: action.status,
@@ -66,6 +62,12 @@ export class ActionService {
             updatedAt: action.updatedAt.toISOString(),
         };
     };
+
+    private transformAction = (action: any): Action => ({
+        ...action,
+        createdAt: new Date(action.createdAt),
+        updatedAt: new Date(action.updatedAt),
+    });
 }
 
 export const actionService = new ActionService();

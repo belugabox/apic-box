@@ -14,9 +14,10 @@ export const AlbumCard = ({ album, children, className }: AlbumCardProps) => {
             <div className="row top-align">
                 <div className="max">
                     <h5>{album.name}</h5>
+                    <p>{album.images.length} photos</p>
                 </div>
             </div>
             <nav className="right-align">{children}</nav>
-        </article>
+        </article >
     );
 };

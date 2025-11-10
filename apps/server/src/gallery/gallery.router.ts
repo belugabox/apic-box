@@ -12,54 +12,85 @@ export const galleryRoutes = () =>
             logger.error(err, 'router error');
             return c.json({ name: err.name, message: err.message }, 500);
         })
-        .get('/all', async (c) => {
-            const galleries = galleryManager.galleries;
-            return c.json(galleries);
-        })
-        .get('/:galleryName', galleryManager.checkAccess(), async (c) => {
-            const { galleryName } = c.req.param();
-
-            const gallery = galleryManager.galleries.find(
-                (g) => g.name === galleryName,
-            );
-            if (!gallery) {
-                throw new Error('Gallery not found');
-            }
-            return c.json(gallery);
-        })
         .get(
-            '/:galleryName/:filename',
-            galleryManager.checkAccess(),
+            '/:galleryId',
+            zValidator(
+                'param',
+                z.object({
+                    galleryId: z.coerce.number(),
+                }),
+            ),
             async (c) => {
-                const { galleryName, filename } = c.req.param();
-                const file = await galleryManager.getImage(
-                    galleryName,
-                    filename,
-                );
-                if (!file) {
-                    throw new Error('Image not found');
-                }
-                c.header('Content-Type', 'image/jpeg');
-                c.header('Cache-Control', 'public, max-age=31536000');
-                return c.body(new Uint8Array(file));
+                const galleryId = Number(c.req.param('galleryId'));
+                const gallery = await galleryManager.get(galleryId);
+                return c.json(gallery);
             },
         )
         .get(
-            '/:galleryName/:filename/raw',
-            authManager.authMiddleware(AuthRole.ADMIN),
+            '/album/:albumId',
+            zValidator(
+                'param',
+                z.object({
+                    albumId: z.coerce.number(),
+                }),
+            ),
             async (c) => {
-                const { galleryName, filename } = c.req.param();
-                const file = await galleryManager.getImage(
-                    galleryName,
-                    filename,
+                const albumId = Number(c.req.param('albumId'));
+                const album = await galleryManager.getAlbum(albumId);
+                return c.json(album);
+            },
+        )
+        .get(
+            '/image/:imageId/thumbnail',
+            zValidator(
+                'param',
+                z.object({
+                    imageId: z.coerce.number(),
+                }),
+            ),
+            async (c) => {
+                const imageId = Number(c.req.param('imageId'));
+                const thumbnail = await galleryManager.getImageBuffer(
+                    imageId,
                     true,
                 );
-                if (!file) {
-                    throw new Error('Image not found');
+                if (!thumbnail) {
+                    throw new Error('Thumbnail not found');
                 }
                 c.header('Content-Type', 'image/jpeg');
                 c.header('Cache-Control', 'public, max-age=31536000');
-                return c.body(new Uint8Array(file));
+                return c.body(new Uint8Array(thumbnail));
+            },
+        )
+        .post(
+            '/addAlbum',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'form',
+                z.object({
+                    galleryId: z.coerce.number(),
+                    name: z.string(),
+                }),
+            ),
+            async (c) => {
+                const { galleryId, name } = c.req.valid('form');
+                await galleryManager.addAlbum(galleryId, name);
+                return c.json({ message: 'Album added' });
+            },
+        )
+        .post(
+            '/deleteAlbum',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'form',
+                z.object({
+                    albumId: z.coerce.number(),
+                }),
+            ),
+            async (c) => {
+                const { albumId } = c.req.valid('form');
+                await galleryManager.deleteAlbum(albumId);
+                return c.json({ message: 'Album deleted' });
             },
         )
         .post(
@@ -67,93 +98,33 @@ export const galleryRoutes = () =>
             authManager.authMiddleware(AuthRole.ADMIN),
             async (c) => {
                 const formData = await c.req.formData();
-                const galleryName = formData.get('galleryName') as string;
-                const albumName = formData.get('albumName') as string;
+                console.log('Received formData:', formData);
+
+                const albumId = z.coerce
+                    .number()
+                    .parse(formData.get('albumId'));
                 const files = formData.getAll('files') as File[];
 
-                if (!galleryName || !albumName || files.length === 0) {
-                    throw new Error('Missing required fields');
+                if (!files || files.length === 0) {
+                    return c.json({ message: 'No files provided' }, 400);
                 }
 
-                await galleryManager.addImages(galleryName, albumName, files);
-                return c.json({
-                    message: 'Images added',
-                    gallery: galleryName,
-                    album: albumName,
-                    count: files.length,
-                });
+                await galleryManager.addImages(albumId, files);
+                return c.json({ message: 'Images added' });
             },
         )
-        // Routes de protection des galeries
         .post(
-            '/:galleryName/protect',
+            '/deleteImage',
             authManager.authMiddleware(AuthRole.ADMIN),
             zValidator(
-                'json',
+                'form',
                 z.object({
-                    password: z.string().min(4, 'Password too short'),
+                    imageId: z.coerce.number(),
                 }),
             ),
             async (c) => {
-                const { galleryName } = c.req.param();
-                const { password } = c.req.valid('json');
-
-                await galleryManager.setPassword(galleryName, password);
-                return c.json({
-                    message: 'Gallery protected',
-                    gallery: galleryName,
-                });
-            },
-        )
-        .post(
-            '/:galleryName/unprotect',
-            authManager.authMiddleware(AuthRole.ADMIN),
-            async (c) => {
-                const { galleryName } = c.req.param();
-
-                await galleryManager.removePassword(galleryName);
-                return c.json({
-                    message: 'Gallery unprotected',
-                    gallery: galleryName,
-                });
-            },
-        )
-        .get('/:galleryName/is-protected', async (c) => {
-            const { galleryName } = c.req.param();
-
-            const isProtected = await galleryManager.isProtected(galleryName);
-            return c.json({
-                gallery: galleryName,
-                isProtected,
-            });
-        })
-        .post(
-            '/:galleryName/unlock',
-            zValidator(
-                'json',
-                z.object({
-                    password: z.string(),
-                }),
-            ),
-            async (c) => {
-                const { galleryName } = c.req.param();
-                const { password } = c.req.valid('json');
-
-                const token = await galleryManager.login(galleryName, password);
-
-                if (!token) {
-                    return c.json(
-                        {
-                            message:
-                                'Invalid password or gallery not protected',
-                        },
-                        401,
-                    );
-                }
-
-                return c.json({
-                    message: 'Gallery unlocked',
-                    token,
-                });
+                const { imageId } = c.req.valid('form');
+                await galleryManager.deleteImage(imageId);
+                return c.json({ message: 'Image deleted' });
             },
         );

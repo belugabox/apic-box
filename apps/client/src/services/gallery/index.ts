@@ -2,25 +2,24 @@ import { usePromise, usePromiseFunc } from '@/utils/Hooks';
 
 import { galleryService } from './gallery';
 
-export const useGallery = (galleryName?: string) =>
+export const useGallery = (galleryId?: number, deps?: React.DependencyList) =>
     usePromise(
         () =>
-            galleryName
-                ? galleryService.get(galleryName)
-                : Promise.resolve(null),
-        [galleryName],
+            galleryId ? galleryService.get(galleryId) : Promise.resolve(null),
+        [galleryId, ...(deps || [])],
     );
 
-export const useGalleries = () => usePromise(() => galleryService.all());
+export const useGalleryImage = (imageId: number) =>
+    usePromise(() => galleryService.image(imageId));
 
-export const useGalleryImage = (galleryName: string, filename: string) =>
-    usePromise(() => galleryService.image(galleryName, filename));
+export const useGalleryAddAlbum = (galleryId: number) =>
+    usePromiseFunc((name: string) => galleryService.addAlbum(galleryId, name));
 
-export const useAddGalleryImages = (
-    galleryName: string,
-    albumName: string,
-    files: File[],
-) =>
-    usePromiseFunc(() =>
-        galleryService.addImages(galleryName, albumName, files),
-    );
+export const useGalleryDeleteAlbum = () =>
+    usePromiseFunc((albumId: number) => galleryService.deleteAlbum(albumId));
+
+export const useGalleryDeleteImage = () =>
+    usePromiseFunc((imageId: number) => galleryService.deleteImage(imageId));
+
+export const useGalleryAddImages = (albumId: number) =>
+    usePromiseFunc((files: File[]) => galleryService.addImages(albumId, files));

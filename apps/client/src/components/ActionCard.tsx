@@ -12,7 +12,7 @@ export const ActionCard = ({ action, children, className }: ActionCardProps) => 
         <article className={className}>
             <div className="row top-align">
                 <div className="max">
-                    <h5>{action.title}</h5>
+                    <h5>{action.name}</h5>
                     <p className="secondary-text">{action.description}</p>
                 </div>
                 <div>

@@ -1,10 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { RouterProvider, createBrowserRouter } from 'react-router'
+import { Navigate, RouterProvider, createBrowserRouter } from 'react-router'
 import { App } from './App'
 import { Home } from './pages/Home'
-import { Admin } from './pages/Admin'
-import { GalleryEdit } from './pages/Admin/GalleryEdit'
+import { AdminAction, AdminAlbum, AdminGallery, AdminHome } from './pages/Admin'
 import 'beercss'
 import "material-dynamic-colors";
 import { Actions } from './pages/Actions'
@@ -26,18 +25,36 @@ const router = createBrowserRouter([
             },
             {
                 path: 'admin',
-                element: <Admin />,
+                element: <AdminHome />,
+                children: [
+                    {
+                        index: true,
+                        element: <Navigate to="action" replace />,
+                    },
+                    {
+                        path: '*',
+                        element: <></>,
+                    },
+                    {
+                        path: 'action',
+                        element: <AdminAction />,
+                    },
+                    {
+                        path: 'gallery/:galleryId',
+                        element: <AdminGallery />,
+                    },
+                    {
+                        path: 'gallery/:galleryId/:albumId',
+                        element: <AdminAlbum />,
+                    },
+                ],
             },
             {
-                path: 'admin/gallery-edit',
-                element: <GalleryEdit />,
-            },
-            {
-                path: 'gallery/:galleryName',
+                path: 'gallery/:galleryId',
                 element: <Gallery />,
             },
             {
-                path: 'gallery/:galleryName/:albumName',
+                path: 'gallery/:galleryId/:albumId',
                 element: <Album />,
             },
             {
