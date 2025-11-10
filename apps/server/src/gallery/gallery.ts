@@ -46,6 +46,7 @@ export class GalleryManager {
     };
 
     add = async (name: string): Promise<number> => {
+        logger.info(`Creating gallery: ${name}`);
         const result = await this.repo.create({
             name,
             createdAt: new Date().toISOString(),
@@ -53,6 +54,7 @@ export class GalleryManager {
         });
 
         const created = await this.repo.findById(result.lastID);
+        logger.info(`Gallery created with ID: ${created!.id}`);
         return created!.id;
     };
 
@@ -63,8 +65,10 @@ export class GalleryManager {
     };
 
     delete = async (id: number): Promise<void> => {
+        logger.info(`Deleting gallery: ${id}`);
         await rm(path.join(GALLERY_DIR, id.toString()), { recursive: true });
         await this.repo.delete(id);
+        logger.info(`Gallery deleted: ${id}`);
     };
 
     setPassword = async (
@@ -152,23 +156,30 @@ export class GalleryManager {
     };
 
     addAlbum = async (galleryId: number, name: string): Promise<void> => {
+        logger.info(`Adding album "${name}" to gallery ${galleryId}`);
         const result = await this.repo.addAlbum(galleryId, name);
         const albumId = result.lastID;
         if (!albumId) {
+            logger.error(
+                `Failed to create album "${name}" in gallery ${galleryId}`,
+            );
             throw new Error('Failed to create album');
         }
 
         // Créer le répertoire de l'album
         const albumPath = await this.getAlbumPath(albumId);
         await mkdir(albumPath, { recursive: true });
+        logger.info(`Album created with ID: ${albumId}`);
     };
 
     deleteAlbum = async (albumId: number): Promise<void> => {
+        logger.info(`Deleting album ${albumId}`);
         // remove album directory
         const albumPath = await this.getAlbumPath(albumId);
         await rm(albumPath, { recursive: true });
 
         await this.repo.deleteAlbum(albumId);
+        logger.info(`Album deleted: ${albumId}`);
     };
 
     // IMAGE
@@ -208,6 +219,7 @@ export class GalleryManager {
     };
 
     addImage = async (albumId: number, file: File): Promise<void> => {
+        logger.info(`Adding image to album ${albumId}: ${file.name}`);
         const ratio = await sharp(await file.arrayBuffer())
             .metadata()
             .then((metadata) => {
@@ -245,6 +257,7 @@ export class GalleryManager {
         const result = await this.repo.addImage(albumId, filename, code, ratio);
         const imageId = result.lastID;
         if (!imageId) {
+            logger.error(`Failed to create image in album ${albumId}`);
             throw new Error('Failed to create image');
         }
 
@@ -256,7 +269,7 @@ export class GalleryManager {
         const thumbnailPath = await this.getImagePath(imageId, true);
         await this.generateThumbnail(imagePath, thumbnailPath);
 
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // to avoid overload when adding many images at once
+        logger.info(`Image added with ID: ${imageId}, code: ${code}`);
     };
 
     addImages = async (albumId: number, files: File[]): Promise<void> => {
@@ -266,11 +279,13 @@ export class GalleryManager {
     };
 
     deleteImage = async (imageId: number): Promise<void> => {
+        logger.info(`Deleting image ${imageId}`);
         // remove image file
         const imagePath = await this.getImagePath(imageId);
         await rm(imagePath, { recursive: true });
 
         await this.repo.deleteImage(imageId);
+        logger.info(`Image deleted: ${imageId}`);
     };
 
     private async generateThumbnail(

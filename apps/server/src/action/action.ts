@@ -1,4 +1,5 @@
 import { galleryManager } from '@server/core';
+import { logger } from '@server/tools/logger';
 
 import { ActionRepository } from './action.repo';
 import { Action, ActionType } from './action.types';
@@ -27,6 +28,7 @@ export class ActionManager {
     add = async (
         action: Omit<Action, 'id' | 'createdAt' | 'updatedAt'>,
     ): Promise<Action> => {
+        logger.info(`Creating action: ${action.name} (type: ${action.type})`);
         let galleryId: number | undefined;
         if (action.type === ActionType.GALLERY) {
             galleryId = await galleryManager.add(action.name);
@@ -42,6 +44,7 @@ export class ActionManager {
         });
 
         const created = await this.repo.findById(result.lastID);
+        logger.info(`Action created with ID: ${created!.id}`);
         return created!;
     };
 
@@ -80,13 +83,19 @@ export class ActionManager {
     };
 
     deleteAction = async (id: number): Promise<void> => {
+        logger.info(`Deleting action ${id}`);
         const action = await this.get(id);
-        if (!action) return;
+        if (!action) {
+            logger.warn(`Action ${id} not found for deletion`);
+            return;
+        }
 
         await this.repo.delete(id);
 
         if (action.galleryId) {
+            logger.info(`Deleting associated gallery ${action.galleryId}`);
             await galleryManager.delete(action.galleryId);
         }
+        logger.info(`Action deleted: ${id}`);
     };
 }

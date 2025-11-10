@@ -44,7 +44,6 @@ if (!fs.existsSync(CONFIG_FILE)) {
     fs.mkdirSync(path.dirname(CONFIG_FILE), { recursive: true }); // Ensure the directory exists
     const defaultConfig = extractDefaults(schema);
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaultConfig, null, 2));
-    console.log(`Default configuration file created at: ${CONFIG_FILE}`);
 }
 
 // Load the configuration from the JSON file

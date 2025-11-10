@@ -73,13 +73,14 @@ export class AuthManager extends MappedRepository<UserRow, User> {
     };
 
     add = async (user: User): Promise<User> => {
+        logger.info(`Creating user: ${user.username} (role: ${user.role})`);
         const hashedPassword = await bcrypt.hash(user.password, 10);
         const result = await this.repo.create({
             username: user.username,
             password: hashedPassword,
             role: user.role,
         });
-        logger.info(`Added user result: ${JSON.stringify(result)}`);
+        logger.info(`User created with ID: ${result.lastID}`);
         return {
             ...user,
             id: result.lastID ?? 0,
@@ -88,18 +89,21 @@ export class AuthManager extends MappedRepository<UserRow, User> {
     };
 
     updateUser = async (user: User): Promise<User> => {
+        logger.info(`Updating user: ${user.username}`);
         const hashedPassword = await bcrypt.hash(user.password, 10);
         const result = await this.repo.update(user.id, {
             username: user.username,
             password: hashedPassword,
             role: user.role,
         });
-        logger.info(`Updated user result: ${JSON.stringify(result)}`);
+        logger.info(`User updated: ${user.username}`);
         return { ...user, password: hashedPassword };
     };
 
     deleteUser = async (id: number): Promise<void> => {
+        logger.info(`Deleting user with ID: ${id}`);
         await this.repo.delete(id);
+        logger.info(`User deleted: ${id}`);
     };
 
     // ---

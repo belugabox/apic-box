@@ -98,7 +98,6 @@ export const galleryRoutes = () =>
             authManager.authMiddleware(AuthRole.ADMIN),
             async (c) => {
                 const formData = await c.req.formData();
-                console.log('Received formData:', formData);
 
                 const albumId = z.coerce
                     .number()

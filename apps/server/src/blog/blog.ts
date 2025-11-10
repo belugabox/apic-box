@@ -1,5 +1,6 @@
 import { db } from '@server/core';
 import { MappedRepository } from '@server/db';
+import { logger } from '@server/tools/logger';
 
 import { Blog } from './blog.types';
 
@@ -52,6 +53,7 @@ export class BlogManager extends MappedRepository<BlogRow, Blog> {
     add = async (
         blog: Omit<Blog, 'id' | 'createdAt' | 'updatedAt'>,
     ): Promise<void> => {
+        logger.info(`Creating blog post: ${blog.title} by ${blog.author}`);
         await this.repo.create({
             title: blog.title,
             content: blog.content,
@@ -59,20 +61,25 @@ export class BlogManager extends MappedRepository<BlogRow, Blog> {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         } as any);
+        logger.info(`Blog post created: ${blog.title}`);
     };
 
     updateBlog = async (
         blog: Omit<Blog, 'createdAt' | 'updatedAt'>,
     ): Promise<void> => {
+        logger.info(`Updating blog post: ${blog.title}`);
         await this.repo.update(blog.id, {
             title: blog.title,
             content: blog.content,
             author: blog.author,
             updatedAt: new Date().toISOString(),
         });
+        logger.info(`Blog post updated: ${blog.title}`);
     };
 
     deleteBlog = async (id: number): Promise<void> => {
+        logger.info(`Deleting blog post with ID: ${id}`);
         await this.repo.delete(id);
+        logger.info(`Blog post deleted: ${id}`);
     };
 }
