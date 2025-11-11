@@ -1,7 +1,8 @@
 export enum ActionStatus {
-    PENDING = 'pending',
-    IN_PROGRESS = 'in-progress',
-    COMPLETED = 'completed',
+    DRAFT = 'draft',
+    TESTING = 'testing',
+    PUBLISHED = 'published',
+    ARCHIVED = 'archived',
 }
 
 export enum ActionType {

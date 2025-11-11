@@ -76,11 +76,10 @@ export const ActionEdit = ({ action, onClose, onSuccess }: ActionEditProps) => {
                         })}
                         className={errors.status ? 'invalid' : ''}
                     >
-                        <option value={ActionStatus.PENDING}>En attente</option>
-                        <option value={ActionStatus.IN_PROGRESS}>
-                            En cours
-                        </option>
-                        <option value={ActionStatus.COMPLETED}>Terminé</option>
+                        <option value={ActionStatus.DRAFT}>Brouillon</option>
+                        <option value={ActionStatus.TESTING}>En test</option>
+                        <option value={ActionStatus.PUBLISHED}>Publié</option>
+                        <option value={ActionStatus.ARCHIVED}>Archivé</option>
                     </select>
                     <label>Statut</label>
                 </div>

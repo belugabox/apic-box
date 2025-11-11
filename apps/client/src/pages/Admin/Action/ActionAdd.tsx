@@ -23,7 +23,7 @@ export const ActionAdd = ({ onClose, onSuccess }: ActionAddProps) => {
             name: '',
             description: '',
             type: ActionType.SIMPLE,
-            status: ActionStatus.PENDING,
+            status: ActionStatus.DRAFT,
             createdAt: new Date(),
             updatedAt: new Date(),
         },
