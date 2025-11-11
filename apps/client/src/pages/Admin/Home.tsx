@@ -1,12 +1,15 @@
-import { useUser, useLogout } from '../../services/auth';
-import { Login } from './Login';
 import { useState } from 'react';
 import { Link, Outlet } from 'react-router';
+
+import { useLogout, useUser } from '../../services/auth';
+import { Login } from './Login';
 
 export const AdminHome = () => {
     const [user] = useUser();
     const [logout] = useLogout();
-    const [activeTab, setActiveTab] = useState<'actions' | 'gallery'>('actions');
+    const [activeTab, setActiveTab] = useState<'actions' | 'gallery'>(
+        'actions',
+    );
 
     if (user?.role !== 'admin') {
         return <Login />;
@@ -24,7 +27,7 @@ export const AdminHome = () => {
                 </Link>
             </div>
 
-            <div className='padding'>
+            <div className="padding">
                 <Outlet />
             </div>
 

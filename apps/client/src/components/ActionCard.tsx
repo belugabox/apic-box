@@ -1,5 +1,6 @@
-import { Action, ActionType } from "@server/action/action.types";
-import { ReactNode } from "react";
+import { ReactNode } from 'react';
+
+import { Action, ActionType } from '@server/action/action.types';
 
 interface ActionCardProps {
     action: Action;
@@ -7,7 +8,11 @@ interface ActionCardProps {
     className?: string;
 }
 
-export const ActionCard = ({ action, children, className }: ActionCardProps) => {
+export const ActionCard = ({
+    action,
+    children,
+    className,
+}: ActionCardProps) => {
     return (
         <article className={className}>
             <div className="row top-align">
@@ -23,5 +28,5 @@ export const ActionCard = ({ action, children, className }: ActionCardProps) => 
             </div>
             <nav className="right-align">{children}</nav>
         </article>
-    )
-}
+    );
+};

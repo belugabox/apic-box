@@ -1,10 +1,6 @@
+import { Outlet } from 'react-router';
 
-
-
-
-
-import { Outlet } from 'react-router'
-import { Navigation } from './components/Navigation'
+import { Navigation } from './components/Navigation';
 
 export const App = () => {
     return (
@@ -14,7 +10,7 @@ export const App = () => {
                 <Outlet />
             </main>
         </>
-    )
-}
+    );
+};
 
-export default App
+export default App;

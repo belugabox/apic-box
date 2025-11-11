@@ -1,5 +1,6 @@
-import { useGalleryDeleteAlbum } from "@/services/gallery";
-import { Album } from "@server/gallery/gallery.types";
+import { Album } from '@server/gallery/gallery.types';
+
+import { useGalleryDeleteAlbum } from '@/services/gallery';
 
 interface AdminGalleryAlbumDeleteProps {
     album?: Album;
@@ -7,8 +8,11 @@ interface AdminGalleryAlbumDeleteProps {
     onSuccess: () => void;
 }
 
-export const AdminGalleryAlbumDelete = ({ album, onClose, onSuccess }: AdminGalleryAlbumDeleteProps) => {
-
+export const AdminGalleryAlbumDelete = ({
+    album,
+    onClose,
+    onSuccess,
+}: AdminGalleryAlbumDeleteProps) => {
     const [deleteAlbum, loading, error] = useGalleryDeleteAlbum();
 
     const handleConfirmDelete = async () => {
@@ -26,13 +30,21 @@ export const AdminGalleryAlbumDelete = ({ album, onClose, onSuccess }: AdminGall
     return (
         <div>
             <h5>Confirmer la suppression</h5>
-            <p>Êtes-vous sûr de vouloir supprimer l'album <strong>"{album?.name}"</strong> ({album?.images.length} photos) ?</p>
+            <p>
+                Êtes-vous sûr de vouloir supprimer l'album{' '}
+                <strong>"{album?.name}"</strong> ({album?.images.length} photos)
+                ?
+            </p>
             <span className="error-text">{error?.message}</span>
             <nav className="right-align">
                 <button className="border" onClick={onClose}>
                     Annuler
                 </button>
-                <button className="error" disabled={loading} onClick={handleConfirmDelete}>
+                <button
+                    className="error"
+                    disabled={loading}
+                    onClick={handleConfirmDelete}
+                >
                     Supprimer
                 </button>
             </nav>

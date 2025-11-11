@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode } from 'react';
 
 interface PageProps {
     loading?: boolean;
@@ -7,7 +7,12 @@ interface PageProps {
     children: ReactNode;
 }
 
-export const Page = ({ loading, error, spinner = true, children }: PageProps) => {
+export const Page = ({
+    loading,
+    error,
+    spinner = true,
+    children,
+}: PageProps) => {
     return (
         <>
             <div>
@@ -17,13 +22,11 @@ export const Page = ({ loading, error, spinner = true, children }: PageProps) =>
                         <p>{error.message}</p>
                     </article>
                 )}
-                {!error && !loading && (
-                    <>{children}</>
-                )}
+                {!error && !loading && <>{children}</>}
             </div>
             {!error && loading && spinner && (
                 <div className="shape loading-indicator absolute center middle  "></div>
             )}
         </>
-    )
+    );
 };

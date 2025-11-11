@@ -1,6 +1,6 @@
-import { Album } from "@server/gallery/gallery.types";
-import { ReactNode } from "react";
+import { ReactNode } from 'react';
 
+import { Album } from '@server/gallery/gallery.types';
 
 interface AlbumCardProps {
     album: Album;
@@ -18,6 +18,6 @@ export const AlbumCard = ({ album, children, className }: AlbumCardProps) => {
                 </div>
             </div>
             <nav className="right-align">{children}</nav>
-        </article >
+        </article>
     );
 };

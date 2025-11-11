@@ -1,6 +1,8 @@
-import { useActionAdd } from "@/services/action";
-import { Action, ActionStatus, ActionType } from "@server/action/action.types";
-import { useForm } from "react-hook-form";
+import { useForm } from 'react-hook-form';
+
+import { Action, ActionStatus, ActionType } from '@server/action/action.types';
+
+import { useActionAdd } from '@/services/action';
 
 interface ActionAddProps {
     onClose?: () => void;
@@ -8,7 +10,6 @@ interface ActionAddProps {
 }
 
 export const ActionAdd = ({ onClose, onSuccess }: ActionAddProps) => {
-
     const [addAction, loading, error] = useActionAdd();
 
     const {
@@ -25,7 +26,7 @@ export const ActionAdd = ({ onClose, onSuccess }: ActionAddProps) => {
             status: ActionStatus.PENDING,
             createdAt: new Date(),
             updatedAt: new Date(),
-        }
+        },
     });
 
     const onSubmit = async (action: Action) => {
@@ -48,8 +49,8 @@ export const ActionAdd = ({ onClose, onSuccess }: ActionAddProps) => {
                     <input
                         id="name"
                         type="text"
-                        {...register("name", {
-                            required: "Le nom est obligatoire."
+                        {...register('name', {
+                            required: 'Le nom est obligatoire.',
                         })}
                         className={errors.name ? 'invalid' : ''}
                     />
@@ -59,8 +60,8 @@ export const ActionAdd = ({ onClose, onSuccess }: ActionAddProps) => {
                     <input
                         id="description"
                         type="text"
-                        {...register("description", {
-                            required: "La description est obligatoire."
+                        {...register('description', {
+                            required: 'La description est obligatoire.',
                         })}
                         className={errors.description ? 'invalid' : ''}
                     />
@@ -69,8 +70,8 @@ export const ActionAdd = ({ onClose, onSuccess }: ActionAddProps) => {
                 <div className="field label border">
                     <select
                         id="type"
-                        {...register("type", {
-                            required: "Le type est obligatoire."
+                        {...register('type', {
+                            required: 'Le type est obligatoire.',
                         })}
                         className={errors.type ? 'invalid' : ''}
                     >
@@ -81,14 +82,22 @@ export const ActionAdd = ({ onClose, onSuccess }: ActionAddProps) => {
                 </div>
                 <span className="error-text">{error?.message}</span>
                 <nav className="right-align">
-                    <button type="button" className="border" onClick={handleCancel}>
+                    <button
+                        type="button"
+                        className="border"
+                        onClick={handleCancel}
+                    >
                         Annuler
                     </button>
-                    <button type="submit" disabled={loading} className="primary">
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="primary"
+                    >
                         Créer
                     </button>
                 </nav>
             </form>
         </div>
     );
-}
+};

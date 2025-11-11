@@ -1,5 +1,6 @@
-import { useLogin } from "@/services/auth";
 import { useForm } from 'react-hook-form';
+
+import { useLogin } from '@/services/auth';
 
 export const Login = () => {
     const [login, loading, loginError] = useLogin();
@@ -7,12 +8,12 @@ export const Login = () => {
     const {
         register,
         handleSubmit,
-        formState: { errors }
+        formState: { errors },
     } = useForm({
         defaultValues: {
             username: '',
-            password: ''
-        }
+            password: '',
+        },
     });
 
     const onSubmit = async (data: any) => {
@@ -26,8 +27,8 @@ export const Login = () => {
                     <input
                         id="username"
                         type="text"
-                        {...register("username", {
-                            required: "L'identifiant est obligatoire."
+                        {...register('username', {
+                            required: "L'identifiant est obligatoire.",
                         })}
                         className={errors.username ? 'invalid' : ''}
                     />
@@ -39,8 +40,8 @@ export const Login = () => {
                 <div className="field label border">
                     <input
                         type="password"
-                        {...register("password", {
-                            required: "Le mot de passe est obligatoire."
+                        {...register('password', {
+                            required: 'Le mot de passe est obligatoire.',
                         })}
                         className={errors.password ? 'invalid' : ''}
                     />
@@ -52,7 +53,11 @@ export const Login = () => {
                 <nav className="right-align">
                     <span className="error-text">{loginError?.message}</span>
                     <button type="submit">
-                        {!loading ? <i>login</i> : <progress className="circle small"></progress>}
+                        {!loading ? (
+                            <i>login</i>
+                        ) : (
+                            <progress className="circle small"></progress>
+                        )}
                         Se connecter
                     </button>
                 </nav>

@@ -1,14 +1,20 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { Navigate, RouterProvider, createBrowserRouter } from 'react-router'
-import { App } from './App'
-import { Home } from './pages/Home'
-import { AdminAction, AdminAlbum, AdminGallery, AdminHome } from './pages/Admin'
-import 'beercss'
-import "material-dynamic-colors";
-import { Actions } from './pages/Actions'
-import { Gallery } from './pages/Gallery'
-import { Album } from './pages/Gallery/Album'
+import 'beercss';
+import 'material-dynamic-colors';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { Navigate, RouterProvider, createBrowserRouter } from 'react-router';
+
+import { App } from './App';
+import { Actions } from './pages/Actions';
+import {
+    AdminAction,
+    AdminAlbum,
+    AdminGallery,
+    AdminHome,
+} from './pages/Admin';
+import { Gallery } from './pages/Gallery';
+import { Album } from './pages/Gallery/Album';
+import { Home } from './pages/Home';
 
 const router = createBrowserRouter([
     {
@@ -63,11 +69,10 @@ const router = createBrowserRouter([
             },
         ],
     },
-])
-
+]);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <RouterProvider router={router} />
     </React.StrictMode>,
-)
+);

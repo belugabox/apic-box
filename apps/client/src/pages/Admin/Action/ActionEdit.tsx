@@ -1,6 +1,8 @@
-import { useActionUpdate } from "@/services/action";
-import { Action, ActionStatus } from "@server/action/action.types";
-import { useForm } from "react-hook-form";
+import { useForm } from 'react-hook-form';
+
+import { Action, ActionStatus } from '@server/action/action.types';
+
+import { useActionUpdate } from '@/services/action';
 
 interface ActionEditProps {
     action: Action;
@@ -25,7 +27,7 @@ export const ActionEdit = ({ action, onClose, onSuccess }: ActionEditProps) => {
             status: action.status,
             createdAt: action.createdAt,
             updatedAt: action.updatedAt,
-        }
+        },
     });
 
     const onSubmit = async (action: Action) => {
@@ -48,8 +50,8 @@ export const ActionEdit = ({ action, onClose, onSuccess }: ActionEditProps) => {
                     <input
                         id="name"
                         type="text"
-                        {...register("name", {
-                            required: "Le nom est obligatoire."
+                        {...register('name', {
+                            required: 'Le nom est obligatoire.',
                         })}
                         className={errors.name ? 'invalid' : ''}
                     />
@@ -59,8 +61,8 @@ export const ActionEdit = ({ action, onClose, onSuccess }: ActionEditProps) => {
                     <input
                         id="description"
                         type="text"
-                        {...register("description", {
-                            required: "La description est obligatoire."
+                        {...register('description', {
+                            required: 'La description est obligatoire.',
                         })}
                         className={errors.description ? 'invalid' : ''}
                     />
@@ -69,27 +71,37 @@ export const ActionEdit = ({ action, onClose, onSuccess }: ActionEditProps) => {
                 <div className="field label border">
                     <select
                         id="status"
-                        {...register("status", {
-                            required: "Le statut est obligatoire."
+                        {...register('status', {
+                            required: 'Le statut est obligatoire.',
                         })}
                         className={errors.status ? 'invalid' : ''}
                     >
                         <option value={ActionStatus.PENDING}>En attente</option>
-                        <option value={ActionStatus.IN_PROGRESS}>En cours</option>
+                        <option value={ActionStatus.IN_PROGRESS}>
+                            En cours
+                        </option>
                         <option value={ActionStatus.COMPLETED}>Terminé</option>
                     </select>
                     <label>Statut</label>
                 </div>
                 <span className="error-text">{error?.message}</span>
                 <nav className="right-align">
-                    <button type="button" className="border" onClick={handleCancel}>
+                    <button
+                        type="button"
+                        className="border"
+                        onClick={handleCancel}
+                    >
                         Annuler
                     </button>
-                    <button type="submit" disabled={loading} className="primary">
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="primary"
+                    >
                         Mettre à jour
                     </button>
                 </nav>
             </form>
         </div>
     );
-}
+};
