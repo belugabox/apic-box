@@ -24,7 +24,6 @@
         "zod": "^4.1.12"
     },
     "devDependencies": {
-        "@types/bcryptjs": "^3.0.0",
         "@types/better-sqlite3": "^7.6.13",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "^24.10.0",
