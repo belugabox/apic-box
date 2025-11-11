@@ -5,6 +5,9 @@ import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'path';
 import sharp from 'sharp';
 
+import { AuthRole } from '@server/auth';
+import { authManager } from '@server/core';
+import { UnauthorizedError } from '@server/tools/errorHandler';
 import { logger } from '@server/tools/logger';
 
 import { GalleryRepository } from './gallery.repo';
@@ -77,14 +80,14 @@ export class GalleryManager {
     };
 
     setPassword = async (
-        galleryId: string,
+        galleryId: number,
         password: string,
     ): Promise<void> => {
         const hashedPassword = await bcrypt.hash(password, 10);
         await this.repo.update(galleryId, { password: hashedPassword });
     };
 
-    removePassword = async (galleryId: string): Promise<void> => {
+    removePassword = async (galleryId: number): Promise<void> => {
         await this.repo.update(galleryId, { password: undefined });
     };
 
@@ -104,12 +107,13 @@ export class GalleryManager {
 
         // Galerie protégée, vérifier le token
         if (!token) {
-            throw new Error('No token provided');
+            return await authManager.authMiddleware(AuthRole.ADMIN)(c, next);
+            //throw new UnauthorizedError('No token provided');
         }
 
         const payload = await this.verifyToken(token);
         if (!payload || payload.galleryId !== galleryId) {
-            throw new Error('Invalid or expired token');
+            throw new UnauthorizedError('Invalid or expired token');
         }
 
         // Token valide, continuer

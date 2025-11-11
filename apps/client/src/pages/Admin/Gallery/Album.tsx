@@ -4,7 +4,9 @@ import { useNavigate, useParams } from 'react-router';
 import { Image } from '@server/gallery/gallery.types';
 
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
+import { Spinner } from '@/components/Spinner';
 import { useGallery } from '@/services/gallery';
 
 import { AdminGalleryImageDelete } from './ImageDelete';
@@ -21,7 +23,9 @@ export const AdminAlbum = () => {
         );
     }
     const galleryId = parseInt(params.galleryId, 10);
-    const [gallery] = useGallery(galleryId, [refresh]);
+    const [gallery, loading, error] = useGallery(galleryId, true, [refresh]);
+    if (loading) return <Spinner />;
+    if (error) return <ErrorMessage error={error} />;
     if (!gallery) {
         return (
             <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
@@ -62,6 +66,8 @@ export const AdminAlbum = () => {
                     <ImageCard
                         className="s6 m4 l2"
                         key={image.id}
+                        galleryId={galleryId}
+                        fromAdmin={true}
                         image={image}
                     >
                         <div className="max">{image.code}</div>

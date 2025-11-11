@@ -6,19 +6,75 @@ import { authService } from '../auth';
 import { serverApi } from '../server';
 
 export class GalleryService {
-    get = async (galleryId: number): Promise<Gallery> => {
+    headers(galleryId: number): Record<string, string> {
+        const token = localStorage.getItem(`gallery_${galleryId}_token`);
+        return token ? { 'X-Gallery-Token': `${token}` } : {};
+    }
+
+    get = async (galleryId: number, fromAdmin?: boolean): Promise<Gallery> => {
         const data = await callRpc(
-            serverApi.gallery[':galleryId'].$get({
-                param: { galleryId: galleryId.toString() },
-            }),
+            serverApi.gallery[':galleryId'].$get(
+                {
+                    param: { galleryId: galleryId.toString() },
+                },
+                {
+                    headers: fromAdmin
+                        ? authService.headers()
+                        : this.headers(galleryId),
+                },
+            ),
         );
         return this.transformGallery(data);
     };
-    album = async (albumId: number): Promise<Album> => {
+    login = async (
+        galleryId: number,
+        password: string,
+    ): Promise<string | void> => {
         const data = await callRpc(
-            serverApi.gallery.album[':albumId'].$get({
-                param: { albumId: albumId.toString() },
+            serverApi.gallery.login.$post({
+                form: { galleryId: galleryId.toString(), password },
             }),
+        );
+        if (data.token) {
+            localStorage.setItem(`gallery_${galleryId}_token`, data.token);
+            return data.token;
+        }
+        return;
+    };
+    updatePassword = async (
+        galleryId: number,
+        password?: string,
+    ): Promise<void> => {
+        await callRpc(
+            serverApi.gallery.updatePassword.$post(
+                {
+                    form: {
+                        galleryId: galleryId.toString(),
+                        password: password || '',
+                    },
+                },
+                {
+                    headers: authService.headers(),
+                },
+            ),
+        );
+    };
+    album = async (
+        galleryId: number,
+        albumId: number,
+        fromAdmin?: boolean,
+    ): Promise<Album> => {
+        const data = await callRpc(
+            serverApi.gallery.album[':albumId'].$get(
+                {
+                    param: { albumId: albumId.toString() },
+                },
+                {
+                    headers: fromAdmin
+                        ? authService.headers()
+                        : this.headers(galleryId),
+                },
+            ),
         );
         return this.transformAlbum(data);
     };
@@ -59,7 +115,12 @@ export class GalleryService {
         );
     };
 
-    image = async (imageId: number, updatedAt?: string): Promise<string> => {
+    image = async (
+        galleryId: number,
+        fromAdmin: boolean | undefined,
+        imageId: number,
+        updatedAt?: string,
+    ): Promise<string> => {
         let url = `/api/gallery/image/${imageId}/thumbnail`;
         if (updatedAt) {
             // Ajouter un query parameter pour invalider le cache lors d'une mise à jour
@@ -68,7 +129,9 @@ export class GalleryService {
         }
 
         const response = await fetch(url, {
-            headers: authService.headers() || {},
+            headers: fromAdmin
+                ? authService.headers()
+                : this.headers(galleryId),
         });
 
         if (!response.ok) {

@@ -4,6 +4,7 @@ import { sign, verify } from 'hono/jwt';
 
 import { db } from '@server/db';
 import { MappedRepository } from '@server/db';
+import { ForbiddenError, UnauthorizedError } from '@server/tools/errorHandler';
 import { logger } from '@server/tools/logger';
 
 import { AuthRole, User } from './auth.types';
@@ -185,26 +186,26 @@ export class AuthManager extends MappedRepository<UserRow, User> {
         (role?: AuthRole) => async (c: Context, next: () => Promise<void>) => {
             const authHeader = c.req.header('Authorization');
             if (!authHeader) {
-                return c.json({ message: 'Unauthorized' }, 401);
+                throw new UnauthorizedError('No token provided');
             }
 
             const token = authHeader.split(' ')[1];
             if (!token) {
-                return c.json({ message: 'Unauthorized' }, 401);
+                throw new UnauthorizedError('No token provided');
             }
 
             try {
                 const payload = await this.verifyAccessToken(token);
                 if (!payload || !payload.role) {
-                    return c.json({ message: 'Invalid token payload' }, 401);
+                    throw new UnauthorizedError('Invalid or expired token');
                 }
                 if (role && payload.role !== role) {
-                    return c.json({ message: 'Forbidden' }, 403);
+                    throw new ForbiddenError('Insufficient permissions');
                 }
                 c.set('user', payload);
             } catch (err) {
                 logger.error(err, 'Token verification failed');
-                return c.json({ message: 'Invalid or expired token' }, 401);
+                throw new UnauthorizedError('Invalid or expired token');
             }
 
             return await next();

@@ -4,18 +4,33 @@ import { usePromise, usePromiseFunc } from '@/utils/Hooks';
 
 import { galleryService } from './gallery';
 
-export const useGallery = (galleryId?: number, deps?: React.DependencyList) =>
+export const useGallery = (
+    galleryId?: number,
+    fromAdmin?: boolean,
+    deps?: React.DependencyList,
+) =>
     usePromise(
         () =>
-            galleryId ? galleryService.get(galleryId) : Promise.resolve(null),
+            galleryId
+                ? galleryService.get(galleryId, fromAdmin)
+                : Promise.resolve(null),
         [galleryId, ...(deps || [])],
     );
 
-export const useGalleryImage = (image: Image | null | undefined) =>
+export const useGalleryImage = (
+    galleryId: number,
+    image: Image | null | undefined,
+    fromAdmin?: boolean,
+) =>
     usePromise(
         () =>
             image
-                ? galleryService.image(image.id, image.updatedAt.toISOString())
+                ? galleryService.image(
+                      galleryId,
+                      fromAdmin,
+                      image.id,
+                      image.updatedAt.toISOString(),
+                  )
                 : Promise.resolve(undefined),
         [image?.id, image?.updatedAt.toISOString()],
     );
@@ -31,3 +46,13 @@ export const useGalleryDeleteImage = () =>
 
 export const useGalleryAddImages = (albumId: number) =>
     usePromiseFunc((files: File[]) => galleryService.addImages(albumId, files));
+
+export const useGalleryUpdatePassword = (galleryId: number) =>
+    usePromiseFunc((password?: string) =>
+        galleryService.updatePassword(galleryId, password),
+    );
+
+export const useGalleryLogin = (galleryId: number) =>
+    usePromiseFunc((password: string) =>
+        galleryService.login(galleryId, password),
+    );

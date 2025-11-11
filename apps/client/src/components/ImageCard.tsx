@@ -7,13 +7,25 @@ import { useGalleryImage } from '@/services/gallery';
 import styles from './ImageCard.module.css';
 
 interface ImageCardProps {
+    galleryId: number;
     image: Image;
+    fromAdmin?: boolean;
     children?: ReactNode;
     className?: string;
 }
 
-export const ImageCard = ({ image, children, className }: ImageCardProps) => {
-    const [imageData, loading, error] = useGalleryImage(image);
+export const ImageCard = ({
+    galleryId,
+    image,
+    fromAdmin = false,
+    children,
+    className,
+}: ImageCardProps) => {
+    const [imageData, loading, error] = useGalleryImage(
+        galleryId,
+        image,
+        fromAdmin,
+    );
     return (
         <div className={className}>
             <div

@@ -3,7 +3,10 @@ import { MappedRepository, RunResult } from '@server/db';
 
 import { Album, Gallery, Image } from './gallery.types';
 
-type GalleryRow = Omit<Gallery, 'createdAt' | 'updatedAt' | 'albums'> & {
+type GalleryRow = Omit<
+    Gallery,
+    'isProtected' | 'createdAt' | 'updatedAt' | 'albums'
+> & {
     password?: string;
     createdAt: string;
     updatedAt: string;
@@ -47,6 +50,7 @@ export class GalleryRepository extends MappedRepository<GalleryRow, Gallery> {
         return {
             ...row,
             albums,
+            isProtected: !!row.password,
             createdAt: new Date(row.createdAt),
             updatedAt: new Date(row.updatedAt),
         } satisfies Gallery;

@@ -5,6 +5,8 @@ import { Action } from '@server/action/action.types';
 
 import { ActionCard } from '@/components/ActionCard';
 import { ActionStatusTag } from '@/components/ActionStatus';
+import { ErrorMessage } from '@/components/Error';
+import { Spinner } from '@/components/Spinner';
 import { useActions } from '@/services/action';
 
 import { ActionAdd } from './ActionAdd';
@@ -16,7 +18,9 @@ export const AdminAction = () => {
     const [showEdit, setShowEdit] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
     const [selectedAction, setSelectedAction] = useState<Action | undefined>();
-    const [actions] = useActions([showEdit, showDelete]);
+    const [actions, loading, error] = useActions([showEdit, showDelete]);
+    if (loading) return <Spinner />;
+    if (error) return <ErrorMessage error={error} />;
 
     const handleEdit = (action: Action) => {
         setSelectedAction(action);

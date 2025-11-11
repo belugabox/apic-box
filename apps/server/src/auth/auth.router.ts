@@ -34,7 +34,10 @@ export const authRoutes = () =>
                     throw new BadRequestError('Invalid credentials');
                 }
                 const tokens = await authManager.generateTokens(user);
-                return c.json({ ...tokens, user });
+                return c.json({
+                    ...tokens,
+                    user: { ...user, password: '*****' },
+                });
             },
         )
         .post('/logout', authManager.authMiddleware(), async (c) => {

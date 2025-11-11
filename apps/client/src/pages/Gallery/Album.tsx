@@ -2,7 +2,9 @@ import Masonry, { ResponsiveMasonry } from 'react-responsive-masonry';
 import { useParams } from 'react-router';
 
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
+import { Spinner } from '@/components/Spinner';
 import { useGallery } from '@/services/gallery';
 
 export const Album = () => {
@@ -14,7 +16,9 @@ export const Album = () => {
         );
     }
     const galleryId = parseInt(params.galleryId, 10);
-    const [gallery, _, error] = useGallery(galleryId);
+    const [gallery, loading, error] = useGallery(galleryId);
+    if (loading) return <Spinner />;
+    if (error) return <ErrorMessage error={error} />;
     if (!gallery) {
         return (
             <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
@@ -40,15 +44,17 @@ export const Album = () => {
 
     return (
         <div>
-            {error && <span className="error-text">{error?.message}</span>}
             <h5>{album.name}</h5>
-
             <ResponsiveMasonry
                 columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}
             >
                 <Masonry>
                     {album.images.map((image) => (
-                        <ImageCard key={image.id} image={image}>
+                        <ImageCard
+                            key={image.id}
+                            galleryId={galleryId}
+                            image={image}
+                        >
                             {image.code}
                         </ImageCard>
                     ))}

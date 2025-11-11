@@ -5,15 +5,19 @@ import { Album } from '@server/gallery/gallery.types';
 
 import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorMessage } from '@/components/Error';
+import { Spinner } from '@/components/Spinner';
 import { useGallery } from '@/services/gallery';
 
 import { AdminGalleryAlbumAdd } from './AlbumAdd';
 import { AdminGalleryAlbumDelete } from './AlbumDelete';
+import { AdminGalleryProtect } from './GalleryProtect';
 
 export const AdminGallery = () => {
     const navigate = useNavigate();
     const [showEdit, setShowEdit] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
+    const [showProtect, setShowProtect] = useState(false);
     const [selectedAlbum, setSelectedAlbum] = useState<Album | undefined>();
     const params = useParams<{ galleryId: string }>();
 
@@ -25,10 +29,18 @@ export const AdminGallery = () => {
 
     const galleryId = parseInt(params.galleryId, 10);
 
-    const [gallery] = useGallery(galleryId, [showEdit, showDelete]);
+    const [gallery, loading, error] = useGallery(galleryId, true, [
+        showEdit,
+        showDelete,
+        showProtect,
+    ]);
+    if (loading) return <Spinner />;
+    if (error) return <ErrorMessage error={error} />;
 
     if (!gallery) {
-        return null;
+        return (
+            <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
+        );
     }
 
     const albums = gallery.albums || [];
@@ -41,6 +53,10 @@ export const AdminGallery = () => {
         setShowEdit(false);
         setSelectedAlbum(undefined);
     };
+    const handleCloseProtect = () => {
+        setShowProtect(false);
+        setSelectedAlbum(undefined);
+    };
 
     const handleDelete = (album: Album) => {
         setSelectedAlbum(album);
@@ -48,6 +64,10 @@ export const AdminGallery = () => {
     };
     const handleCloseDelete = () => {
         setShowDelete(false);
+        setSelectedAlbum(undefined);
+    };
+    const handleProtect = () => {
+        setShowProtect(true);
         setSelectedAlbum(undefined);
     };
 
@@ -119,14 +139,36 @@ export const AdminGallery = () => {
                     />
                 </dialog>
             )}
+            {/* Modal de gestion des albums */}
+            {showProtect && (
+                <dialog className="active">
+                    <AdminGalleryProtect
+                        gallery={gallery}
+                        onClose={handleCloseProtect}
+                        onSuccess={() => {
+                            handleCloseProtect();
+                        }}
+                    />
+                </dialog>
+            )}
             {/* Bouton d'ajout */}
-            <button
-                className="primary large fixed margin center bottom"
-                onClick={() => handleEdit()}
-            >
-                <i>add</i>
-                <span>Créer un album</span>
-            </button>
+            <div className=" fixed margin center bottom">
+                <button className="primary large" onClick={() => handleEdit()}>
+                    <i>add</i>
+                    <span>Créer un album</span>
+                </button>
+                <button
+                    className="fill large circle"
+                    onClick={() => handleProtect()}
+                >
+                    {gallery.isProtected ? <i>lock</i> : <i>lock_open</i>}
+                </button>
+                <div className="tooltip right">
+                    {gallery.isProtected
+                        ? 'La galerie est protégée'
+                        : "La galerie n'est pas protégée"}
+                </div>
+            </div>
         </div>
     );
 };

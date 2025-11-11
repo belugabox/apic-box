@@ -4,6 +4,7 @@ export type Gallery = {
     albums: Album[];
     createdAt: Date;
     updatedAt: Date;
+    isProtected: boolean;
 };
 
 export type Album = {

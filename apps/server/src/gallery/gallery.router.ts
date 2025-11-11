@@ -15,6 +15,7 @@ export const galleryRoutes = () =>
         .onError(errorHandler)
         .get(
             '/:galleryId',
+            galleryManager.checkAccess(),
             zValidator(
                 'param',
                 z.object({
@@ -28,6 +29,26 @@ export const galleryRoutes = () =>
                     throw new NotFoundError(`Gallery ${galleryId} not found`);
                 }
                 return c.json(gallery);
+            },
+        )
+        .post(
+            '/updatePassword',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'form',
+                z.object({
+                    galleryId: z.coerce.number(),
+                    password: z.string().optional(),
+                }),
+            ),
+            async (c) => {
+                const { galleryId, password } = c.req.valid('form');
+                if (!password || password === '') {
+                    await galleryManager.removePassword(galleryId);
+                    return c.json({ message: 'Password removed' });
+                }
+                await galleryManager.setPassword(galleryId, password);
+                return c.json({ message: 'Password updated' });
             },
         )
         .get(
@@ -79,6 +100,21 @@ export const galleryRoutes = () =>
                     'public, max-age=31536000, immutable',
                 );
                 return c.body(new Uint8Array(thumbnail));
+            },
+        )
+        .post(
+            '/login',
+            zValidator(
+                'form',
+                z.object({
+                    galleryId: z.coerce.number(),
+                    password: z.string(),
+                }),
+            ),
+            async (c) => {
+                const { galleryId, password } = c.req.valid('form');
+                const token = await galleryManager.login(galleryId, password);
+                return c.json({ token });
             },
         )
         .post(

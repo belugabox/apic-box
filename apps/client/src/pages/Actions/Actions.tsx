@@ -3,14 +3,16 @@ import { useNavigate } from 'react-router';
 import { ActionType } from '@server/action/action.types';
 
 import { ActionCard } from '@/components/ActionCard';
+import { ErrorMessage } from '@/components/Error';
+import { Spinner } from '@/components/Spinner';
 import { useActions } from '@/services/action';
 
 export const Actions = () => {
     const navigate = useNavigate();
     const [actions, loading, error] = useActions();
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error.message}</div>;
+    if (loading) return <Spinner />;
+    if (error) return <ErrorMessage error={error} />;
 
     return (
         <div className="grid">
