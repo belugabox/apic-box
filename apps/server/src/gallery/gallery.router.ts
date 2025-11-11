@@ -55,8 +55,15 @@ export const galleryRoutes = () =>
                     imageId: z.coerce.number(),
                 }),
             ),
+            zValidator(
+                'query',
+                z.object({
+                    v: z.string().optional(),
+                }),
+            ),
             async (c) => {
                 const imageId = Number(c.req.param('imageId'));
+                // Le query param 'v' est un cache buster (timestamp) - il est ignoré
                 const thumbnail = await galleryManager.getImageBuffer(
                     imageId,
                     true,
@@ -67,8 +74,10 @@ export const galleryRoutes = () =>
                     );
                 }
                 c.header('Content-Type', 'image/jpeg');
-                c.header('Cache-Control', 'public, max-age=31536000');
-                // TODO: gérer le cache des thumbnails
+                c.header(
+                    'Cache-Control',
+                    'public, max-age=31536000, immutable',
+                );
                 return c.body(new Uint8Array(thumbnail));
             },
         )

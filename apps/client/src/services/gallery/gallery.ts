@@ -59,15 +59,26 @@ export class GalleryService {
         );
     };
 
-    image = async (imageId: number): Promise<string> => {
-        const response = await callRpc(
-            serverApi.gallery.image[':imageId']['thumbnail'].$get({
-                param: { imageId: imageId.toString() },
-            }),
-        );
-        const blob = this.uint8ArrayToBlob(response);
-        const url = URL.createObjectURL(blob);
-        return url;
+    image = async (imageId: number, updatedAt?: string): Promise<string> => {
+        let url = `/api/gallery/image/${imageId}/thumbnail`;
+        if (updatedAt) {
+            // Ajouter un query parameter pour invalider le cache lors d'une mise à jour
+            const timestamp = new Date(updatedAt).getTime();
+            url += `?v=${timestamp}`;
+        }
+
+        const response = await fetch(url, {
+            headers: authService.headers() || {},
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                `Failed to fetch thumbnail: ${response.statusText}`,
+            );
+        }
+
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
     };
     addImages = async (albumId: number, files: File[]) => {
         const formData = new FormData();

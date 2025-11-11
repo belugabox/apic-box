@@ -1,7 +1,10 @@
-import { useGalleryImage } from "@/services/gallery";
-import { Image } from "@server/gallery/gallery.types";
-import { ReactNode } from "react";
-import styles from "./ImageCard.module.css";
+import { ReactNode } from 'react';
+
+import { Image } from '@server/gallery/gallery.types';
+
+import { useGalleryImage } from '@/services/gallery';
+
+import styles from './ImageCard.module.css';
 
 interface ImageCardProps {
     image: Image;
@@ -10,11 +13,11 @@ interface ImageCardProps {
 }
 
 export const ImageCard = ({ image, children, className }: ImageCardProps) => {
-    const [imageData, loading, error] = useGalleryImage(image.id);
+    const [imageData, loading, error] = useGalleryImage(image);
     return (
         <div className={className}>
             <div
-                className={"surface-dim" + (loading ? ` ${styles.pulse}` : "")}
+                className={'surface-dim' + (loading ? ` ${styles.pulse}` : '')}
                 style={{ aspectRatio: image.ratio }}
             >
                 {imageData && (
@@ -23,13 +26,15 @@ export const ImageCard = ({ image, children, className }: ImageCardProps) => {
                         alt={image.code}
                         style={{
                             width: '100%',
-                            aspectRatio: image.ratio
+                            aspectRatio: image.ratio,
                         }}
                     />
                 )}
                 {error && <p>Error: {error.message}</p>}
             </div>
-            {children && <nav className="center-align tiny-margin">{children}</nav>}
+            {children && (
+                <nav className="center-align tiny-margin">{children}</nav>
+            )}
         </div>
     );
 };
