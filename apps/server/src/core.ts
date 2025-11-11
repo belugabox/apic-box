@@ -1,15 +1,16 @@
-import { ActionManager } from './action';
-import { AuthManager } from './auth';
-import { BlogManager } from './blog';
-import { DbManager } from './db';
-import { GalleryManager } from './gallery';
+import { Container, createContainer } from './container';
 import { logger } from './tools/logger';
 
-export const db = new DbManager();
-export const authManager = new AuthManager();
-export const actionManager = new ActionManager();
-export const galleryManager = new GalleryManager();
-export const blogManager = new BlogManager();
+// Container global - créé une seule fois
+const container = createContainer();
+
+export const getContainer = (): Container => {
+    return container;
+};
+
+// Exports du container
+export const { db, authManager, actionManager, galleryManager, blogManager } =
+    container;
 
 export const init = async () => {
     await db.health();

@@ -1,4 +1,4 @@
-import { db } from '@server/core';
+import { db } from '@server/db';
 import { MappedRepository } from '@server/db';
 
 import { Action, ActionType } from './action.types';

@@ -10,8 +10,13 @@ import { logger } from '@server/tools/logger';
 import { GalleryRepository } from './gallery.repo';
 import { Album, Gallery } from './gallery.types';
 
-export const GALLERY_JWT_SECRET =
-    process.env.GALLERY_JWT_SECRET || 'apic-box-gallery-secret-key';
+export let GALLERY_JWT_SECRET: string;
+
+if (!process.env.GALLERY_JWT_SECRET) {
+    throw new Error('GALLERY_JWT_SECRET environment variable is required');
+}
+
+GALLERY_JWT_SECRET = process.env.GALLERY_JWT_SECRET;
 
 const GALLERY_DIR = path.resolve(
     process.env.DATA_FILE_PATH ?? './data',

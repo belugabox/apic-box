@@ -1,4 +1,4 @@
-import { db } from '@server/core';
+import { db } from '@server/db';
 import { MappedRepository, RunResult } from '@server/db';
 
 import { Album, Gallery, Image } from './gallery.types';

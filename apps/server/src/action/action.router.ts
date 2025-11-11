@@ -4,19 +4,26 @@ import z from 'zod';
 
 import { AuthRole } from '@server/auth';
 import { actionManager, authManager } from '@server/core';
-import { logger } from '@server/tools/logger';
+import { NotFoundError, errorHandler } from '@server/tools/errorHandler';
 
 import { ActionStatus, ActionType } from './action.types';
 
 export const actionRoutes = () =>
     new Hono()
+        .onError(errorHandler)
         .get('/all', async (c) => {
+            const limit = Math.min(Number(c.req.query('limit')) || 50, 500);
+            const offset = Number(c.req.query('offset')) || 0;
+
             const actions = await actionManager.all();
-            return c.json(actions);
-        })
-        .onError((err, c) => {
-            logger.error(err, 'router error');
-            return c.json({ name: err.name, message: err.message }, 500);
+            const paginated = actions.slice(offset, offset + limit);
+
+            return c.json({
+                data: paginated,
+                total: actions.length,
+                limit,
+                offset,
+            });
         })
         .post(
             '/add',
@@ -61,8 +68,18 @@ export const actionRoutes = () =>
         .delete(
             '/delete/:id',
             authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'param',
+                z.object({
+                    id: z.coerce.number(),
+                }),
+            ),
             async (c) => {
                 const id = Number(c.req.param('id'));
+                const action = await actionManager.get(id);
+                if (!action) {
+                    throw new NotFoundError(`Action ${id} not found`);
+                }
                 await actionManager.deleteAction(id);
                 return c.json({ message: 'Action deleted' });
             },

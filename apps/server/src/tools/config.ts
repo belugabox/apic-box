@@ -3,7 +3,9 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
-dotenv.config();
+dotenv.config({
+    quiet: true,
+});
 
 const CONFIG_FILE = path.resolve(
     process.env.DATA_FILE_PATH ?? './data',
@@ -56,7 +58,7 @@ const isValid = validate(config);
 
 if (!isValid) {
     console.error('Configuration validation failed:', validate.errors);
-    //process.exit(1); // Exit the process if validation fails
+    process.exit(1);
 }
 
 // Export the configuration

@@ -4,14 +4,15 @@ import { z } from 'zod';
 
 import { AuthRole } from '@server/auth';
 import { authManager, galleryManager } from '@server/core';
-import { logger } from '@server/tools/logger';
+import {
+    BadRequestError,
+    NotFoundError,
+    errorHandler,
+} from '@server/tools/errorHandler';
 
 export const galleryRoutes = () =>
     new Hono()
-        .onError((err, c) => {
-            logger.error(err, 'router error');
-            return c.json({ name: err.name, message: err.message }, 500);
-        })
+        .onError(errorHandler)
         .get(
             '/:galleryId',
             zValidator(
@@ -23,6 +24,9 @@ export const galleryRoutes = () =>
             async (c) => {
                 const galleryId = Number(c.req.param('galleryId'));
                 const gallery = await galleryManager.get(galleryId);
+                if (!gallery) {
+                    throw new NotFoundError(`Gallery ${galleryId} not found`);
+                }
                 return c.json(gallery);
             },
         )
@@ -37,6 +41,9 @@ export const galleryRoutes = () =>
             async (c) => {
                 const albumId = Number(c.req.param('albumId'));
                 const album = await galleryManager.getAlbum(albumId);
+                if (!album) {
+                    throw new NotFoundError(`Album ${albumId} not found`);
+                }
                 return c.json(album);
             },
         )
@@ -55,10 +62,13 @@ export const galleryRoutes = () =>
                     true,
                 );
                 if (!thumbnail) {
-                    throw new Error('Thumbnail not found');
+                    throw new NotFoundError(
+                        `Thumbnail for image ${imageId} not found`,
+                    );
                 }
                 c.header('Content-Type', 'image/jpeg');
                 c.header('Cache-Control', 'public, max-age=31536000');
+                // TODO: gérer le cache des thumbnails
                 return c.body(new Uint8Array(thumbnail));
             },
         )
@@ -105,7 +115,7 @@ export const galleryRoutes = () =>
                 const files = formData.getAll('files') as File[];
 
                 if (!files || files.length === 0) {
-                    return c.json({ message: 'No files provided' }, 400);
+                    throw new BadRequestError('No files provided');
                 }
 
                 await galleryManager.addImages(albumId, files);

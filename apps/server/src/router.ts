@@ -3,14 +3,11 @@ import { Hono } from 'hono';
 import { actionRoutes } from './action/action.router';
 import { authRoutes } from './auth/auth.router';
 import { galleryRoutes } from './gallery/gallery.router';
-import { logger } from './tools/logger';
+import { errorHandler } from './tools/errorHandler';
 
 export const router = () =>
     new Hono()
-        .onError((err, c) => {
-            logger.error(err, 'router error');
-            return c.json({ name: err.name, message: err.message }, 500);
-        })
+        .onError(errorHandler)
         .route('/auth', authRoutes())
         .route('/actions', actionRoutes())
         .route('/gallery', galleryRoutes());

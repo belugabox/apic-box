@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { Context } from 'hono';
 import { sign, verify } from 'hono/jwt';
 
-import { db } from '@server/core';
+import { db } from '@server/db';
 import { MappedRepository } from '@server/db';
 import { logger } from '@server/tools/logger';
 
@@ -12,11 +12,17 @@ type UserRow = Omit<User, 'role'> & {
     role: string;
 };
 
-export const JWT_SECRET =
-    process.env.JWT_SECRET || 'apic-box-secret-key-change-in-production';
-export const JWT_REFRESH_SECRET =
-    process.env.JWT_REFRESH_SECRET ||
-    'apic-box-refresh-secret-key-change-in-production';
+export let JWT_SECRET: string;
+export let JWT_REFRESH_SECRET: string;
+
+if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+    throw new Error(
+        'JWT_SECRET and JWT_REFRESH_SECRET environment variables are required',
+    );
+}
+
+JWT_SECRET = process.env.JWT_SECRET;
+JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 export class AuthManager extends MappedRepository<UserRow, User> {
     constructor() {
@@ -46,21 +52,32 @@ export class AuthManager extends MappedRepository<UserRow, User> {
             'SELECT COUNT(*) as count FROM user',
         );
         if (emptyTable && emptyTable.count <= 0) {
+            const defaultAdminPassword =
+                process.env.ADMIN_PASSWORD ||
+                (() => {
+                    throw new Error(
+                        'ADMIN_PASSWORD environment variable is required for first setup',
+                    );
+                })();
+
             await this.add({
                 id: 0,
                 username: 'admin',
-                password: 'admin',
+                password: defaultAdminPassword,
                 role: AuthRole.ADMIN,
             });
-            logger.info(
-                `Default admin user created with username: "admin" and password: "admin"`,
-            );
+            logger.info(`Default admin user created with username: "admin"`);
         }
     };
 
     health = async () => {
-        const result = await this.findOne({});
-        return result ? 'healthy' : 'healthy';
+        try {
+            const result = await this.findOne({});
+            return result ? 'healthy' : 'healthy';
+        } catch (err) {
+            logger.error(err, 'AuthManager health check failed');
+            throw err;
+        }
     };
 
     all = async (): Promise<User[]> => {
@@ -88,10 +105,29 @@ export class AuthManager extends MappedRepository<UserRow, User> {
         };
     };
 
-    updateUser = async (user: User): Promise<User> => {
+    updateUser = async (
+        user: User,
+        currentPassword?: string,
+    ): Promise<User> => {
         logger.info(`Updating user: ${user.username}`);
+
+        // Vérifier l'ancien mot de passe si fourni
+        if (currentPassword) {
+            const existingUser = await this.findById(user.id);
+            if (!existingUser) {
+                throw new Error(`User ${user.id} not found`);
+            }
+            const passwordMatch = await bcrypt.compare(
+                currentPassword,
+                existingUser.password,
+            );
+            if (!passwordMatch) {
+                throw new Error('Current password is incorrect');
+            }
+        }
+
         const hashedPassword = await bcrypt.hash(user.password, 10);
-        const result = await this.repo.update(user.id, {
+        await this.repo.update(user.id, {
             username: user.username,
             password: hashedPassword,
             role: user.role,

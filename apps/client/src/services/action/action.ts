@@ -7,8 +7,12 @@ import { serverApi } from '../server';
 
 export class ActionService {
     all = async (): Promise<Action[]> => {
-        const data = await callRpc(serverApi.actions.all.$get());
-        return data.map((action) => this.transformAction(action));
+        const response = (await callRpc(serverApi.actions.all.$get())) as
+            | any[]
+            | { data: any[] };
+        // Gère la réponse paginée
+        const data = Array.isArray(response) ? response : response.data || [];
+        return data.map((action: any) => this.transformAction(action));
     };
     add = async (action: Action): Promise<string> => {
         return await callRpc(

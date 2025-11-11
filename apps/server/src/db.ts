@@ -2,6 +2,10 @@ import SQLite, { Database } from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 
+import { migrations } from './db/migrations';
+import { logger } from './tools/logger';
+import { Migrator } from './tools/migrator';
+
 const DB_FILE = path.resolve(
     process.env.DATA_FILE_PATH ?? './data',
     'db.sqlite',
@@ -161,6 +165,7 @@ export abstract class MappedRepository<
 
 export class DbManager {
     private dbInstance: Database | undefined;
+    private migrator: Migrator | undefined;
 
     constructor() {
         fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
@@ -173,10 +178,21 @@ export class DbManager {
     getDb = async (): Promise<Database> => {
         if (!this.dbInstance) {
             this.dbInstance = new SQLite(DB_FILE);
+            // Auto-run migrations
+            await this.runMigrations();
         }
 
         return this.dbInstance;
     };
+
+    private async runMigrations() {
+        if (this.dbInstance && !this.migrator) {
+            this.migrator = new Migrator(this.dbInstance);
+            this.migrator.registerAll(migrations);
+            await this.migrator.runMigrations(this.dbInstance);
+            logger.info('✓ All migrations completed');
+        }
+    }
 
     run = async (sql: string, params?: unknown[]): Promise<RunResult> => {
         const database = await this.getDb();
@@ -214,4 +230,31 @@ export class DbManager {
     ): Repository<T> {
         return new Repository<T>(this, tableName);
     }
+}
+
+// Singleton global
+let dbInstance: DbManager | undefined;
+
+export const createDbInstance = (): DbManager => {
+    if (!dbInstance) {
+        dbInstance = new DbManager();
+    }
+    return dbInstance;
+};
+
+export const getDb = (): DbManager => {
+    if (!dbInstance) {
+        throw new Error(
+            'Database not initialized. Call createDbInstance() first.',
+        );
+    }
+    return dbInstance;
+};
+
+// Export pour import directs - créé lors du premier accès
+export let db: DbManager;
+
+// Initialiser db au chargement du module pour éviter la dépendance circulaire
+if (!dbInstance) {
+    db = createDbInstance();
 }

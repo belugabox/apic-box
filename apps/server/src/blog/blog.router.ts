@@ -4,21 +4,42 @@ import z from 'zod';
 
 import { AuthRole } from '@server/auth';
 import { authManager, blogManager } from '@server/core';
+import { NotFoundError, errorHandler } from '@server/tools/errorHandler';
 
 export const blogRoutes = () =>
     new Hono()
+        .onError(errorHandler)
         .get('/all', async (c) => {
+            const limit = Math.min(Number(c.req.query('limit')) || 50, 500);
+            const offset = Number(c.req.query('offset')) || 0;
+
             const blogs = await blogManager.all();
-            return c.json(blogs);
+            const paginated = blogs.slice(offset, offset + limit);
+
+            return c.json({
+                data: paginated,
+                total: blogs.length,
+                limit,
+                offset,
+            });
         })
-        .get('/:id', async (c) => {
-            const { id } = c.req.param();
-            const blog = await blogManager.get(id);
-            if (!blog) {
-                throw new Error('Blog not found');
-            }
-            return c.json(blog);
-        })
+        .get(
+            '/:id',
+            zValidator(
+                'param',
+                z.object({
+                    id: z.string(),
+                }),
+            ),
+            async (c) => {
+                const id = c.req.param('id');
+                const blog = await blogManager.get(id);
+                if (!blog) {
+                    throw new NotFoundError(`Blog ${id} not found`);
+                }
+                return c.json(blog);
+            },
+        )
         .post(
             '/add',
             authManager.authMiddleware(AuthRole.ADMIN),
@@ -54,11 +75,21 @@ export const blogRoutes = () =>
                 return c.json({ message: 'Blog updated', blog: updatedBlog });
             },
         )
-        .post(
+        .delete(
             '/delete/:id',
             authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'param',
+                z.object({
+                    id: z.string(),
+                }),
+            ),
             async (c) => {
-                const id = Number(c.req.param('id'));
+                const id = c.req.param('id');
+                const blog = await blogManager.get(id);
+                if (!blog) {
+                    throw new NotFoundError(`Blog ${id} not found`);
+                }
                 await blogManager.deleteBlog(id);
                 return c.json({ message: 'Blog deleted' });
             },

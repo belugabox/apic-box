@@ -1,4 +1,4 @@
-import { db } from '@server/core';
+import { db } from '@server/db';
 import { MappedRepository } from '@server/db';
 import { logger } from '@server/tools/logger';
 
@@ -77,7 +77,7 @@ export class BlogManager extends MappedRepository<BlogRow, Blog> {
         logger.info(`Blog post updated: ${blog.title}`);
     };
 
-    deleteBlog = async (id: number): Promise<void> => {
+    deleteBlog = async (id: string): Promise<void> => {
         logger.info(`Deleting blog post with ID: ${id}`);
         await this.repo.delete(id);
         logger.info(`Blog post deleted: ${id}`);

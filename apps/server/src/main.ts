@@ -9,6 +9,8 @@ import { health, init, start } from './core';
 import { router } from './router';
 import { isValid } from './tools/config';
 import { logger } from './tools/logger';
+import { requestLoggerMiddleware } from './tools/requestLoggerMiddleware';
+import { timeoutMiddleware } from './tools/timeoutMiddleware';
 
 // Handle unhandled rejections
 process.on('unhandledRejection', (err: Error) => {
@@ -22,6 +24,8 @@ const app = new Hono();
 
 // ---
 app.use('/api/*', cors());
+app.use('/api/*', requestLoggerMiddleware());
+app.use('/api/*', timeoutMiddleware(30000));
 const routes = app.basePath('/api').route('/', router());
 export type ServerType = typeof routes;
 
@@ -51,12 +55,13 @@ const startServer = () => {
 };
 
 if (isValid) {
-    init().then(() => {
-        health().then(() => {
-            start().then(() => {
-                startServer();
-            });
-        });
-        63;
+    (async () => {
+        await init();
+        await health();
+        await start();
+        startServer();
+    })().catch((err) => {
+        logger.error(err, 'Failed to start server');
+        process.exit(1);
     });
 }
