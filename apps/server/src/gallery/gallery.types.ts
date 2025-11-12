@@ -1,6 +1,16 @@
+export enum GalleryStatus {
+    DRAFT = 'draft',
+    PUBLISHED = 'published',
+    ARCHIVED = 'archived',
+}
+
+export type GalleryLight = Omit<Gallery, 'albums'>;
+
 export type Gallery = {
     id: number;
     name: string;
+    description: string;
+    status: GalleryStatus;
     albums: Album[];
     createdAt: Date;
     updatedAt: Date;

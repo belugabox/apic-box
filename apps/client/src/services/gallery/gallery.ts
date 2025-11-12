@@ -11,6 +11,11 @@ export class GalleryService {
         return token ? { 'X-Gallery-Token': `${token}` } : {};
     }
 
+    all = async (): Promise<Gallery[]> => {
+        const data = await callRpc(serverApi.gallery.all.$get());
+        return data.map((gallery: any) => this.transformGallery(gallery));
+    };
+
     get = async (galleryId: number, fromAdmin?: boolean): Promise<Gallery> => {
         const data = await callRpc(
             serverApi.gallery[':galleryId'].$get(
@@ -26,6 +31,49 @@ export class GalleryService {
         );
         return this.transformGallery(data);
     };
+
+    add = async (gallery: Omit<Gallery, 'id' | 'createdAt' | 'updatedAt'>) => {
+        await callRpc(
+            serverApi.gallery.add.$post(
+                {
+                    form: gallery,
+                },
+                {
+                    headers: authService.headers(),
+                },
+            ),
+        );
+    };
+
+    delete = async (id: number) => {
+        await callRpc(
+            serverApi.gallery.delete[':id'].$delete(
+                { param: { id: String(id) } },
+                {
+                    headers: authService.headers(),
+                },
+            ),
+        );
+    };
+
+    update = async (gallery: Gallery): Promise<void> => {
+        await callRpc(
+            serverApi.gallery.update.$post(
+                {
+                    form: {
+                        id: gallery.id.toString(),
+                        name: gallery.name,
+                        description: gallery.description,
+                        status: gallery.status,
+                    },
+                },
+                {
+                    headers: authService.headers(),
+                },
+            ),
+        );
+    };
+
     login = async (
         galleryId: number,
         password: string,

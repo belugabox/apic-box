@@ -1,16 +1,19 @@
 import { useForm } from 'react-hook-form';
 
-import { Action, ActionStatus, ActionType } from '@server/action/action.types';
+import { Gallery, GalleryStatus } from '@server/gallery/gallery.types';
 
-import { useActionAdd } from '@/services/action';
+import { useGalleryAdd } from '@/services/gallery';
 
-interface ActionAddProps {
+interface AdminGalleryAddProps {
     onClose?: () => void;
     onSuccess?: () => void;
 }
 
-export const ActionAdd = ({ onClose, onSuccess }: ActionAddProps) => {
-    const [addAction, loading, error] = useActionAdd();
+export const AdminGalleryAdd = ({
+    onClose,
+    onSuccess,
+}: AdminGalleryAddProps) => {
+    const [addGallery, loading, error] = useGalleryAdd();
 
     const {
         register,
@@ -22,15 +25,16 @@ export const ActionAdd = ({ onClose, onSuccess }: ActionAddProps) => {
             id: 0,
             name: '',
             description: '',
-            type: ActionType.SIMPLE,
-            status: ActionStatus.DRAFT,
+            status: GalleryStatus.DRAFT,
             createdAt: new Date(),
             updatedAt: new Date(),
-        },
+            isProtected: false,
+            albums: [],
+        } satisfies Gallery,
     });
 
-    const onSubmit = async (action: Action) => {
-        await addAction(action).then(() => {
+    const onSubmit = async (gallery: Gallery) => {
+        await addGallery(gallery).then(() => {
             reset();
             onSuccess?.();
             onClose?.();
@@ -66,19 +70,6 @@ export const ActionAdd = ({ onClose, onSuccess }: ActionAddProps) => {
                         className={errors.description ? 'invalid' : ''}
                     />
                     <label>Description</label>
-                </div>
-                <div className="field label border">
-                    <select
-                        id="type"
-                        {...register('type', {
-                            required: 'Le type est obligatoire.',
-                        })}
-                        className={errors.type ? 'invalid' : ''}
-                    >
-                        <option value={ActionType.SIMPLE}>Simple</option>
-                        <option value={ActionType.GALLERY}>Galerie</option>
-                    </select>
-                    <label>Type</label>
                 </div>
                 <span className="error-text">{error?.message}</span>
                 <nav className="right-align">

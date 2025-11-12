@@ -5,15 +5,11 @@ import ReactDOM from 'react-dom/client';
 import { Navigate, RouterProvider, createBrowserRouter } from 'react-router';
 
 import { App } from './App';
-import { Actions } from './pages/Actions';
-import {
-    AdminAction,
-    AdminAlbum,
-    AdminGallery,
-    AdminHome,
-} from './pages/Admin';
+import { AdminAlbum, AdminGallery, AdminHome } from './pages/Admin';
+import { AdminGalleryHome } from './pages/Admin/Gallery/GalleryHome';
 import { Gallery } from './pages/Gallery';
 import { Album } from './pages/Gallery/Album';
+import { GalleryHome } from './pages/Gallery/GalleryHome';
 import { Home } from './pages/Home';
 
 const router = createBrowserRouter([
@@ -26,24 +22,20 @@ const router = createBrowserRouter([
                 element: <Home />,
             },
             {
-                path: 'actions',
-                element: <Actions />,
-            },
-            {
                 path: 'admin',
                 element: <AdminHome />,
                 children: [
                     {
                         index: true,
-                        element: <Navigate to="action" replace />,
+                        element: <Navigate to="gallery" replace />,
                     },
                     {
                         path: '*',
                         element: <></>,
                     },
                     {
-                        path: 'action',
-                        element: <AdminAction />,
+                        path: 'gallery',
+                        element: <AdminGalleryHome />,
                     },
                     {
                         path: 'gallery/:galleryId',
@@ -54,6 +46,10 @@ const router = createBrowserRouter([
                         element: <AdminAlbum />,
                     },
                 ],
+            },
+            {
+                path: 'gallery',
+                element: <GalleryHome />,
             },
             {
                 path: 'gallery/:galleryId',

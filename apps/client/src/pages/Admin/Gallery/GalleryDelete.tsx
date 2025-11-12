@@ -1,24 +1,24 @@
-import { Action } from '@server/action/action.types';
+import { Gallery } from '@server/gallery/gallery.types';
 
-import { useActionDelete } from '@/services/action';
+import { useGalleryDelete } from '@/services/gallery';
 
-interface ActionDeleteProps {
-    action?: Action;
+interface AdminGalleryDeleteProps {
+    gallery?: Gallery;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-export const ActionDelete = ({
-    action,
+export const AdminGalleryDelete = ({
+    gallery,
     onClose,
     onSuccess,
-}: ActionDeleteProps) => {
-    const [deleteAction, loading, error] = useActionDelete();
+}: AdminGalleryDeleteProps) => {
+    const [deleteGallery, loading, error] = useGalleryDelete();
 
     const handleConfirmDelete = async () => {
         try {
-            if (action) {
-                await deleteAction(action);
+            if (gallery) {
+                await deleteGallery(gallery);
             }
             onSuccess();
             onClose();
@@ -31,8 +31,8 @@ export const ActionDelete = ({
         <div>
             <h5>Confirmer la suppression</h5>
             <p>
-                Êtes-vous sûr de vouloir supprimer l'action{' '}
-                <strong>"{action?.name}"</strong> ?
+                Êtes-vous sûr de vouloir supprimer la galerie{' '}
+                <strong>"{gallery?.name}"</strong> ?
             </p>
             <span className="error-text">{error?.message}</span>
             <nav className="right-align">

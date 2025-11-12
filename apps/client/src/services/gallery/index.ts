@@ -1,8 +1,11 @@
-import { Image } from '@server/gallery/gallery.types';
+import { Gallery, Image } from '@server/gallery/gallery.types';
 
 import { usePromise, usePromiseFunc } from '@/utils/Hooks';
 
 import { galleryService } from './gallery';
+
+export const useGalleries = (deps?: React.DependencyList) =>
+    usePromise(() => galleryService.all(), [...(deps || [])]);
 
 export const useGallery = (
     galleryId?: number,
@@ -34,6 +37,15 @@ export const useGalleryImage = (
                 : Promise.resolve(undefined),
         [image?.id, image?.updatedAt.toISOString()],
     );
+
+export const useGalleryAdd = () =>
+    usePromiseFunc((gallery: Gallery) => galleryService.add(gallery));
+
+export const useGalleryUpdate = () =>
+    usePromiseFunc((gallery: Gallery) => galleryService.update(gallery));
+
+export const useGalleryDelete = () =>
+    usePromiseFunc((gallery: Gallery) => galleryService.delete(gallery.id));
 
 export const useGalleryAddAlbum = (galleryId: number) =>
     usePromiseFunc((name: string) => galleryService.addAlbum(galleryId, name));

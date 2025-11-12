@@ -9,8 +9,9 @@ import { Migration } from '../tools/migrator';
 
 export const migrations: Migration[] = [
     {
-        name: '001_create_user_table',
+        name: '001_init',
         up: (db: Database) => {
+            // user
             db.exec(`
                 CREATE TABLE IF NOT EXISTS user (
                     id INTEGER PRIMARY KEY,
@@ -19,51 +20,41 @@ export const migrations: Migration[] = [
                     role TEXT NOT NULL
                 )
             `);
-        },
-        down: (db: Database) => {
-            db.exec('DROP TABLE IF EXISTS user');
-        },
-    },
-    {
-        name: '002_create_action_table',
-        up: (db: Database) => {
-            db.exec(`
-                CREATE TABLE IF NOT EXISTS action (
-                    id INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    description TEXT,
-                    type TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    galleryId INTEGER,
-                    createdAt TEXT NOT NULL,
-                    updatedAt TEXT NOT NULL
-                )
-            `);
-        },
-        down: (db: Database) => {
-            db.exec('DROP TABLE IF EXISTS action');
-        },
-    },
-    {
-        name: '003_create_gallery_table',
-        up: (db: Database) => {
+
+            // gallery
             db.exec(`
                 CREATE TABLE IF NOT EXISTS gallery (
                     id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL,
+                    description TEXT,
+                    status TEXT NOT NULL,
                     password TEXT,
                     createdAt TEXT NOT NULL,
                     updatedAt TEXT NOT NULL
                 )
             `);
-        },
-        down: (db: Database) => {
-            db.exec('DROP TABLE IF EXISTS gallery');
-        },
-    },
-    {
-        name: '004_create_blog_table',
-        up: (db: Database) => {
+            db.exec(
+                `CREATE TABLE IF NOT EXISTS gallery_album (
+                    id INTEGER PRIMARY KEY, 
+                    galleryId INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    createdAt TEXT NOT NULL,
+                    updatedAt TEXT NOT NULL,
+                    FOREIGN KEY (galleryId) REFERENCES gallery(id) ON DELETE CASCADE
+                );`,
+            );
+            db.exec(
+                `CREATE TABLE IF NOT EXISTS gallery_album_image (
+                            id INTEGER PRIMARY KEY, 
+                            albumId INTEGER NOT NULL,
+                            filename TEXT NOT NULL,
+                            code TEXT NOT NULL,
+                            ratio REAL NOT NULL,
+                            FOREIGN KEY (albumId) REFERENCES gallery_album(id) ON DELETE CASCADE
+                        );`,
+            );
+
+            // blog
             db.exec(`
                 CREATE TABLE IF NOT EXISTS blog (
                     id TEXT PRIMARY KEY,
@@ -76,24 +67,9 @@ export const migrations: Migration[] = [
             `);
         },
         down: (db: Database) => {
+            db.exec('DROP TABLE IF EXISTS user');
+            db.exec('DROP TABLE IF EXISTS gallery');
             db.exec('DROP TABLE IF EXISTS blog');
-        },
-    },
-    {
-        name: '005_add_indexes',
-        up: (db: Database) => {
-            db.exec(`
-                CREATE INDEX IF NOT EXISTS idx_action_galleryId ON action(galleryId);
-                CREATE INDEX IF NOT EXISTS idx_user_username ON user(username);
-                CREATE INDEX IF NOT EXISTS idx_gallery_name ON gallery(name);
-            `);
-        },
-        down: (db: Database) => {
-            db.exec(`
-                DROP INDEX IF EXISTS idx_action_galleryId;
-                DROP INDEX IF EXISTS idx_user_username;
-                DROP INDEX IF EXISTS idx_gallery_name;
-            `);
         },
     },
 ];

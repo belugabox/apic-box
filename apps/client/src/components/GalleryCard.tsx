@@ -1,28 +1,28 @@
 import { ReactNode } from 'react';
 
-import { Action, ActionType } from '@server/action/action.types';
+import { Gallery } from '@server/gallery/gallery.types';
 
-interface ActionCardProps {
-    action: Action;
+interface GalleryCardProps {
+    gallery: Gallery;
     children?: ReactNode;
     className?: string;
 }
 
-export const ActionCard = ({
-    action,
+export const GalleryCard = ({
+    gallery,
     children,
     className,
-}: ActionCardProps) => {
+}: GalleryCardProps) => {
     return (
         <article className={className}>
             <div className="row top-align">
                 <div className="max">
-                    <h5>{action.name}</h5>
-                    <p className="secondary-text">{action.description}</p>
+                    <h5>{gallery.name}</h5>
+                    <p className="secondary-text">{gallery.description}</p>
                 </div>
                 <div>
                     <i className="extra secondary-text">
-                        {action.type === ActionType.GALLERY ? 'photo' : 'event'}
+                        {gallery.isProtected ? 'lock' : ''}
                     </i>
                 </div>
             </div>

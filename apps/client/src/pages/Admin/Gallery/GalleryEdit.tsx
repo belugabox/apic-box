@@ -1,17 +1,21 @@
 import { useForm } from 'react-hook-form';
 
-import { Action, ActionStatus } from '@server/action/action.types';
+import { Gallery, GalleryStatus } from '@server/gallery/gallery.types';
 
-import { useActionUpdate } from '@/services/action';
+import { useGalleryUpdate } from '@/services/gallery';
 
-interface ActionEditProps {
-    action: Action;
+interface AdminGalleryEditProps {
+    gallery: Gallery;
     onClose?: () => void;
     onSuccess?: () => void;
 }
 
-export const ActionEdit = ({ action, onClose, onSuccess }: ActionEditProps) => {
-    const [updateAction, loading, error] = useActionUpdate();
+export const AdminGalleryEdit = ({
+    gallery,
+    onClose,
+    onSuccess,
+}: AdminGalleryEditProps) => {
+    const [updateGallery, loading, error] = useGalleryUpdate();
 
     const {
         register,
@@ -20,18 +24,19 @@ export const ActionEdit = ({ action, onClose, onSuccess }: ActionEditProps) => {
         reset,
     } = useForm({
         defaultValues: {
-            id: action.id,
-            name: action.name,
-            description: action.description,
-            type: action.type,
-            status: action.status,
-            createdAt: action.createdAt,
-            updatedAt: action.updatedAt,
-        },
+            id: gallery.id,
+            name: gallery.name,
+            description: gallery.description,
+            status: gallery.status,
+            createdAt: gallery.createdAt,
+            updatedAt: gallery.updatedAt,
+            albums: [],
+            isProtected: gallery.isProtected,
+        } satisfies Gallery,
     });
 
-    const onSubmit = async (action: Action) => {
-        await updateAction(action).then(() => {
+    const onSubmit = async (gallery: Gallery) => {
+        await updateGallery(gallery).then(() => {
             reset();
             onSuccess?.();
             onClose?.();
@@ -76,10 +81,9 @@ export const ActionEdit = ({ action, onClose, onSuccess }: ActionEditProps) => {
                         })}
                         className={errors.status ? 'invalid' : ''}
                     >
-                        <option value={ActionStatus.DRAFT}>Brouillon</option>
-                        <option value={ActionStatus.TESTING}>En test</option>
-                        <option value={ActionStatus.PUBLISHED}>Publié</option>
-                        <option value={ActionStatus.ARCHIVED}>Archivé</option>
+                        <option value={GalleryStatus.DRAFT}>Brouillon</option>
+                        <option value={GalleryStatus.PUBLISHED}>Publié</option>
+                        <option value={GalleryStatus.ARCHIVED}>Archivé</option>
                     </select>
                     <label>Statut</label>
                 </div>

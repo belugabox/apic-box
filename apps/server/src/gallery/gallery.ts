@@ -46,17 +46,31 @@ export class GalleryManager {
     };
 
     all = async (): Promise<Gallery[]> => {
-        return this.repo.findAll();
+        return (await this.repo.findAll()).map((gallery) => ({
+            id: gallery.id,
+            name: gallery.name,
+            description: gallery.description,
+            status: gallery.status,
+            createdAt: gallery.createdAt,
+            updatedAt: gallery.updatedAt,
+            isProtected: gallery.isProtected,
+            albums: [],
+        }));
     };
 
     get = async (id: number): Promise<Gallery | undefined> => {
         return this.repo.findById(id);
     };
 
-    add = async (name: string): Promise<number> => {
-        logger.info(`Creating gallery: ${name}`);
+    add = async (
+        gallery: Omit<
+            Gallery,
+            'id' | 'createdAt' | 'updatedAt' | 'albums' | 'isProtected'
+        >,
+    ): Promise<number> => {
+        logger.info(`Creating gallery: ${gallery.name}`);
         const result = await this.repo.create({
-            name,
+            ...gallery,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         });
@@ -67,9 +81,29 @@ export class GalleryManager {
     };
 
     update = async (
-        gallery: Omit<Gallery, 'albums' | 'createdAt' | 'updatedAt'>,
-    ): Promise<void> => {
-        await this.repo.update(gallery.id, gallery);
+        gallery: Omit<
+            Gallery,
+            'createdAt' | 'updatedAt' | 'albums' | 'isProtected'
+        >,
+    ): Promise<Gallery> => {
+        const existing = await this.repo.findById(gallery.id);
+        if (!existing) {
+            throw new Error(`Gallery ${gallery.id} not found`);
+        }
+
+        const result = await this.repo.update(gallery.id, {
+            name: gallery.name,
+            description: gallery.description,
+            status: gallery.status,
+            updatedAt: new Date().toISOString(),
+        });
+
+        const updated = await this.get(gallery.id);
+        if (!updated) {
+            throw new Error(`Gallery ${gallery.id} not found`);
+        }
+        logger.info(`Gallery updated with ID: ${updated.id}`);
+        return updated;
     };
 
     delete = async (id: number): Promise<void> => {

@@ -31,24 +31,17 @@ export class GalleryRepository extends MappedRepository<GalleryRow, Gallery> {
         this.albumRepository = new AlbumRepository(this.imageRepository);
     }
 
-    protected async initializeSchema(): Promise<void> {
-        db.run(
-            `CREATE TABLE IF NOT EXISTS gallery (
-                id INTEGER PRIMARY KEY, 
-                name TEXT NOT NULL, 
-                password TEXT,
-                createdAt TEXT NOT NULL,
-                updatedAt TEXT NOT NULL
-            );`,
-        );
-    }
+    protected async initializeSchema(): Promise<void> {}
 
     protected async mapToDomain(row: GalleryRow): Promise<Gallery> {
         const albums = await this.albumRepository.findMany({
             galleryId: row.id,
         });
         return {
-            ...row,
+            id: row.id,
+            name: row.name,
+            description: row.description,
+            status: row.status,
             albums,
             isProtected: !!row.password,
             createdAt: new Date(row.createdAt),
@@ -105,18 +98,7 @@ export class AlbumRepository extends MappedRepository<AlbumRow, Album> {
         super(db, 'gallery_album');
         this.imageRepository = imageRepository;
     }
-    protected async initializeSchema(): Promise<void> {
-        db.run(
-            `CREATE TABLE IF NOT EXISTS gallery_album (
-                id INTEGER PRIMARY KEY, 
-                galleryId INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                createdAt TEXT NOT NULL,
-                updatedAt TEXT NOT NULL,
-                FOREIGN KEY (galleryId) REFERENCES gallery(id) ON DELETE CASCADE
-            );`,
-        );
-    }
+    protected async initializeSchema(): Promise<void> {}
     protected async mapToDomain(row: AlbumRow): Promise<Album> {
         const images = await this.imageRepository.findByAlbumId(row.id);
         return {
@@ -161,18 +143,7 @@ export class ImageRepository extends MappedRepository<ImageRow, Image> {
     constructor() {
         super(db, 'gallery_album_image');
     }
-    protected async initializeSchema(): Promise<void> {
-        db.run(
-            `CREATE TABLE IF NOT EXISTS gallery_album_image (
-                id INTEGER PRIMARY KEY, 
-                albumId INTEGER NOT NULL,
-                filename TEXT NOT NULL,
-                code TEXT NOT NULL,
-                ratio REAL NOT NULL,
-                FOREIGN KEY (albumId) REFERENCES gallery_album(id) ON DELETE CASCADE
-            );`,
-        );
-    }
+    protected async initializeSchema(): Promise<void> {}
     protected async mapToDomain(row: ImageRow): Promise<Image> {
         return {
             ...row,

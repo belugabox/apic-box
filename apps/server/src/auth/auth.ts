@@ -30,16 +30,7 @@ export class AuthManager extends MappedRepository<UserRow, User> {
         super(db, 'user');
     }
 
-    protected async initializeSchema(): Promise<void> {
-        await db.run(`
-            CREATE TABLE IF NOT EXISTS user (
-                id INTEGER PRIMARY KEY, 
-                username TEXT NOT NULL, 
-                password TEXT NOT NULL,
-                role TEXT NOT NULL
-            );
-        `);
-    }
+    protected async initializeSchema(): Promise<void> {}
 
     protected mapToDomain(row: UserRow): User {
         return {

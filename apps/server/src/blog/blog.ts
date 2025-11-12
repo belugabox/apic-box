@@ -14,17 +14,7 @@ export class BlogManager extends MappedRepository<BlogRow, Blog> {
         super(db, 'blog');
     }
 
-    protected async initializeSchema(): Promise<void> {
-        await db.run(`
-            CREATE TABLE IF NOT EXISTS blog (
-                id TEXT PRIMARY KEY,
-                title TEXT NOT NULL, 
-                content TEXT NOT NULL,
-                author TEXT NOT NULL,
-                createdAt datetime NOT NULL,
-                updatedAt datetime NOT NULL
-            );`);
-    }
+    protected async initializeSchema(): Promise<void> {}
 
     protected async mapToDomain(row: BlogRow): Promise<Blog> {
         return {

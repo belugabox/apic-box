@@ -9,15 +9,13 @@ export const getContainer = (): Container => {
 };
 
 // Exports du container
-export const { db, authManager, actionManager, galleryManager, blogManager } =
-    container;
+export const { db, authManager, galleryManager, blogManager } = container;
 
 export const init = async () => {
     await db.health();
 
     await authManager.init();
     await blogManager.init();
-    await actionManager.init();
     await galleryManager.init();
 };
 
@@ -41,12 +39,6 @@ export const health = async () => {
             .catch((err: Error) => {
                 logger.error(err, 'BlogManager connection failed');
             }),
-        actionManager
-            .health()
-            .then(() => logger.info('ActionManager connection successful'))
-            .catch((err: Error) => {
-                logger.error(err, 'ActionManager connection failed');
-            }),
         galleryManager
             .health()
             .then(() => logger.info('GalleryManager connection successful'))
@@ -59,6 +51,3 @@ export const health = async () => {
 export const start = async () => {
     return true;
 };
-
-// ---
-export const listActions = actionManager.all;

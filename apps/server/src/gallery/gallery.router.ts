@@ -10,9 +10,15 @@ import {
     errorHandler,
 } from '@server/tools/errorHandler';
 
+import { GalleryStatus } from './gallery.types';
+
 export const galleryRoutes = () =>
     new Hono()
         .onError(errorHandler)
+        .get('/all', async (c) => {
+            const galleries = await galleryManager.all();
+            return c.json(galleries);
+        })
         .get(
             '/:galleryId',
             galleryManager.checkAccess(),
@@ -29,6 +35,67 @@ export const galleryRoutes = () =>
                     throw new NotFoundError(`Gallery ${galleryId} not found`);
                 }
                 return c.json(gallery);
+            },
+        )
+        .post(
+            '/add',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'form',
+                z.object({
+                    name: z.string(),
+                    description: z.string(),
+                    status: z.enum(GalleryStatus),
+                }),
+            ),
+            async (c) => {
+                const { name, description, status } = c.req.valid('form');
+                await galleryManager.add({
+                    name,
+                    description,
+                    status,
+                });
+                return c.json({ message: 'Gallery added' });
+            },
+        )
+        .post(
+            '/update',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'form',
+                z.object({
+                    id: z.coerce.number(),
+                    name: z.string(),
+                    description: z.string(),
+                    status: z.enum(GalleryStatus),
+                }),
+            ),
+            async (c) => {
+                const gallery = c.req.valid('form');
+                const updatedGallery = await galleryManager.update(gallery);
+                return c.json({
+                    message: 'Gallery updated',
+                    gallery: updatedGallery,
+                });
+            },
+        )
+        .delete(
+            '/delete/:id',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'param',
+                z.object({
+                    id: z.coerce.number(),
+                }),
+            ),
+            async (c) => {
+                const id = Number(c.req.param('id'));
+                const gallery = await galleryManager.get(id);
+                if (!gallery) {
+                    throw new NotFoundError(`Gallery ${id} not found`);
+                }
+                await galleryManager.delete(id);
+                return c.json({ message: 'Gallery deleted' });
             },
         )
         .post(

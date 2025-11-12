@@ -7,9 +7,7 @@ import { Login } from './Login';
 export const AdminHome = () => {
     const [user] = useUser();
     const [logout] = useLogout();
-    const [activeTab, setActiveTab] = useState<'actions' | 'gallery'>(
-        'actions',
-    );
+    const [activeTab, setActiveTab] = useState<'gallery'>('gallery');
 
     if (user?.role !== 'admin') {
         return <Login />;
@@ -19,11 +17,11 @@ export const AdminHome = () => {
         <>
             <div className="tabs left-align">
                 <Link
-                    to="/admin/action"
-                    className={activeTab === 'actions' ? 'active' : ''}
-                    onClick={() => setActiveTab('actions')}
+                    to="/admin/gallery"
+                    className={activeTab === 'gallery' ? 'active' : ''}
+                    onClick={() => setActiveTab('gallery')}
                 >
-                    Actions
+                    Galerie
                 </Link>
             </div>
 

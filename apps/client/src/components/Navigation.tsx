@@ -20,10 +20,10 @@ export const Navigation = () => {
                     <i>home</i>
                 </Link>
                 <Link
-                    to="/actions"
-                    className={page === '/actions' ? 'active' : ''}
+                    to="/gallery"
+                    className={page === '/gallery' ? 'active' : ''}
                 >
-                    <i>event</i>
+                    <i>photo</i>
                 </Link>
                 <Link to="/admin" className={page === '/admin' ? 'active' : ''}>
                     <i>admin_panel_settings</i>
