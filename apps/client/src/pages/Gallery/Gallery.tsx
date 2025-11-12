@@ -46,7 +46,7 @@ export const Gallery = () => {
                     type="button"
                     className="circle transparent"
                     onClick={async () => {
-                        navigate(-1);
+                        navigate('/gallery');
                     }}
                 >
                     <i>arrow_back</i>

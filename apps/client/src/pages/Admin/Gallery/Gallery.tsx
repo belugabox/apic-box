@@ -61,7 +61,7 @@ export const AdminGallery = () => {
                     type="button"
                     className="circle transparent"
                     onClick={async () => {
-                        navigate(-1);
+                        navigate('/admin/gallery');
                     }}
                 >
                     <i>arrow_back</i>

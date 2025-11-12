@@ -1,15 +1,19 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
-import { Mansory2 } from '@/components/Mansonry';
+import { Mansory } from '@/components/Mansonry';
 import { Spinner } from '@/components/Spinner';
 import { useGallery } from '@/services/gallery';
+
+import { GalleryLogin } from './Login';
 
 export const Album = () => {
     const navigate = useNavigate();
     const params = useParams<{ galleryId: string; albumId: string }>();
+    const [refresh, setRefresh] = useState(false);
 
     if (!params.galleryId) {
         return (
@@ -17,8 +21,16 @@ export const Album = () => {
         );
     }
     const galleryId = parseInt(params.galleryId, 10);
-    const [gallery, loading, error] = useGallery(galleryId);
+    const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
     if (loading) return <Spinner />;
+    if (error?.name === 'UnauthorizedError') {
+        return (
+            <GalleryLogin
+                galleryId={galleryId}
+                onSuccess={() => setRefresh(!refresh)}
+            />
+        );
+    }
     if (error) return <ErrorMessage error={error} />;
     if (!gallery) {
         return (
@@ -42,7 +54,7 @@ export const Album = () => {
                     type="button"
                     className="circle transparent"
                     onClick={async () => {
-                        navigate(-1);
+                        navigate('/gallery/' + galleryId);
                     }}
                 >
                     <i>arrow_back</i>
@@ -59,7 +71,7 @@ export const Album = () => {
                 <EmptyState icon="photo_album" title={`L'album est vide`} />
             )}
             {album.images.length > 0 && (
-                <Mansory2>
+                <Mansory>
                     {album.images.map((image) => (
                         <ImageCard
                             key={image.id}
@@ -70,7 +82,7 @@ export const Album = () => {
                             {image.code}
                         </ImageCard>
                     ))}
-                </Mansory2>
+                </Mansory>
             )}
             {/*import MasonryWrapper, { ResponsiveMasonry } from 'react-responsive-masonry';
             album.images.length > 0 && (

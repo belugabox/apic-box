@@ -6,6 +6,7 @@ import { Image } from '@server/gallery/gallery.types';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
+import { Mansory } from '@/components/Mansonry';
 import { Spinner } from '@/components/Spinner';
 import { useGallery } from '@/services/gallery';
 
@@ -43,12 +44,12 @@ export const AdminAlbum = () => {
 
     return (
         <div>
-            <div className="row left-align bottom-align ">
+            <nav className="row left-align bottom-align ">
                 <button
                     type="button"
                     className="circle transparent"
                     onClick={async () => {
-                        navigate(-1);
+                        navigate('/admin/gallery/' + galleryId);
                     }}
                 >
                     <i>arrow_back</i>
@@ -60,7 +61,31 @@ export const AdminAlbum = () => {
                     {album.images.length} photo
                     {album.images.length > 1 ? 's' : ''}
                 </p>
-            </div>
+            </nav>
+            {album.images.length === 0 && (
+                <EmptyState icon="photo_album" title={`L'album est vide`} />
+            )}
+            {album.images.length > 0 && (
+                <Mansory>
+                    {album.images.map((image) => (
+                        <ImageCard
+                            key={image.id}
+                            galleryId={galleryId}
+                            image={image}
+                            zoomable={true}
+                        >
+                            <div className="max">{image.code}</div>
+                            <button
+                                type="button"
+                                className="circle small transparent"
+                                onClick={() => setImageToDelete(image)}
+                            >
+                                <i>delete</i>
+                            </button>
+                        </ImageCard>
+                    ))}
+                </Mansory>
+            )}
             <div className="grid">
                 {album.images.map((image) => (
                     <ImageCard
