@@ -2,7 +2,12 @@ import { useForm } from 'react-hook-form';
 
 import { useGalleryLogin } from '@/services/gallery';
 
-export const GalleryLogin = ({ galleryId }: { galleryId: number }) => {
+interface GalleryLoginProps {
+    galleryId: number;
+    onSuccess?: () => void;
+}
+
+export const GalleryLogin = ({ galleryId, onSuccess }: GalleryLoginProps) => {
     const [login, loading, loginError] = useGalleryLogin(galleryId);
 
     const {
@@ -11,12 +16,13 @@ export const GalleryLogin = ({ galleryId }: { galleryId: number }) => {
         formState: { errors },
     } = useForm({
         defaultValues: {
-            password: '',
+            passwordGallery: '',
         },
     });
 
     const onSubmit = async (data: any) => {
-        await login(data.password);
+        await login(data.passwordGallery);
+        onSuccess?.();
     };
 
     return (
@@ -25,15 +31,18 @@ export const GalleryLogin = ({ galleryId }: { galleryId: number }) => {
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="field label border">
                     <input
-                        type="password"
-                        {...register('password', {
-                            required: 'Le mot de passe est obligatoire.',
+                        type="text"
+                        autoComplete="off"
+                        {...register('passwordGallery', {
+                            required: 'Le code secret est obligatoire.',
                         })}
-                        className={errors.password ? 'invalid' : ''}
+                        className={errors.passwordGallery ? 'invalid' : ''}
                     />
-                    <label>Mot de passe</label>
-                    {errors.password && (
-                        <span className="error">{errors.password.message}</span>
+                    <label>Code secret</label>
+                    {errors.passwordGallery && (
+                        <span className="error">
+                            {errors.passwordGallery.message}
+                        </span>
                     )}
                 </div>
                 <nav className="right-align">

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import { AlbumCard } from '@/components/AlbumCard';
@@ -11,6 +12,7 @@ import { GalleryLogin } from './Login';
 export const Gallery = () => {
     const navigate = useNavigate();
     const params = useParams<{ galleryId: string }>();
+    const [refresh, setRefresh] = useState(false);
 
     if (!params.galleryId) {
         return (
@@ -20,10 +22,15 @@ export const Gallery = () => {
 
     const galleryId = parseInt(params.galleryId, 10);
 
-    const [gallery, loading, error] = useGallery(galleryId);
+    const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
     if (loading) return <Spinner />;
     if (error?.name === 'UnauthorizedError') {
-        return <GalleryLogin galleryId={galleryId} />;
+        return (
+            <GalleryLogin
+                galleryId={galleryId}
+                onSuccess={() => setRefresh(!refresh)}
+            />
+        );
     }
     if (error) return <ErrorMessage error={error} />;
     if (!gallery) {

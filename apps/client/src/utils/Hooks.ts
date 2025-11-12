@@ -13,6 +13,7 @@ export function usePromise<T>(
 
     useEffect(() => {
         setLoading(true);
+        setError(undefined);
         promise()
             .then((value) => {
                 setState(value);

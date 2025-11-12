@@ -5,7 +5,9 @@ import { Navigation } from './components/Navigation';
 export const App = () => {
     return (
         <>
-            <Navigation />
+            <header>
+                <Navigation />
+            </header>
             <main className="responsive">
                 <Outlet />
             </main>

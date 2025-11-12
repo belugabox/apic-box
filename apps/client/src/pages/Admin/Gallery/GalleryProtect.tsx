@@ -56,12 +56,12 @@ export const AdminGalleryProtect = ({
                             minLength: {
                                 value: 8,
                                 message:
-                                    'Le mot de passe doit contenir au moins 8 caractères.',
+                                    'Le code secret doit contenir au moins 8 caractères.',
                             },
                         })}
                         className={errors.password ? 'invalid' : ''}
                     />
-                    <label>Mot de passe</label>
+                    <label>Code secret</label>
                     <span className="error-text">
                         {errors.password && errors.password.message}
                     </span>
@@ -82,9 +82,9 @@ export const AdminGalleryProtect = ({
                     >
                         {gallery.isProtected
                             ? passwordValue === ''
-                                ? 'Retirer le mot de passe'
-                                : 'Modifier le mot de passe'
-                            : 'Ajouter un mot de passe'}
+                                ? 'Retirer le code secret'
+                                : 'Modifier le code secret'
+                            : 'Ajouter un code secret'}
                     </button>
                 </nav>
             </form>
