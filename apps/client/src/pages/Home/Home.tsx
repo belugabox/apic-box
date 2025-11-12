@@ -1,12 +1,12 @@
 export const Home = () => {
     return (
-        <div>
-            <h1>Bienvenue sur le site de l'APIC Sentelette !</h1>
+        <div className="center-align">
+            <h4>Bienvenue sur le site de l'APIC Sentelette !</h4>
             <p>
                 L'association des parents d'élèves de Sains-en-Amienois,
                 Saint-Fuscien et Estrées-sur-Noye.
             </p>
-            <nav>
+            <div>
                 <a
                     className="link"
                     href="https://www.facebook.com/rpisentelette"
@@ -15,6 +15,7 @@ export const Home = () => {
                 >
                     Facebook
                 </a>
+                {' | '}
                 <a
                     className="link"
                     href="https://chat.whatsapp.com/Jcz7TJyL6RiDuoaEbKqRPr"
@@ -23,7 +24,7 @@ export const Home = () => {
                 >
                     WhatsApp
                 </a>
-            </nav>
+            </div>
         </div>
     );
 };

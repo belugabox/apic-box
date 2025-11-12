@@ -70,15 +70,18 @@ export const Gallery = () => {
             <div className="grid">
                 {gallery.albums.map((album) => (
                     <AlbumCard
-                        className="s12 m6 l4"
+                        className="s12 m6"
                         key={album.name}
+                        galleryId={galleryId}
                         album={album}
                     >
                         <button
                             onClick={() =>
                                 navigate(`/gallery/${galleryId}/${album.id}`)
                             }
+                            className="no-margin"
                         >
+                            <i>visibility</i>
                             Voir l'album
                         </button>
                     </AlbumCard>

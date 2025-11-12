@@ -46,6 +46,17 @@ export const useGalleryAdd = () =>
 export const useGalleryUpdate = () =>
     usePromiseFunc((gallery: Gallery) => galleryService.update(gallery));
 
+export const useGalleryCover = (gallery: Gallery) =>
+    usePromise(
+        () => galleryService.cover(gallery.id, gallery.updatedAt.toISOString()),
+        [gallery.id, gallery.updatedAt],
+    );
+
+export const useGalleryUpdateCover = (galleryId: number) =>
+    usePromiseFunc((files?: File[]) =>
+        galleryService.updateCover(galleryId, files?.[0]),
+    );
+
 export const useGalleryDelete = () =>
     usePromiseFunc((gallery: Gallery) => galleryService.delete(gallery.id));
 

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Context } from 'hono';
 import { sign, verify } from 'hono/jwt';
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'path';
 import sharp from 'sharp';
@@ -134,6 +135,41 @@ export class GalleryManager {
 
     removePassword = async (galleryId: number): Promise<void> => {
         await this.repo.update(galleryId, { password: undefined });
+    };
+
+    setCover = async (galleryId: number, file: File): Promise<void> => {
+        const coverPath = await this.getCoverPath(galleryId);
+        await this.generateThumbnail(await file.arrayBuffer(), coverPath, 600);
+
+        await this.repo.update(galleryId, {
+            updatedAt: new Date().toISOString(),
+        });
+    };
+
+    removeCover = async (galleryId: number): Promise<void> => {
+        const coverPath = await this.getCoverPath(galleryId);
+        await rm(coverPath, { recursive: true });
+
+        await this.repo.update(galleryId, {
+            updatedAt: new Date().toISOString(),
+        });
+    };
+
+    getCoverBuffer = async (galleryId: number): Promise<Buffer | null> => {
+        const coverPath = await this.getCoverPath(galleryId);
+        if (!(await existsSync(coverPath))) {
+            return null;
+        }
+        return await readFile(coverPath);
+    };
+
+    getCoverPath = async (galleryId: number): Promise<string> => {
+        const coverPath = path.join(
+            GALLERY_DIR,
+            galleryId.toString(),
+            'cover.jpg',
+        );
+        return coverPath;
     };
 
     /**
@@ -321,7 +357,7 @@ export class GalleryManager {
 
         // generate thumbnail
         const thumbnailPath = await this.getImagePath(imageId, true);
-        await this.generateThumbnail(imagePath, thumbnailPath);
+        await this.generateThumbnail(await file.arrayBuffer(), thumbnailPath);
 
         logger.info(`Image added with ID: ${imageId}, code: ${code}`);
     };
@@ -343,14 +379,19 @@ export class GalleryManager {
     };
 
     private async generateThumbnail(
-        imagePath: string,
+        buffer: ArrayBuffer,
         thumbnailPath: string,
+        size?: number,
     ): Promise<void> {
-        await sharp(imagePath)
-            .resize(IMAGE_THUMBNAIL_SIZE, IMAGE_THUMBNAIL_SIZE, {
-                fit: 'inside',
-            })
-            .jpeg({ quality: 80 })
+        await sharp(buffer)
+            .resize(
+                size || IMAGE_THUMBNAIL_SIZE,
+                size || IMAGE_THUMBNAIL_SIZE,
+                {
+                    fit: 'inside',
+                },
+            )
+            .jpeg({ quality: 90 })
             .toFile(thumbnailPath);
     }
 

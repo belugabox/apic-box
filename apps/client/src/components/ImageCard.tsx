@@ -10,6 +10,7 @@ interface ImageCardProps {
     galleryId: number;
     image: Image;
     zoomable?: boolean;
+    square?: boolean;
     fromAdmin?: boolean;
     children?: ReactNode;
     className?: string;
@@ -19,6 +20,7 @@ export const ImageCard = ({
     galleryId,
     image,
     zoomable = false,
+    square = false,
     fromAdmin = false,
     children,
     className,
@@ -38,8 +40,9 @@ export const ImageCard = ({
                         'surface-dim' + (loading ? ` ${styles.pulse}` : '')
                     }
                     style={{
-                        aspectRatio: image.ratio,
+                        aspectRatio: square ? '1/1' : image.ratio,
                         cursor: zoomable ? 'zoom-in' : 'default',
+                        borderRadius: square ? '1em' : '0',
                     }}
                     onClick={() => zoomable && setIsZoomed(true)}
                 >
@@ -49,7 +52,8 @@ export const ImageCard = ({
                             alt={image.code}
                             style={{
                                 width: '100%',
-                                aspectRatio: image.ratio,
+                                aspectRatio: square ? '1/1' : image.ratio,
+                                objectFit: 'cover',
                             }}
                         />
                     )}

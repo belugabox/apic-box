@@ -123,8 +123,57 @@ export const galleryRoutes = () =>
                 return c.json({ message: 'Password updated' });
             },
         )
+        .post(
+            '/updateCover',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            async (c) => {
+                const formData = await c.req.formData();
+
+                const galleryId = z.coerce
+                    .number()
+                    .parse(formData.get('galleryId'));
+                const file = formData.get('file') as File;
+
+                if (!file) {
+                    await galleryManager.removeCover(galleryId);
+                    return c.json({ message: 'Cover image removed' });
+                }
+                await galleryManager.setCover(galleryId, file);
+                return c.json({ message: 'Cover image updated' });
+            },
+        )
+        .get(
+            '/cover/:galleryId',
+            zValidator(
+                'param',
+                z.object({
+                    galleryId: z.coerce.number(),
+                }),
+            ),
+            zValidator(
+                'query',
+                z.object({
+                    v: z.string().optional(),
+                }),
+            ),
+            async (c) => {
+                const galleryId = Number(c.req.param('galleryId'));
+                // Le query param 'v' est un cache buster (timestamp) - il est ignoré
+                const cover = await galleryManager.getCoverBuffer(galleryId);
+                if (!cover) {
+                    return c.body(null);
+                }
+                c.header('Content-Type', 'image/jpeg');
+                c.header(
+                    'Cache-Control',
+                    'public, max-age=31536000, immutable',
+                );
+                return c.body(new Uint8Array(cover));
+            },
+        )
         .get(
             '/album/:albumId',
+            // TODO Ajouter le galleryManager.checkAccess(),
             zValidator(
                 'param',
                 z.object({
@@ -142,6 +191,7 @@ export const galleryRoutes = () =>
         )
         .get(
             '/image/:imageId/thumbnail',
+            // TODO Ajouter le galleryManager.checkAccess(),
             zValidator(
                 'param',
                 z.object({

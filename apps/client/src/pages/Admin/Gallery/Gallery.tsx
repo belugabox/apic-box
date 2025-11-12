@@ -7,7 +7,8 @@ import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { Spinner } from '@/components/Spinner';
-import { useGallery } from '@/services/gallery';
+import { UploadImageBtn } from '@/components/UploadImageBtn';
+import { useGallery, useGalleryUpdateCover } from '@/services/gallery';
 
 import { AdminGalleryAlbumAdd } from './AlbumAdd';
 import { AdminGalleryAlbumDelete } from './AlbumDelete';
@@ -75,6 +76,13 @@ export const AdminGallery = () => {
                         {albums.length > 1 ? 's' : ''}
                     </p>
                 </div>
+
+                <UploadImageBtn
+                    className="circle fill"
+                    icon="photo"
+                    useFunc={() => useGalleryUpdateCover(galleryId)}
+                    onSuccess={() => setShow(show)}
+                />
                 <button
                     className="circle fill"
                     onClick={() => handleOpen('protect', gallery)}
@@ -91,26 +99,29 @@ export const AdminGallery = () => {
             <div className="grid">
                 {albums.map((album) => (
                     <AlbumCard
-                        className="s12 m6 l4"
+                        className="s12 m6"
                         key={album.id}
+                        galleryId={galleryId}
                         album={album}
                     >
-                        <button
-                            className="circle fill"
-                            onClick={() => handleOpen('deleteAlbum', album)}
-                        >
-                            <i>delete</i>
-                        </button>
-                        <button
-                            className="circle"
-                            onClick={() =>
-                                navigate(
-                                    `/admin/gallery/${galleryId}/${album.id}`,
-                                )
-                            }
-                        >
-                            <i>edit</i>
-                        </button>
+                        <nav>
+                            <button
+                                className="circle fill"
+                                onClick={() => handleOpen('deleteAlbum', album)}
+                            >
+                                <i>delete</i>
+                            </button>
+                            <button
+                                className="circle"
+                                onClick={() =>
+                                    navigate(
+                                        `/admin/gallery/${galleryId}/${album.id}`,
+                                    )
+                                }
+                            >
+                                <i>edit</i>
+                            </button>
+                        </nav>
                     </AlbumCard>
                 ))}
             </div>

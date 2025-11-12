@@ -198,6 +198,52 @@ export class GalleryService {
         const blob = await response.blob();
         return URL.createObjectURL(blob);
     };
+
+    cover = async (
+        galleryId: number,
+        updatedAt?: string,
+    ): Promise<string | undefined> => {
+        let url = `/api/gallery/cover/${galleryId}`;
+        if (updatedAt) {
+            // Ajouter un query parameter pour invalider le cache lors d'une mise à jour
+            const timestamp = new Date(updatedAt).getTime();
+            url += `?v=${timestamp}`;
+        }
+
+        const response = await fetch(url);
+        if (!response || !response.ok) {
+            throw new Error(`Failed to fetch cover: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        if (blob.size === 0) {
+            return undefined;
+        }
+        return URL.createObjectURL(blob);
+    };
+
+    updateCover = async (galleryId: number, file?: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append('galleryId', galleryId.toString());
+        if (file) formData.append('file', file);
+
+        const headers = authService.headers();
+        delete (headers as any)['Content-Type'];
+
+        const response = await fetch('/api/gallery/updateCover', {
+            method: 'POST',
+            body: formData,
+            headers,
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw error;
+        }
+
+        return response.json();
+    };
+
     addImages = async (albumId: number, files: File[]) => {
         const formData = new FormData();
         formData.append('albumId', albumId.toString());
@@ -205,16 +251,8 @@ export class GalleryService {
             formData.append('files', file);
         });
 
-        // Logging correct pour FormData
-        console.log('albumId:', albumId);
-        console.log('files count:', files.length);
-        for (const [key, value] of formData.entries()) {
-            console.log(`${key}:`, value);
-        }
-
-        // Utiliser fetch directement pour éviter les problèmes de sérialisation du client Hono
         const headers = authService.headers();
-        delete (headers as any)['Content-Type']; // Laisser le navigateur ajouter le boundary
+        delete (headers as any)['Content-Type'];
 
         const response = await fetch('/api/gallery/addImages', {
             method: 'POST',

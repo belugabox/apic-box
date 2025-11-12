@@ -8,10 +8,14 @@ import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
 import { Mansory } from '@/components/Mansonry';
 import { Spinner } from '@/components/Spinner';
-import { useGallery } from '@/services/gallery';
+import { UploadImageBtn } from '@/components/UploadImageBtn';
+import {
+    useGallery,
+    useGalleryAddImages,
+    useGalleryCover,
+} from '@/services/gallery';
 
 import { AdminGalleryImageDelete } from './ImageDelete';
-import { AdminGalleryImagesButton } from './ImagesAdd';
 
 export const AdminAlbum = () => {
     const navigate = useNavigate();
@@ -86,26 +90,6 @@ export const AdminAlbum = () => {
                     ))}
                 </Mansory>
             )}
-            <div className="grid">
-                {album.images.map((image) => (
-                    <ImageCard
-                        className="s6 m4 l2"
-                        key={image.id}
-                        galleryId={galleryId}
-                        fromAdmin={true}
-                        image={image}
-                    >
-                        <div className="max">{image.code}</div>
-                        <button
-                            type="button"
-                            className="circle small transparent"
-                            onClick={() => setImageToDelete(image)}
-                        >
-                            <i>delete</i>
-                        </button>
-                    </ImageCard>
-                ))}
-            </div>
             <div className="medium-space"></div>
             {/* Modal de suppression d'image */}
             {imageToDelete && (
@@ -121,10 +105,14 @@ export const AdminAlbum = () => {
                 </dialog>
             )}
             {/* Bouton d'ajout */}
-            <AdminGalleryImagesButton
-                albumId={album.id}
-                onSuccess={() => setRefresh(!refresh)}
-            />
+            <div className="fixed margin center bottom">
+                <UploadImageBtn
+                    className="large"
+                    text="Ajouter des photos"
+                    useFunc={() => useGalleryAddImages(albumId)}
+                    onSuccess={() => setRefresh(!refresh)}
+                />
+            </div>
         </div>
     );
 };

@@ -25,13 +25,14 @@ export const GalleryHome = () => {
             <div className="grid">
                 {galleries?.map((gallery) => (
                     <GalleryCard
-                        className="s12 m6 l4"
+                        className="s12 m6"
                         key={gallery.id}
                         gallery={gallery}
                     >
                         <button
                             onClick={() => navigate(`/gallery/${gallery.id}`)}
                         >
+                            <i>visibility</i>
                             Voir la galerie
                         </button>
                     </GalleryCard>
