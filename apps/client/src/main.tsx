@@ -6,8 +6,6 @@ import { RouterProvider } from 'react-router';
 
 import { router } from './router';
 
-await ui('theme', '');
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <RouterProvider router={router} />

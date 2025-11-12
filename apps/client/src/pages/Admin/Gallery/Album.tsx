@@ -9,11 +9,7 @@ import { ImageCard } from '@/components/ImageCard';
 import { Mansory } from '@/components/Mansonry';
 import { Spinner } from '@/components/Spinner';
 import { UploadImageBtn } from '@/components/UploadImageBtn';
-import {
-    useGallery,
-    useGalleryAddImages,
-    useGalleryCover,
-} from '@/services/gallery';
+import { useGallery, useGalleryAddImages } from '@/services/gallery';
 
 import { AdminGalleryImageDelete } from './ImageDelete';
 
