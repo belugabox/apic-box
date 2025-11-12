@@ -102,7 +102,7 @@ export class GalleryManager {
             throw new Error(`Gallery ${gallery.id} not found`);
         }
 
-        const result = await this.repo.update(gallery.id, {
+        await this.repo.update(gallery.id, {
             name: gallery.name,
             description: gallery.description,
             status: gallery.status,
