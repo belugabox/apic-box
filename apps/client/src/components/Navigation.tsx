@@ -21,11 +21,14 @@ export const Navigation = () => {
                 </Link>
                 <Link
                     to="/gallery"
-                    className={page === '/gallery' ? 'active' : ''}
+                    className={page.startsWith('/gallery') ? 'active' : ''}
                 >
                     <i>photo</i>
                 </Link>
-                <Link to="/admin" className={page === '/admin' ? 'active' : ''}>
+                <Link
+                    to="/admin"
+                    className={page.startsWith('/admin') ? 'active' : ''}
+                >
                     <i>admin_panel_settings</i>
                 </Link>
             </nav>

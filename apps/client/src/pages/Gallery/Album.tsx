@@ -1,13 +1,14 @@
-import Masonry, { ResponsiveMasonry } from 'react-responsive-masonry';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
+import { Mansory2 } from '@/components/Mansonry';
 import { Spinner } from '@/components/Spinner';
 import { useGallery } from '@/services/gallery';
 
 export const Album = () => {
+    const navigate = useNavigate();
     const params = useParams<{ galleryId: string; albumId: string }>();
 
     if (!params.galleryId) {
@@ -33,33 +34,64 @@ export const Album = () => {
     if (!album) {
         return <EmptyState icon="photo_album" title={`L'album n'existe pas`} />;
     }
-    if (album.images.length === 0) {
-        return (
-            <EmptyState
-                icon="photo_album"
-                title={`L'album ${album.name} est vide`}
-            />
-        );
-    }
 
     return (
         <div>
-            <h5>{album.name}</h5>
-            <ResponsiveMasonry
-                columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}
-            >
-                <Masonry>
+            <nav className="row left-align top-align">
+                <button
+                    type="button"
+                    className="circle transparent"
+                    onClick={async () => {
+                        navigate(-1);
+                    }}
+                >
+                    <i>arrow_back</i>
+                </button>
+
+                <div>
+                    <h5 className="no-margin inline-block large-margin-left">
+                        {gallery.name} - {album.name}
+                    </h5>
+                    <p className="no-margin">{gallery.description}</p>
+                </div>
+            </nav>
+            {album.images.length === 0 && (
+                <EmptyState icon="photo_album" title={`L'album est vide`} />
+            )}
+            {album.images.length > 0 && (
+                <Mansory2>
                     {album.images.map((image) => (
                         <ImageCard
                             key={image.id}
                             galleryId={galleryId}
                             image={image}
+                            zoomable={true}
                         >
                             {image.code}
                         </ImageCard>
                     ))}
-                </Masonry>
-            </ResponsiveMasonry>
+                </Mansory2>
+            )}
+            {/*import MasonryWrapper, { ResponsiveMasonry } from 'react-responsive-masonry';
+            album.images.length > 0 && (
+                <ResponsiveMasonry
+                    className="top-margin"
+                    columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}
+                >
+                    <MasonryWrapper>
+                        {album.images.map((image) => (
+                            <ImageCard
+                                key={image.id}
+                                galleryId={galleryId}
+                                image={image}
+                                zoomable={true}
+                            >
+                                {image.code}
+                            </ImageCard>
+                        ))}
+                    </MasonryWrapper>
+                </ResponsiveMasonry>
+            )*/}
         </div>
     );
 };

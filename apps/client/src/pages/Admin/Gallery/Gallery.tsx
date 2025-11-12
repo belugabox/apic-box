@@ -76,13 +76,13 @@ export const AdminGallery = () => {
                     </p>
                 </div>
                 <button
-                    className="circle fill large "
+                    className="circle fill"
                     onClick={() => handleOpen('protect', gallery)}
                 >
                     {gallery.isProtected ? <i>lock</i> : <i>lock_open</i>}
                 </button>
                 <button
-                    className="circle large "
+                    className="circle"
                     onClick={() => handleOpen('edit', gallery)}
                 >
                     <i>edit</i>
@@ -91,7 +91,7 @@ export const AdminGallery = () => {
             <div className="grid">
                 {albums.map((album) => (
                     <AlbumCard
-                        className="s12 m6 l3"
+                        className="s12 m6 l4"
                         key={album.id}
                         album={album}
                     >

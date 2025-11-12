@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 
 import { Image } from '@server/gallery/gallery.types';
 
@@ -9,6 +9,7 @@ import styles from './ImageCard.module.css';
 interface ImageCardProps {
     galleryId: number;
     image: Image;
+    zoomable?: boolean;
     fromAdmin?: boolean;
     children?: ReactNode;
     className?: string;
@@ -17,36 +18,85 @@ interface ImageCardProps {
 export const ImageCard = ({
     galleryId,
     image,
+    zoomable = false,
     fromAdmin = false,
     children,
     className,
 }: ImageCardProps) => {
+    const [isZoomed, setIsZoomed] = useState(false);
     const [imageData, loading, error] = useGalleryImage(
         galleryId,
         image,
         fromAdmin,
     );
+
     return (
-        <div className={className}>
-            <div
-                className={'surface-dim' + (loading ? ` ${styles.pulse}` : '')}
-                style={{ aspectRatio: image.ratio }}
-            >
-                {imageData && (
-                    <img
-                        src={imageData}
-                        alt={image.code}
+        <>
+            <div className={className}>
+                <div
+                    className={
+                        'surface-dim' + (loading ? ` ${styles.pulse}` : '')
+                    }
+                    style={{
+                        aspectRatio: image.ratio,
+                        cursor: zoomable ? 'zoom-in' : 'default',
+                    }}
+                    onClick={() => zoomable && setIsZoomed(true)}
+                >
+                    {imageData && (
+                        <img
+                            src={imageData}
+                            alt={image.code}
+                            style={{
+                                width: '100%',
+                                aspectRatio: image.ratio,
+                            }}
+                        />
+                    )}
+                    {error && <p>Error: {error.message}</p>}
+                </div>
+                {children && (
+                    <nav className="center-align tiny-margin">{children}</nav>
+                )}
+            </div>
+
+            {/* Modal de zoom */}
+            {isZoomed && imageData && (
+                <dialog
+                    className="max active"
+                    onClick={() => setIsZoomed(false)}
+                >
+                    <div
+                        className="large-padding"
                         style={{
                             width: '100%',
-                            aspectRatio: image.ratio,
+                            height: '100%',
                         }}
-                    />
-                )}
-                {error && <p>Error: {error.message}</p>}
-            </div>
-            {children && (
-                <nav className="center-align tiny-margin">{children}</nav>
+                    >
+                        <img
+                            src={imageData}
+                            alt={image.code}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'contain',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        {children && (
+                            <nav className="center-align tiny-margin">
+                                {children}
+                            </nav>
+                        )}
+                    </div>
+                    <button
+                        className="circle transparent absolute top right small-margin"
+                        onClick={() => setIsZoomed(false)}
+                    >
+                        <i>close</i>
+                    </button>
+                </dialog>
             )}
-        </div>
+        </>
     );
 };

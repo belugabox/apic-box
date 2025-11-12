@@ -38,28 +38,52 @@ export const Gallery = () => {
             <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
         );
     }
-    if (gallery?.albums.length === 0) {
-        return (
-            <EmptyState
-                icon="photo_album"
-                title={`La galerie ${gallery?.name} est vide`}
-            />
-        );
-    }
 
     return (
-        <div className="grid">
-            {gallery?.albums.map((album) => (
-                <AlbumCard className="s12 m6 l3" key={album.name} album={album}>
-                    <button
-                        onClick={() =>
-                            navigate(`/gallery/${galleryId}/${album.id}`)
-                        }
+        <div>
+            <nav className="row left-align top-align">
+                <button
+                    type="button"
+                    className="circle transparent"
+                    onClick={async () => {
+                        navigate(-1);
+                    }}
+                >
+                    <i>arrow_back</i>
+                </button>
+                <div className="max">
+                    <h5 className="no-margin inline-block large-margin-left">
+                        {gallery.name}
+                    </h5>
+                    <p className="no-margin">
+                        {gallery.description} - {gallery.albums.length} album
+                        {gallery.albums.length > 1 ? 's' : ''}
+                    </p>
+                </div>
+            </nav>
+            {gallery.albums.length === 0 && (
+                <EmptyState
+                    icon="photo_album"
+                    title={`Aucun album pour le moment`}
+                />
+            )}
+            <div className="grid">
+                {gallery.albums.map((album) => (
+                    <AlbumCard
+                        className="s12 m6 l4"
+                        key={album.name}
+                        album={album}
                     >
-                        Voir l'album
-                    </button>
-                </AlbumCard>
-            ))}
+                        <button
+                            onClick={() =>
+                                navigate(`/gallery/${galleryId}/${album.id}`)
+                            }
+                        >
+                            Voir l'album
+                        </button>
+                    </AlbumCard>
+                ))}
+            </div>
         </div>
     );
 };
