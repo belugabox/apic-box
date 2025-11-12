@@ -16,9 +16,6 @@ export const Navigation = () => {
             </Link>
             <div className="max center-align"></div>
             <nav className="">
-                <Link to="/" className={page === '/' ? 'active' : ''}>
-                    <i>home</i>
-                </Link>
                 <Link
                     to="/gallery"
                     className={page.startsWith('/gallery') ? 'active' : ''}

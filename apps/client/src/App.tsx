@@ -5,7 +5,7 @@ import { Navigation } from './components/Navigation';
 export const App = () => {
     return (
         <>
-            <header>
+            <header className="fixed">
                 <Navigation />
             </header>
             <main className="responsive">
