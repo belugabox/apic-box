@@ -45,21 +45,32 @@ export class GalleryManager {
         return Promise.all([readdir(GALLERY_DIR), this.repo.findOne({})]);
     };
 
-    all = async (): Promise<Gallery[]> => {
-        return (await this.repo.findAll()).map((gallery) => ({
-            id: gallery.id,
-            name: gallery.name,
-            description: gallery.description,
-            status: gallery.status,
-            createdAt: gallery.createdAt,
-            updatedAt: gallery.updatedAt,
-            isProtected: gallery.isProtected,
-            albums: [],
-        }));
+    all = async (isAdmin: boolean): Promise<Gallery[]> => {
+        return (await this.repo.findAll())
+            .filter((gallery) => {
+                return isAdmin || gallery.status === 'published';
+            })
+            .map((gallery) => ({
+                id: gallery.id,
+                name: gallery.name,
+                description: gallery.description,
+                status: gallery.status,
+                createdAt: gallery.createdAt,
+                updatedAt: gallery.updatedAt,
+                isProtected: gallery.isProtected,
+                albums: [],
+            }));
     };
 
-    get = async (id: number): Promise<Gallery | undefined> => {
-        return this.repo.findById(id);
+    get = async (
+        id: number,
+        isAdmin: boolean,
+    ): Promise<Gallery | undefined> => {
+        const gallery = await this.repo.findById(id);
+        if (!gallery || !(isAdmin || gallery.status === 'published')) {
+            return undefined;
+        }
+        return gallery;
     };
 
     add = async (
@@ -98,7 +109,7 @@ export class GalleryManager {
             updatedAt: new Date().toISOString(),
         });
 
-        const updated = await this.get(gallery.id);
+        const updated = await this.get(gallery.id, true);
         if (!updated) {
             throw new Error(`Gallery ${gallery.id} not found`);
         }

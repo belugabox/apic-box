@@ -16,7 +16,9 @@ export const galleryRoutes = () =>
     new Hono()
         .onError(errorHandler)
         .get('/all', async (c) => {
-            const galleries = await galleryManager.all();
+            const galleries = await galleryManager.all(
+                await authManager.isAdmin(c),
+            );
             return c.json(galleries);
         })
         .get(
@@ -30,7 +32,10 @@ export const galleryRoutes = () =>
             ),
             async (c) => {
                 const galleryId = Number(c.req.param('galleryId'));
-                const gallery = await galleryManager.get(galleryId);
+                const gallery = await galleryManager.get(
+                    galleryId,
+                    await authManager.isAdmin(c),
+                );
                 if (!gallery) {
                     throw new NotFoundError(`Gallery ${galleryId} not found`);
                 }
@@ -90,7 +95,7 @@ export const galleryRoutes = () =>
             ),
             async (c) => {
                 const id = Number(c.req.param('id'));
-                const gallery = await galleryManager.get(id);
+                const gallery = await galleryManager.get(id, true);
                 if (!gallery) {
                     throw new NotFoundError(`Gallery ${id} not found`);
                 }

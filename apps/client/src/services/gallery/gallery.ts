@@ -11,8 +11,15 @@ export class GalleryService {
         return token ? { 'X-Gallery-Token': `${token}` } : {};
     }
 
-    all = async (): Promise<Gallery[]> => {
-        const data = await callRpc(serverApi.gallery.all.$get());
+    all = async (fromAdmin?: boolean): Promise<Gallery[]> => {
+        const data = await callRpc(
+            serverApi.gallery.all.$get(
+                {},
+                {
+                    headers: fromAdmin ? authService.headers() : {},
+                },
+            ),
+        );
         return data.map((gallery: any) => this.transformGallery(gallery));
     };
 

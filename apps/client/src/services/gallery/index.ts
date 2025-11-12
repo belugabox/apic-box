@@ -4,8 +4,10 @@ import { usePromise, usePromiseFunc } from '@/utils/Hooks';
 
 import { galleryService } from './gallery';
 
-export const useGalleries = (deps?: React.DependencyList) =>
-    usePromise(() => galleryService.all(), [...(deps || [])]);
+export const useGalleries = (
+    fromAdmin?: boolean,
+    deps?: React.DependencyList,
+) => usePromise(() => galleryService.all(fromAdmin), [...(deps || [])]);
 
 export const useGallery = (
     galleryId?: number,

@@ -173,6 +173,18 @@ export class AuthManager extends MappedRepository<UserRow, User> {
     };
 
     // ---
+    isAdmin = async (c: Context): Promise<boolean> => {
+        const authHeader = c.req.header('Authorization');
+        if (!authHeader) {
+            return false;
+        }
+        const token = authHeader.split(' ')[1];
+        if (!token) {
+            return false;
+        }
+        const payload = await this.verifyAccessToken(token);
+        return payload && payload.role === AuthRole.ADMIN;
+    };
     authMiddleware =
         (role?: AuthRole) => async (c: Context, next: () => Promise<void>) => {
             const authHeader = c.req.header('Authorization');

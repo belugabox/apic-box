@@ -19,7 +19,10 @@ export const AdminGalleryHome = () => {
     const [selectedGallery, setSelectedGallery] = useState<
         Gallery | undefined
     >();
-    const [galleries, loading, error] = useGalleries([showAdd, showDelete]);
+    const [galleries, loading, error] = useGalleries(true, [
+        showAdd,
+        showDelete,
+    ]);
     if (loading) return <Spinner />;
     if (error) return <ErrorMessage error={error} />;
 
