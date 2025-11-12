@@ -31,6 +31,8 @@ WORKDIR /app
 
 # Copier les fichiers nécessaires pour exécuter le serveur
 COPY --from=build /build/package.json /build/pnpm-workspace.yaml ./
+COPY --from=build /build/apps/client/package.json ./apps/client/
+COPY --from=build /build/apps/client/dist ./apps/client/dist/
 COPY --from=build /build/apps/server/package.json ./apps/server/
 COPY --from=build /build/apps/server/dist ./apps/server/dist/
 
