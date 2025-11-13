@@ -30,7 +30,7 @@ const GALLERY_DIR = path.resolve(
 );
 const THUMBNAIL_DIR = 'thumbnails';
 
-const IMAGE_THUMBNAIL_SIZE = 400;
+const IMAGE_THUMBNAIL_SIZE = 500;
 
 export class GalleryManager {
     private repo!: GalleryRepository;
