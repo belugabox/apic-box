@@ -105,6 +105,7 @@ export const AdminAlbum = () => {
                 <UploadImageBtn
                     className="large"
                     text="Ajouter des photos"
+                    multiple
                     useFunc={() => useGalleryAddImages(albumId)}
                     onSuccess={() => setRefresh(!refresh)}
                 />
