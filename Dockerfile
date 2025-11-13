@@ -46,4 +46,4 @@ EXPOSE 3001
 ENV DATA_FILE_PATH=/data
 
 # Commande pour démarrer l'application
-CMD ["pnpm", "run", "-C", "apps/server", "start"]
+CMD ["pnpm", "run", "start"]
