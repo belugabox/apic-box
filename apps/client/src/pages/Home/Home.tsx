@@ -7,9 +7,12 @@ export const Home = () => {
     const navigate = useNavigate();
     const [galleries] = useGalleries();
 
-    const latestGallery = galleries?.reduce((latest, current) =>
-        current.createdAt > latest.createdAt ? current : latest,
-    );
+    const latestGallery =
+        galleries && galleries.length > 0
+            ? galleries.reduce((latest, current) =>
+                  current.createdAt > latest.createdAt ? current : latest,
+              )
+            : undefined;
 
     return (
         <>
