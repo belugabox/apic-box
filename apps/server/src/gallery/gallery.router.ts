@@ -236,6 +236,9 @@ export const galleryRoutes = () =>
             async (c) => {
                 const { galleryId, password } = c.req.valid('form');
                 const token = await galleryManager.login(galleryId, password);
+                if (!token) {
+                    throw new BadRequestError('Code secret invalide');
+                }
                 return c.json({ token });
             },
         )
@@ -282,7 +285,7 @@ export const galleryRoutes = () =>
                 const files = formData.getAll('files') as File[];
 
                 if (!files || files.length === 0) {
-                    throw new BadRequestError('No files provided');
+                    throw new BadRequestError('Aucun fichier fourni');
                 }
 
                 await galleryManager.addImages(albumId, files);

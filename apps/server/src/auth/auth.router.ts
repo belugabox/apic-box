@@ -31,7 +31,9 @@ export const authRoutes = () =>
 
                 const user = await authManager.login(username, password);
                 if (!user) {
-                    throw new BadRequestError('Invalid credentials');
+                    throw new BadRequestError(
+                        'Identifiant ou mot de passe invalide',
+                    );
                 }
                 const tokens = await authManager.generateTokens(user);
                 return c.json({

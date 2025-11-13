@@ -189,26 +189,26 @@ export class AuthManager extends MappedRepository<UserRow, User> {
         (role?: AuthRole) => async (c: Context, next: () => Promise<void>) => {
             const authHeader = c.req.header('Authorization');
             if (!authHeader) {
-                throw new UnauthorizedError('No token provided');
+                throw new UnauthorizedError('Aucun token fourni');
             }
 
             const token = authHeader.split(' ')[1];
             if (!token) {
-                throw new UnauthorizedError('No token provided');
+                throw new UnauthorizedError('Aucun token fourni');
             }
 
             try {
                 const payload = await this.verifyAccessToken(token);
                 if (!payload || !payload.role) {
-                    throw new UnauthorizedError('Invalid or expired token');
+                    throw new UnauthorizedError('Token invalide ou expiré');
                 }
                 if (role && payload.role !== role) {
-                    throw new ForbiddenError('Insufficient permissions');
+                    throw new ForbiddenError('Permissions insuffisantes');
                 }
                 c.set('user', payload);
             } catch (err) {
                 logger.error(err, 'Token verification failed');
-                throw new UnauthorizedError('Invalid or expired token');
+                throw new UnauthorizedError('Token invalide ou expiré');
             }
 
             return await next();
