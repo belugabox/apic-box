@@ -7,8 +7,12 @@ export const Navigation = () => {
     return (
         <nav className="">
             <Link to="/" className={page === '/' ? 'active' : ''}>
-                <div className="shape sunny">
-                    <i>potted_plant</i>
+                <div>
+                    <img
+                        src="/logo.png"
+                        alt="APIC Logo"
+                        className="round large tiny-padding surface-bright"
+                    />
                 </div>
                 <div className="left-align left-margin">
                     <h6>APIC Sentelette</h6>
