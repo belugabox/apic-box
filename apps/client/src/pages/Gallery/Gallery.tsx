@@ -4,8 +4,8 @@ import { useNavigate, useParams } from 'react-router';
 import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
-import { Spinner } from '@/components/Spinner';
 import { useGallery } from '@/services/gallery';
+import { spinner } from '@/services/spinner';
 
 import { GalleryLogin } from './Login';
 
@@ -23,7 +23,8 @@ export const Gallery = () => {
     const galleryId = parseInt(params.galleryId, 10);
 
     const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
-    if (loading) return <Spinner />;
+    spinner('Gallery', loading);
+    if (loading) return;
     if (error?.name === 'UnauthorizedError') {
         return (
             <GalleryLogin

@@ -6,9 +6,9 @@ import { Album, Gallery } from '@server/gallery/gallery.types';
 import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
-import { Spinner } from '@/components/Spinner';
 import { UploadImageBtn } from '@/components/UploadImageBtn';
 import { useGallery, useGalleryUpdateCover } from '@/services/gallery';
+import { spinner } from '@/services/spinner';
 
 import { AdminGalleryAlbumAdd } from './AlbumAdd';
 import { AdminGalleryAlbumDelete } from './AlbumDelete';
@@ -33,7 +33,8 @@ export const AdminGallery = () => {
     const galleryId = parseInt(params.galleryId, 10);
 
     const [gallery, loading, error] = useGallery(galleryId, true, [show]);
-    if (loading) return <Spinner />;
+    spinner('AdminGallery', loading);
+    if (loading) return;
     if (error) return <ErrorMessage error={error} />;
     if (!gallery) {
         return (

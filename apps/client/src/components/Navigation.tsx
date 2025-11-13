@@ -15,7 +15,7 @@ export const Navigation = () => {
                     />
                 </div>
                 <div className="left-align left-margin">
-                    <h6>APIC Sentelette</h6>
+                    <h6 className="bold black-text">APIC Sentelette</h6>
                 </div>
             </Link>
             <div className="max center-align"></div>

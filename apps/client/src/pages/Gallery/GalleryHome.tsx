@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { GalleryCard } from '@/components/GalleryCard';
-import { Spinner } from '@/components/Spinner';
 import { useGalleries } from '@/services/gallery';
+import { spinner } from '@/services/spinner';
 
 export const GalleryHome = () => {
     const navigate = useNavigate();
     const [galleries, loading, error] = useGalleries();
 
-    if (loading) return <Spinner />;
+    spinner('GalleryHome', loading);
+    if (loading) return;
     if (error) return <ErrorMessage error={error} />;
 
     return (

@@ -5,8 +5,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
 import { Mansory } from '@/components/Mansonry';
-import { Spinner } from '@/components/Spinner';
 import { useGallery } from '@/services/gallery';
+import { spinner } from '@/services/spinner';
 
 import { GalleryLogin } from './Login';
 
@@ -22,7 +22,8 @@ export const Album = () => {
     }
     const galleryId = parseInt(params.galleryId, 10);
     const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
-    if (loading) return <Spinner />;
+    spinner('Album', loading);
+    if (loading) return;
     if (error?.name === 'UnauthorizedError') {
         return (
             <GalleryLogin
