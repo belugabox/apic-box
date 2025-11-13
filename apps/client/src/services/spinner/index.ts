@@ -15,7 +15,6 @@ export const useSpinner = () => {
         const subscription = elements.pipe(distinctUntilChanged()).subscribe({
             next: (elements) => {
                 const state = Object.values(elements).some(Boolean);
-                console.log(state);
                 setState(state);
             },
         });

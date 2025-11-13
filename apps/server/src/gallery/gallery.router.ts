@@ -143,6 +143,32 @@ export const galleryRoutes = () =>
             },
         )
         .get(
+            '/export/:galleryId',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            async (c) => {
+                const galleryId = Number(c.req.param('galleryId'));
+                const gallery = await galleryManager.get(galleryId, true);
+                if (!gallery) {
+                    throw new NotFoundError(`Gallery ${galleryId} not found`);
+                }
+                const zipBlob = await galleryManager.export(galleryId);
+                if (!zipBlob) {
+                    throw new NotFoundError(
+                        `Gallery ${galleryId} not found or has no images`,
+                    );
+                }
+                c.header(
+                    'Content-Disposition',
+                    `attachment; filename="${gallery.name}.zip"`,
+                );
+                c.header('Content-Type', 'application/zip');
+                // Convertir Blob en Buffer
+                const buffer = await zipBlob.arrayBuffer();
+                return c.body(buffer);
+            },
+        )
+
+        .get(
             '/cover/:galleryId',
             zValidator(
                 'param',

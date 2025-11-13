@@ -52,6 +52,9 @@ export const useGalleryCover = (gallery: Gallery) =>
         [gallery.id, gallery.updatedAt],
     );
 
+export const useGalleryExport = () =>
+    usePromiseFunc((galleryId: number) => galleryService.export(galleryId));
+
 export const useGalleryUpdateCover = (galleryId: number) =>
     usePromiseFunc((files?: File[]) =>
         galleryService.updateCover(galleryId, files?.[0]),

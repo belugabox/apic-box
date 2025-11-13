@@ -1,3 +1,4 @@
+import archiver from 'archiver';
 import bcrypt from 'bcryptjs';
 import { Context } from 'hono';
 import { sign, verify } from 'hono/jwt';
@@ -9,6 +10,7 @@ import sharp from 'sharp';
 import { AuthRole } from '@server/auth';
 import { authManager } from '@server/core';
 import { UnauthorizedError } from '@server/tools/errorHandler';
+import { generateExcel } from '@server/tools/excel';
 import { logger } from '@server/tools/logger';
 
 import { GalleryRepository } from './gallery.repo';
@@ -227,6 +229,88 @@ export class GalleryManager {
             return null;
         }
     }
+
+    export = async (galleryId: number): Promise<Blob | null> => {
+        const gallery = await this.get(galleryId, true);
+        if (!gallery) {
+            return null;
+        }
+        const albums = gallery.albums;
+        if (!albums || albums.length === 0) {
+            return null;
+        }
+
+        const data: Array<{
+            Album: string;
+            Code: string;
+        }> = [];
+
+        for (const album of albums) {
+            for (const image of album.images) {
+                data.push({
+                    Album: album.name,
+                    Code: image.code,
+                });
+            }
+        }
+        logger.info(
+            `Exporting ${gallery.name} with ${data.length} images to Excel`,
+        );
+
+        // Générer le fichier Excel
+        const excelBlob = await generateExcel(data);
+        const excelBuffer = await excelBlob.arrayBuffer();
+
+        // Créer un ZIP avec les images et l'Excel
+        const archive = archiver.create('zip', { zlib: { level: 9 } });
+
+        // Créer un buffer pour le ZIP
+        const chunks: Uint8Array[] = [];
+        archive.on('data', (chunk: Uint8Array) => {
+            chunks.push(chunk);
+        });
+
+        // Ajouter le fichier Excel
+        archive.append(Buffer.from(excelBuffer), {
+            name: `codes.xlsx`,
+        });
+
+        // Ajouter les images
+        for (const album of albums) {
+            for (const image of album.images) {
+                try {
+                    const imagePath = await this.getImagePath(image.id, false);
+                    const imageBuffer = await readFile(imagePath);
+                    archive.append(imageBuffer, {
+                        name: path.join(
+                            'photos',
+                            image.code + path.extname(image.filename),
+                        ),
+                    });
+                } catch (err) {
+                    logger.warn(`Failed to add image ${image.id} to archive`);
+                }
+            }
+        }
+
+        // Finaliser l'archive
+        return new Promise((resolve, reject) => {
+            archive.on('end', () => {
+                const zipBuffer = Buffer.concat(chunks);
+                const blob = new Blob([zipBuffer], {
+                    type: 'application/zip',
+                });
+                resolve(blob);
+            });
+
+            archive.on('error', (err: Error) => {
+                logger.error(err, 'Failed to create archive');
+                reject(err);
+            });
+
+            archive.finalize();
+        });
+    };
 
     // ALBUM
     private getAlbumPath = async (albumId: number): Promise<string> => {

@@ -96,24 +96,25 @@ export const useBehaviourSubject = <T>(
     return [state, setState, loading, error];
 };
 
-export function usePromiseFunc<P extends unknown[]>(
-    func: (...args: P) => Promise<void | string>,
-): [(...args: P) => Promise<void | string>, boolean, Error | undefined] {
+export function usePromiseFunc<P extends unknown[], T>(
+    func: (...args: P) => Promise<T>,
+): [(...args: P) => Promise<T>, boolean, Error | undefined] {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error>();
 
     const execute = async (...args: P) => {
         setLoading(true);
         setError(undefined);
+        let result = undefined;
         try {
-            await func(...args);
+            result = await func(...args);
         } catch (err) {
             setError(err as Error);
             return Promise.reject(err);
         } finally {
             setLoading(false);
         }
-        return Promise.resolve();
+        return Promise.resolve(result);
     };
 
     return [execute, loading, error];

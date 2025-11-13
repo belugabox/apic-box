@@ -266,7 +266,28 @@ export class GalleryService {
         }
 
         return response.json();
-    }; // Convertir Uint8Array en Blob
+    };
+
+    export = async (galleryId: number): Promise<Blob> => {
+        const headers = authService.headers();
+        delete (headers as any)['Content-Type'];
+
+        const response = await fetch(`/api/gallery/export/${galleryId}`, {
+            method: 'GET',
+            headers,
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(
+                error.message || "Échec de l'exportation de la galerie",
+            );
+        }
+
+        return response.blob();
+    };
+
+    // Convertir Uint8Array en Blob
     uint8ArrayToBlob = (uint8Array: Uint8Array): Blob => {
         const bytes = new Uint8Array(uint8Array);
         return new Blob([bytes], { type: 'image/jpeg' });

@@ -40,7 +40,7 @@ export class DbManager {
             this.migrator = new Migrator(this.dbInstance);
             this.migrator.registerAll(migrations);
             await this.migrator.runMigrations(this.dbInstance);
-            logger.info('✓ All migrations completed');
+            logger.info('All migrations completed');
         }
     }
 

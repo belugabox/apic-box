@@ -7,7 +7,11 @@ import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { UploadImageBtn } from '@/components/UploadImageBtn';
-import { useGallery, useGalleryUpdateCover } from '@/services/gallery';
+import {
+    useGallery,
+    useGalleryExport,
+    useGalleryUpdateCover,
+} from '@/services/gallery';
 import { spinner } from '@/services/spinner';
 
 import { AdminGalleryAlbumAdd } from './AlbumAdd';
@@ -33,6 +37,7 @@ export const AdminGallery = () => {
     const galleryId = parseInt(params.galleryId, 10);
 
     const [gallery, loading, error] = useGallery(galleryId, true, [show]);
+    const [exportGallery, exportLoading] = useGalleryExport();
     spinner('AdminGallery', loading);
     if (loading) return;
     if (error) return <ErrorMessage error={error} />;
@@ -84,6 +89,26 @@ export const AdminGallery = () => {
                     useFunc={() => useGalleryUpdateCover(galleryId)}
                     onSuccess={() => setShow(show)}
                 />
+                <button
+                    className="circle fill"
+                    onClick={async () => {
+                        const blob = await exportGallery(galleryId);
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${gallery.name}.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                    }}
+                >
+                    {!exportLoading ? (
+                        <i>file_download</i>
+                    ) : (
+                        <progress className={`circle small`}></progress>
+                    )}
+                </button>
                 <button
                     className="circle fill"
                     onClick={() => handleOpen('protect', gallery)}
