@@ -42,16 +42,13 @@ export const Home = () => {
                         </a>
                     </div>
                     {latestGallery && (
-                        <GalleryCard gallery={latestGallery}>
-                            <button
-                                onClick={() =>
-                                    navigate(`/gallery/${latestGallery.id}`)
-                                }
-                            >
-                                <i>visibility</i>
-                                Voir la galerie
-                            </button>
-                        </GalleryCard>
+                        <GalleryCard
+                            className=""
+                            gallery={latestGallery}
+                            onClick={() =>
+                                navigate(`/gallery/${latestGallery.id}`)
+                            }
+                        ></GalleryCard>
                     )}
                 </div>
                 <div className="center bottom">

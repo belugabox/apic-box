@@ -29,14 +29,8 @@ export const GalleryHome = () => {
                         className="s12 m6"
                         key={gallery.id}
                         gallery={gallery}
-                    >
-                        <button
-                            onClick={() => navigate(`/gallery/${gallery.id}`)}
-                        >
-                            <i>visibility</i>
-                            Voir la galerie
-                        </button>
-                    </GalleryCard>
+                        onClick={() => navigate(`/gallery/${gallery.id}`)}
+                    ></GalleryCard>
                 ))}
             </div>
         </div>

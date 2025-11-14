@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
 import { Mansory } from '@/components/Mansonry';
+import { SubNavigation } from '@/components/SubNavigation';
 import { UploadImageBtn } from '@/components/UploadImageBtn';
 import { useGallery, useGalleryAddImages } from '@/services/gallery';
 import { spinner } from '@/services/spinner';
@@ -45,26 +46,11 @@ export const AdminAlbum = () => {
 
     return (
         <div>
-            <nav className="row left-align top-align ">
-                <button
-                    type="button"
-                    className="circle transparent"
-                    onClick={async () => {
-                        navigate('/admin/gallery/' + galleryId);
-                    }}
-                >
-                    <i>arrow_back</i>
-                </button>
-                <div className="max">
-                    <h5 className="no-margin inline-block large-margin-left">
-                        {gallery.name} - {album.name}
-                    </h5>
-                    <p className="no-margin">
-                        {album.images.length} photo
-                        {album.images.length > 1 ? 's' : ''}
-                    </p>
-                </div>
-            </nav>
+            <SubNavigation
+                onClickBack={() => navigate('/admin/gallery/' + galleryId)}
+            >
+                {gallery.name} - {album.name}
+            </SubNavigation>
             {album.images.length === 0 && (
                 <EmptyState icon="photo_album" title={`L'album est vide`} />
             )}

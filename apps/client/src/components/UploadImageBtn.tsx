@@ -61,6 +61,7 @@ export const UploadImageBtn = ({
             {error && <span className="error-text">{error.message}</span>}
             <button
                 className={`${className} ${!text ? 'circle' : ''}`}
+                style={{ cursor: 'pointer' }}
                 type="button"
             >
                 {!loading ? (
@@ -73,6 +74,7 @@ export const UploadImageBtn = ({
                     id="files"
                     type="file"
                     multiple={multiple}
+                    style={{ cursor: 'pointer' }}
                     accept=".jpg,.jpeg,.JPG,.JPEG,image/jpeg"
                     ref={fileInputRef}
                     className={errors.files ? 'invalid' : ''}

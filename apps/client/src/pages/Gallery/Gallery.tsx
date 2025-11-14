@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router';
 import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
+import { SubNavigation } from '@/components/SubNavigation';
 import { useGallery } from '@/services/gallery';
 import { spinner } from '@/services/spinner';
 
@@ -42,26 +43,9 @@ export const Gallery = () => {
 
     return (
         <div>
-            <nav className="row left-align top-align">
-                <button
-                    type="button"
-                    className="circle transparent"
-                    onClick={async () => {
-                        navigate('/gallery');
-                    }}
-                >
-                    <i>arrow_back</i>
-                </button>
-                <div className="max">
-                    <h5 className="no-margin inline-block large-margin-left">
-                        {gallery.name}
-                    </h5>
-                    <p className="no-margin">
-                        {gallery.description} - {gallery.albums.length} album
-                        {gallery.albums.length > 1 ? 's' : ''}
-                    </p>
-                </div>
-            </nav>
+            <SubNavigation onClickBack={() => navigate('/gallery')}>
+                {gallery.name}
+            </SubNavigation>
             {gallery.albums.length === 0 && (
                 <EmptyState
                     icon="photo_album"
@@ -75,17 +59,10 @@ export const Gallery = () => {
                         key={album.name}
                         galleryId={galleryId}
                         album={album}
-                    >
-                        <button
-                            onClick={() =>
-                                navigate(`/gallery/${galleryId}/${album.id}`)
-                            }
-                            className="no-margin"
-                        >
-                            <i>visibility</i>
-                            Voir l'album
-                        </button>
-                    </AlbumCard>
+                        onClick={() =>
+                            navigate(`/gallery/${galleryId}/${album.id}`)
+                        }
+                    ></AlbumCard>
                 ))}
             </div>
         </div>

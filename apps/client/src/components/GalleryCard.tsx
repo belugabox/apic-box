@@ -4,26 +4,30 @@ import { Gallery } from '@server/gallery/gallery.types';
 
 import { useGalleryCover } from '@/services/gallery';
 
+import { CardBtn } from './CardBtn';
+
 interface GalleryCardProps {
     gallery: Gallery;
     children?: ReactNode;
     className?: string;
+    onClick?: () => void;
 }
 
 export const GalleryCard = ({
     gallery,
     children,
     className,
+    onClick,
 }: GalleryCardProps) => {
     const [cover] = useGalleryCover(gallery);
 
     return (
-        <article className={`no-padding ${className}`}>
+        <CardBtn className={`no-padding ${className}`} onClick={onClick}>
             <div className="grid no-space">
                 <div className="s4">
                     {cover && (
                         <img
-                            className="responsive large"
+                            className="responsive medium"
                             src={cover}
                             alt={`${gallery.name} cover`}
                             style={{
@@ -56,6 +60,9 @@ export const GalleryCard = ({
                             <p className="secondary-text">
                                 {gallery.description}
                             </p>
+                            <p className="secondary-text">
+                                {gallery.albums.length} albums
+                            </p>
                         </div>
                         <div>
                             <i className="small secondary-text">
@@ -63,9 +70,13 @@ export const GalleryCard = ({
                             </i>
                         </div>
                     </div>
-                    <nav className="bottom-align right-align">{children}</nav>
+                    {children && (
+                        <nav className="bottom-align right-align">
+                            {children}
+                        </nav>
+                    )}
                 </div>
             </div>
-        </article>
+        </CardBtn>
     );
 };

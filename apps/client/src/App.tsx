@@ -12,7 +12,7 @@ export const App = () => {
                 <Navigation />
             </header>
             {loading && <Spinner></Spinner>}
-            <main className="responsive">
+            <main className="responsive padding">
                 <Outlet />
             </main>
         </>

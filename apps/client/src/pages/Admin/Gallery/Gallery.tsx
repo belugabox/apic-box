@@ -6,6 +6,7 @@ import { Album, Gallery } from '@server/gallery/gallery.types';
 import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
+import { SubNavigation } from '@/components/SubNavigation';
 import { UploadImageBtn } from '@/components/UploadImageBtn';
 import {
     useGallery,
@@ -63,26 +64,9 @@ export const AdminGallery = () => {
 
     return (
         <>
-            <nav className="row left-align top-align">
-                <button
-                    type="button"
-                    className="circle transparent"
-                    onClick={async () => {
-                        navigate('/admin/gallery');
-                    }}
-                >
-                    <i>arrow_back</i>
-                </button>
-                <div className="max">
-                    <h5 className="no-margin inline-block large-margin-left">
-                        {gallery.name}
-                    </h5>
-                    <p className="no-margin">
-                        {gallery.description} - {albums.length} album
-                        {albums.length > 1 ? 's' : ''}
-                    </p>
-                </div>
-            </nav>
+            <SubNavigation onClickBack={() => navigate('/admin/gallery')}>
+                {gallery.name}
+            </SubNavigation>
             <div className="grid">
                 {albums.map((album) => (
                     <AlbumCard
@@ -169,15 +153,6 @@ export const AdminGallery = () => {
                     </button>
                     <menu className="top left right-align transparent no-wrap">
                         <li>
-                            <UploadImageBtn
-                                className="fill"
-                                icon="photo"
-                                text="Mettre une couverture"
-                                useFunc={() => useGalleryUpdateCover(galleryId)}
-                                onSuccess={() => setShow(show)}
-                            />
-                        </li>
-                        <li>
                             <button
                                 className="fill"
                                 onClick={async () => {
@@ -194,7 +169,7 @@ export const AdminGallery = () => {
                                 }}
                             >
                                 {!exportLoading ? (
-                                    <i>file_download</i>
+                                    <i>upload</i>
                                 ) : (
                                     <progress
                                         className={`circle small`}
@@ -202,6 +177,15 @@ export const AdminGallery = () => {
                                 )}
                                 <span>Exporter les photos</span>
                             </button>
+                        </li>
+                        <li>
+                            <UploadImageBtn
+                                className="fill"
+                                icon="photo"
+                                text="Mettre une couverture"
+                                useFunc={() => useGalleryUpdateCover(galleryId)}
+                                onSuccess={() => setShow(show)}
+                            />
                         </li>
                         <li>
                             <button

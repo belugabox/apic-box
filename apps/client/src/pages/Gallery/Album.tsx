@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
 import { Mansory } from '@/components/Mansonry';
+import { SubNavigation } from '@/components/SubNavigation';
 import { useGallery } from '@/services/gallery';
 import { spinner } from '@/services/spinner';
 
@@ -48,28 +49,76 @@ export const Album = () => {
         return <EmptyState icon="photo_album" title={`L'album n'existe pas`} />;
     }
 
+    /*const currentAlbumIndex = gallery.albums.findIndex((a) => a.id === albumId);
+    const previousAlbum =
+        currentAlbumIndex > 0 ? gallery.albums[currentAlbumIndex - 1] : null;
+    const nextAlbum =
+        currentAlbumIndex < gallery.albums.length - 1
+            ? gallery.albums[currentAlbumIndex + 1]
+            : null;*/
+
     return (
         <div>
-            <nav className="row left-align top-align">
-                <button
-                    type="button"
-                    className="circle transparent"
-                    onClick={async () => {
-                        navigate('/gallery/' + galleryId);
-                    }}
-                >
-                    <i>arrow_back</i>
-                </button>
+            <SubNavigation
+                onClickBack={() => navigate('/gallery/' + galleryId)}
+            >
+                {gallery.name} - {album.name}
+            </SubNavigation>
 
-                <div className="max">
-                    <h5 className="no-margin inline-block large-margin-left">
-                        {gallery.name} - {album.name}
-                    </h5>
-                    <p className="no-margin">{gallery.description}</p>
-                </div>
-            </nav>
+            {/*
+                <nav className="right-align tabbed small">
+                    {previousAlbum && (
+                        <Link to={`/gallery/${galleryId}/${previousAlbum.id}`}>
+                            <i>arrow_back</i>
+                        </Link>
+                    )}
+                    <Link
+                        className="active"
+                        to={`/gallery/${galleryId}/${album.id}`}
+                    >
+                        <span className="no-wrap">{album.name}</span>
+                    </Link>
+                    {nextAlbum && (
+                        <Link to={`/gallery/${galleryId}/${nextAlbum.id}`}>
+                            <i>arrow_forward</i>
+                        </Link>
+                    )}
+                </nav>
+                
+                <nav className="max tabbed small m l">
+                    {gallery.albums.map((a) => (
+                        <Link
+                            key={a.id}
+                            className={`${album.id === a.id ? 'active' : ''}`}
+                            to={`/gallery/${galleryId}/${a.id}`}
+                        >
+                            <span className="no-wrap">{a.name}</span>
+                        </Link>
+                    ))}
+                </nav>
+                <nav className="active">
+                    <button className=" large fill">
+                        <span className="no-wrap">{album.name}</span>
+                    </button>
+                    <menu className="bottom left right-align no-wrap">
+                        {gallery.albums.map((a) => (
+                            <li>
+                                <Link
+                                    key={a.id}
+                                    className={`${album.id === a.id ? 'active' : ''}`}
+                                    to={`/gallery/${galleryId}/${a.id}`}
+                                >
+                                    <span className="no-wrap">{a.name}</span>
+                                </Link>
+                            </li>
+                        ))}
+                    </menu>
+                </nav>
+                
+                */}
+
             {album.images.length === 0 && (
-                <EmptyState icon="photo_album" title={`L'album est vide`} />
+                <EmptyState icon="no_photography" title={`L'album est vide`} />
             )}
             {album.images.length > 0 && (
                 <Mansory>
@@ -85,26 +134,6 @@ export const Album = () => {
                     ))}
                 </Mansory>
             )}
-            {/*import MasonryWrapper, { ResponsiveMasonry } from 'react-responsive-masonry';
-            album.images.length > 0 && (
-                <ResponsiveMasonry
-                    className="top-margin"
-                    columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}
-                >
-                    <MasonryWrapper>
-                        {album.images.map((image) => (
-                            <ImageCard
-                                key={image.id}
-                                galleryId={galleryId}
-                                image={image}
-                                zoomable={true}
-                            >
-                                {image.code}
-                            </ImageCard>
-                        ))}
-                    </MasonryWrapper>
-                </ResponsiveMasonry>
-            )*/}
         </div>
     );
 };

@@ -105,7 +105,10 @@ export class GalleryManager {
                 createdAt: gallery.createdAt,
                 updatedAt: gallery.updatedAt,
                 isProtected: gallery.isProtected,
-                albums: [],
+                albums: gallery.albums.map((album) => ({
+                    ...album,
+                    images: [],
+                })),
             }));
     };
 

@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 
 import { Album } from '@server/gallery/gallery.types';
 
+import { CardBtn } from './CardBtn';
 import { ImageCard } from './ImageCard';
 
 interface AlbumCardProps {
@@ -9,6 +10,7 @@ interface AlbumCardProps {
     album: Album;
     children?: ReactNode;
     className?: string;
+    onClick?: () => void;
 }
 
 export const AlbumCard = ({
@@ -16,9 +18,10 @@ export const AlbumCard = ({
     album,
     children,
     className,
+    onClick,
 }: AlbumCardProps) => {
     return (
-        <article className={className}>
+        <CardBtn className={className} onClick={onClick}>
             <div className="row top-align">
                 <div className="max">
                     <h5>{album.name}</h5>
@@ -32,15 +35,19 @@ export const AlbumCard = ({
                                 />
                             </div>
                         ))}
+                        {album.images.length === 0 && (
+                            <div className="s3" key={album.id}>
+                                <ImageCard galleryId={galleryId} square />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
-            <nav className="right-align">
-                <div className="max left-align">
-                    {album.images.length} photos
-                </div>
-                <div>{children}</div>
-            </nav>
-        </article>
+            {children && (
+                <nav className="right-align">
+                    <div>{children}</div>
+                </nav>
+            )}
+        </CardBtn>
     );
 };

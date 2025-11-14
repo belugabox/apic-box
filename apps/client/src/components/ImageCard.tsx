@@ -8,7 +8,7 @@ import styles from './ImageCard.module.css';
 
 interface ImageCardProps {
     galleryId: number;
-    image: Image;
+    image?: Image;
     zoomable?: boolean;
     square?: boolean;
     fromAdmin?: boolean;
@@ -37,11 +37,12 @@ export const ImageCard = ({
             <div className={className}>
                 <div
                     className={
-                        'surface-dim' + (loading ? ` ${styles.pulse}` : '')
+                        'surface-dim middle-align center-align' +
+                        (loading ? ` ${styles.pulse}` : '')
                     }
                     style={{
-                        aspectRatio: square ? '1/1' : image.ratio,
-                        cursor: zoomable ? 'zoom-in' : 'default',
+                        aspectRatio: square ? '1/1' : image?.ratio,
+                        cursor: zoomable ? 'zoom-in' : 'inherit',
                         borderRadius: square ? '1em' : '0',
                     }}
                     onClick={() => zoomable && setIsZoomed(true)}
@@ -49,14 +50,15 @@ export const ImageCard = ({
                     {imageData && (
                         <img
                             src={imageData}
-                            alt={image.code}
+                            alt={image?.code}
                             style={{
                                 width: '100%',
-                                aspectRatio: square ? '1/1' : image.ratio,
+                                aspectRatio: square ? '1/1' : image?.ratio,
                                 objectFit: 'cover',
                             }}
                         />
                     )}
+                    {!imageData && <i className="grey-text">no_photography</i>}
                     {error && <p>Error: {error.message}</p>}
                 </div>
                 {children && (
@@ -79,7 +81,7 @@ export const ImageCard = ({
                     >
                         <img
                             src={imageData}
-                            alt={image.code}
+                            alt={image?.code}
                             style={{
                                 width: '100%',
                                 height: '100%',
