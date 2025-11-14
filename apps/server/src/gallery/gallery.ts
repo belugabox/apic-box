@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'path';
 import sharp from 'sharp';
+import { addImageWatermark } from 'sharp-watermark';
 
 import { AuthRole } from '@server/auth';
 import { authManager } from '@server/core';
@@ -29,6 +30,8 @@ const GALLERY_DIR = path.resolve(
     'gallery',
 );
 const THUMBNAIL_DIR = 'thumbnails';
+
+const WATERMARK_PATH = './assets/watermark.png';
 
 const IMAGE_THUMBNAIL_SIZE = 500;
 
@@ -526,7 +529,7 @@ export class GalleryManager {
         thumbnailPath: string,
         size?: number,
     ): Promise<void> {
-        await sharp(buffer)
+        const thumbnailBuffer = await sharp(buffer)
             .resize(
                 size || IMAGE_THUMBNAIL_SIZE,
                 size || IMAGE_THUMBNAIL_SIZE,
@@ -535,7 +538,21 @@ export class GalleryManager {
                 },
             )
             .jpeg({ quality: 90 })
-            .toFile(thumbnailPath);
+            .toBuffer();
+
+        if ((await existsSync(WATERMARK_PATH)) === false) {
+            await sharp(thumbnailBuffer).toFile(thumbnailPath);
+            return;
+        }
+
+        const watermarkedBuffer = await addImageWatermark(
+            thumbnailBuffer,
+            WATERMARK_PATH,
+            { position: 'bottomRight', opacity: 0.3, ratio: 0.3 },
+        );
+
+        await watermarkedBuffer.toFile(thumbnailPath);
+        return;
     }
 
     private async saveImageBuffer(

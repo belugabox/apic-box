@@ -4,7 +4,7 @@
     "description": "",
     "main": "main.js",
     "scripts": {
-        "build": "tsc && tsc-alias",
+        "build": "tsc && tsc-alias && copyfiles -u 0 assets/* dist -V",
         "start": "node dist/main.js",
         "dev": "tsx watch ./src/main.ts"
     },
@@ -22,6 +22,7 @@
         "pino": "^9.14.0",
         "pino-pretty": "^13.1.2",
         "sharp": "^0.34.5",
+        "sharp-watermark": "^0.6.0",
         "write-excel-file": "^2.3.10",
         "zod": "^4.1.12"
     },
@@ -30,6 +31,7 @@
         "@types/better-sqlite3": "^7.6.13",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "^24.10.0",
+        "copyfiles": "^2.4.1",
         "tsc-alias": "^1.8.16",
         "tsx": "^4.20.6",
         "typescript": "~5.7.2"
