@@ -1,6 +1,6 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import { z } from 'zod';
+import { codec, z } from 'zod';
 
 import { AuthRole } from '@server/auth';
 import { authManager, galleryManager } from '@server/core';
@@ -276,11 +276,12 @@ export const galleryRoutes = () =>
                 z.object({
                     galleryId: z.coerce.number(),
                     name: z.string(),
+                    code: z.string().min(2).max(3),
                 }),
             ),
             async (c) => {
-                const { galleryId, name } = c.req.valid('form');
-                await galleryManager.addAlbum(galleryId, name);
+                const { galleryId, name, code } = c.req.valid('form');
+                await galleryManager.addAlbum(galleryId, name, code);
                 return c.json({ message: 'Album added' });
             },
         )

@@ -133,11 +133,15 @@ export class GalleryService {
         );
         return this.transformAlbum(data);
     };
-    addAlbum = async (galleryId: number, name: string): Promise<void> => {
+    addAlbum = async (
+        galleryId: number,
+        name: string,
+        code: string,
+    ): Promise<void> => {
         await callRpc(
             serverApi.gallery.addAlbum.$post(
                 {
-                    form: { galleryId: galleryId.toString(), name },
+                    form: { galleryId: galleryId.toString(), name, code },
                 },
                 {
                     headers: authService.headers(),

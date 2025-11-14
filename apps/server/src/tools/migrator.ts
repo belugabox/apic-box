@@ -47,7 +47,7 @@ export class Migrator {
                     db.prepare('INSERT INTO migrations (name) VALUES (?)').run(
                         name,
                     );
-                    logger.info(`✓ Migration applied: ${name}`);
+                    logger.info(`Migration applied: ${name}`);
                 } catch (err) {
                     logger.error(err, `Migration failed: ${name}`);
                     throw err;

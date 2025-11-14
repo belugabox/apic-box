@@ -38,6 +38,7 @@ export const migrations: Migration[] = [
                     id INTEGER PRIMARY KEY, 
                     galleryId INTEGER NOT NULL,
                     name TEXT NOT NULL,
+                    code TEXT NOT NULL,
                     createdAt TEXT NOT NULL,
                     updatedAt TEXT NOT NULL,
                     FOREIGN KEY (galleryId) REFERENCES gallery(id) ON DELETE CASCADE

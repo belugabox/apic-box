@@ -19,19 +19,22 @@ export type Gallery = {
 
 export type Album = {
     id: number;
+    code: string;
     name: string;
     images: Image[];
     createdAt: Date;
     updatedAt: Date;
+
     galleryId: number;
 };
 
 export type Image = {
     id: number;
-    filename: string;
     code: string;
+    filename: string;
     ratio: number;
     createdAt: Date;
     updatedAt: Date;
+
     albumId: number;
 };

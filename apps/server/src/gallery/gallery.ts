@@ -48,6 +48,50 @@ export class GalleryManager {
         return Promise.all([readdir(GALLERY_DIR), this.repo.findOne({})]);
     };
 
+    // ---
+    private getGalleryPath = async (galleryId: number): Promise<string> => {
+        const galleryPath = path.join(GALLERY_DIR, galleryId.toString());
+        return galleryPath;
+    };
+
+    private getAlbumPath = async (albumId: number): Promise<string> => {
+        const album = await this.repo.getAlbum(albumId);
+        if (!album) {
+            throw new Error(`Album ${albumId} not found`);
+        }
+        return path.join(
+            GALLERY_DIR,
+            album.galleryId.toString(),
+            album.id.toString(),
+        );
+    };
+    private getImagePath = async (
+        imageId: number,
+        thumbnail: boolean = false,
+    ): Promise<string> => {
+        const image = await this.repo.getImage(imageId);
+        if (!image) {
+            throw new Error(`Image ${imageId} not found`);
+        }
+        if (!image.albumId) {
+            throw new Error(`Album for image ${imageId} not found`);
+        }
+        const album = await this.repo.getAlbum(image.albumId);
+        if (!album) {
+            throw new Error(`Gallery for album ${image.albumId} not found`);
+        }
+        const dir = path.join(
+            GALLERY_DIR,
+            album.galleryId.toString(),
+            album.id.toString(),
+            thumbnail ? THUMBNAIL_DIR : '',
+        );
+        await mkdir(dir, { recursive: true });
+
+        return path.join(dir, `${image.filename}`);
+    };
+
+    // GALLERY
     all = async (isAdmin: boolean): Promise<Gallery[]> => {
         return (await this.repo.findAll())
             .filter((gallery) => {
@@ -89,9 +133,12 @@ export class GalleryManager {
             updatedAt: new Date().toISOString(),
         });
 
-        const created = await this.repo.findById(result.lastID);
-        logger.info(`Gallery created with ID: ${created!.id}`);
-        return created!.id;
+        const galleryId = result.lastID!;
+        logger.info(`Gallery created with ID: ${galleryId}`);
+        const galleryPath = await this.getGalleryPath(galleryId);
+        await mkdir(galleryPath, { recursive: true });
+
+        return galleryId;
     };
 
     update = async (
@@ -122,7 +169,13 @@ export class GalleryManager {
 
     delete = async (id: number): Promise<void> => {
         logger.info(`Deleting gallery: ${id}`);
-        await rm(path.join(GALLERY_DIR, id.toString()), { recursive: true });
+        try {
+            await rm(path.join(GALLERY_DIR, id.toString()), {
+                recursive: true,
+            });
+        } catch {
+            logger.warn(`Gallery directory for gallery ${id} not found`);
+        }
         await this.repo.delete(id);
         logger.info(`Gallery deleted: ${id}`);
     };
@@ -149,8 +202,12 @@ export class GalleryManager {
     };
 
     removeCover = async (galleryId: number): Promise<void> => {
-        const coverPath = await this.getCoverPath(galleryId);
-        await rm(coverPath, { recursive: true });
+        try {
+            const coverPath = await this.getCoverPath(galleryId);
+            await rm(coverPath, { recursive: true });
+        } catch {
+            logger.warn(`Gallery cover for gallery ${galleryId} not found`);
+        }
 
         await this.repo.update(galleryId, {
             updatedAt: new Date().toISOString(),
@@ -313,25 +370,19 @@ export class GalleryManager {
     };
 
     // ALBUM
-    private getAlbumPath = async (albumId: number): Promise<string> => {
-        const album = await this.repo.getAlbum(albumId);
-        if (!album) {
-            throw new Error(`Album ${albumId} not found`);
-        }
-        return path.join(
-            GALLERY_DIR,
-            album.galleryId.toString(),
-            album.id.toString(),
-        );
-    };
-
     getAlbum = async (albumId: number): Promise<Album | undefined> => {
         return await this.repo.getAlbum(albumId);
     };
 
-    addAlbum = async (galleryId: number, name: string): Promise<void> => {
+    addAlbum = async (
+        galleryId: number,
+        name: string,
+        code: string,
+    ): Promise<void> => {
         logger.info(`Adding album "${name}" to gallery ${galleryId}`);
-        const result = await this.repo.addAlbum(galleryId, name);
+
+        code = code.toUpperCase();
+        const result = await this.repo.addAlbum(galleryId, name, code);
         const albumId = result.lastID;
         if (!albumId) {
             logger.error(
@@ -349,39 +400,18 @@ export class GalleryManager {
     deleteAlbum = async (albumId: number): Promise<void> => {
         logger.info(`Deleting album ${albumId}`);
         // remove album directory
-        const albumPath = await this.getAlbumPath(albumId);
-        await rm(albumPath, { recursive: true });
+        try {
+            const albumPath = await this.getAlbumPath(albumId);
+            await rm(albumPath, { recursive: true });
+        } catch {
+            logger.warn(`Album directory for album ${albumId} not found`);
+        }
 
         await this.repo.deleteAlbum(albumId);
         logger.info(`Album deleted: ${albumId}`);
     };
 
     // IMAGE
-    private getImagePath = async (
-        imageId: number,
-        thumbnail: boolean = false,
-    ): Promise<string> => {
-        const image = await this.repo.getImage(imageId);
-        if (!image) {
-            throw new Error(`Image ${imageId} not found`);
-        }
-        if (!image.albumId) {
-            throw new Error(`Album for image ${imageId} not found`);
-        }
-        const album = await this.repo.getAlbum(image.albumId);
-        if (!album) {
-            throw new Error(`Gallery for album ${image.albumId} not found`);
-        }
-        const dir = path.join(
-            GALLERY_DIR,
-            album.galleryId.toString(),
-            album.id.toString(),
-            thumbnail ? THUMBNAIL_DIR : '',
-        );
-        await mkdir(dir, { recursive: true });
-
-        return path.join(dir, `${image.filename}`);
-    };
 
     getImageBuffer = async (
         imageId: number,
@@ -394,6 +424,8 @@ export class GalleryManager {
 
     addImage = async (albumId: number, file: File): Promise<void> => {
         logger.info(`Adding image to album ${albumId}: ${file.name}`);
+
+        // calculate image ratio
         const ratio = await sharp(await file.arrayBuffer())
             .metadata()
             .then((metadata) => {
@@ -407,7 +439,11 @@ export class GalleryManager {
             });
 
         // find next image name
-        const albumPath = await this.getAlbumPath(albumId);
+        const album = await this.repo.getAlbum(albumId);
+        if (!album) {
+            throw new Error(`Album ${albumId} not found`);
+        }
+        const albumPath = await this.getAlbumPath(album.id);
         const existingFiles = await readdir(albumPath).catch(() => []);
         let maxIndex = 0;
         for (const galleryItem of existingFiles) {
@@ -415,7 +451,8 @@ export class GalleryManager {
             if (galleryItem === THUMBNAIL_DIR) {
                 continue;
             }
-            const match = galleryItem.match(/^(\d+)\.jpg$/i);
+            const match = galleryItem.match(/^(\d+)\.[a-zA-Z0-9]+$/i);
+            console.log(match);
             if (match) {
                 const index = parseInt(match[1], 10);
                 if (index > maxIndex) {
@@ -424,11 +461,19 @@ export class GalleryManager {
             }
         }
         const currentIndex = maxIndex + 1;
-        const filename = `${String(currentIndex).padStart(3, '0')}.jpg`;
-        const code = `${String(albumId).padStart(2, '0')}${String(currentIndex).padStart(3, '0')}`;
+
+        // generate code
+        const shortCode = `${String(currentIndex).padStart(3, '0')}`;
+        const code = `${album.code}${shortCode}`;
+        const filename = `${shortCode}${path.extname(file.name)}`;
 
         // add image to database
-        const result = await this.repo.addImage(albumId, filename, code, ratio);
+        const result = await this.repo.addImage(
+            album.id,
+            filename,
+            code,
+            ratio,
+        );
         const imageId = result.lastID;
         if (!imageId) {
             logger.error(`Failed to create image in album ${albumId}`);
@@ -447,16 +492,27 @@ export class GalleryManager {
     };
 
     addImages = async (albumId: number, files: File[]): Promise<void> => {
+        const album = await this.repo.getAlbum(albumId);
+        if (!album) {
+            throw new Error(`Album ${albumId} not found`);
+        }
+        logger.info(`Adding ${files.length} images to album ${albumId}`);
         for (const file of files) {
-            await this.addImage(albumId, file);
+            await this.addImage(album.id, file);
         }
     };
 
     deleteImage = async (imageId: number): Promise<void> => {
         logger.info(`Deleting image ${imageId}`);
         // remove image file
-        const imagePath = await this.getImagePath(imageId);
-        await rm(imagePath, { recursive: true });
+        try {
+            const imagePath = await this.getImagePath(imageId);
+            const thumbnailPath = await this.getImagePath(imageId, true);
+            await rm(imagePath, { recursive: true });
+            await rm(thumbnailPath, { recursive: true });
+        } catch {
+            logger.warn(`Image file for image ${imageId} not found`);
+        }
 
         await this.repo.deleteImage(imageId);
         logger.info(`Image deleted: ${imageId}`);

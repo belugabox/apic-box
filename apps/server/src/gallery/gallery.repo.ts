@@ -61,10 +61,15 @@ export class GalleryRepository extends MappedRepository<GalleryRow, Gallery> {
         return this.albumRepository.findById(albumId);
     };
 
-    addAlbum = async (galleryId: number, name: string): Promise<RunResult> => {
+    addAlbum = async (
+        galleryId: number,
+        name: string,
+        code: string,
+    ): Promise<RunResult> => {
         return this.albumRepository.create({
             galleryId,
             name,
+            code,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         });

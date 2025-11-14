@@ -64,7 +64,9 @@ export const useGalleryDelete = () =>
     usePromiseFunc((gallery: Gallery) => galleryService.delete(gallery.id));
 
 export const useGalleryAddAlbum = (galleryId: number) =>
-    usePromiseFunc((name: string) => galleryService.addAlbum(galleryId, name));
+    usePromiseFunc((name: string, code: string) =>
+        galleryService.addAlbum(galleryId, name, code),
+    );
 
 export const useGalleryDeleteAlbum = () =>
     usePromiseFunc((albumId: number) => galleryService.deleteAlbum(albumId));

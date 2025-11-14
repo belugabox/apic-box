@@ -23,10 +23,11 @@ export const AdminGalleryAlbumAdd = ({
     } = useForm({
         defaultValues: {
             name: '',
+            code: '',
         },
     });
-    const onSubmit = async (album: { name: string }) => {
-        await addAlbum(album.name).then(() => {
+    const onSubmit = async (data: { name: string; code: string }) => {
+        await addAlbum(data.name, data.code).then(() => {
             reset();
             onSuccess?.();
             onClose?.();
@@ -51,6 +52,27 @@ export const AdminGalleryAlbumAdd = ({
                         className={errors.name ? 'invalid' : ''}
                     />
                     <label>Nom</label>
+                </div>
+                <div className="field label border">
+                    <input
+                        id="code"
+                        type="text"
+                        {...register('code', {
+                            required: 'Le code est obligatoire.',
+                            min: {
+                                value: 2,
+                                message:
+                                    'Le code doit contenir au moins 2 lettres.',
+                            },
+                            max: {
+                                value: 3,
+                                message:
+                                    'Le code doit contenir au maximum 3 lettres.',
+                            },
+                        })}
+                        className={errors.code ? 'invalid' : ''}
+                    />
+                    <label>Code (3 lettres)</label>
                 </div>
                 <span className="error-text">{error?.message}</span>
                 <nav className="right-align">
