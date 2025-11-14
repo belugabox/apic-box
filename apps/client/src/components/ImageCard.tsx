@@ -4,8 +4,6 @@ import { Image } from '@server/gallery/gallery.types';
 
 import { useGalleryImage } from '@/services/gallery';
 
-import styles from './ImageCard.module.css';
-
 interface ImageCardProps {
     galleryId: number;
     image?: Image;
@@ -38,7 +36,7 @@ export const ImageCard = ({
                 <div
                     className={
                         'surface-dim middle-align center-align' +
-                        (loading ? ` ${styles.pulse}` : '')
+                        (loading ? ` pulse` : '')
                     }
                     style={{
                         aspectRatio: square ? '1/1' : image?.ratio,
@@ -58,7 +56,9 @@ export const ImageCard = ({
                             }}
                         />
                     )}
-                    {!imageData && <i className="grey-text">no_photography</i>}
+                    {!imageData && !loading && (
+                        <i className="grey-text">no_photography</i>
+                    )}
                     {error && <p>Error: {error.message}</p>}
                 </div>
                 {children && (

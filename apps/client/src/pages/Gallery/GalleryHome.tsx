@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { GalleryCard } from '@/components/GalleryCard';
+import { SubNavigation } from '@/components/SubNavigation';
 import { useGalleries } from '@/services/gallery';
 import { spinner } from '@/services/spinner';
 
@@ -16,6 +17,7 @@ export const GalleryHome = () => {
 
     return (
         <div>
+            <SubNavigation>Galeries photos</SubNavigation>
             {!galleries ||
                 (galleries?.length === 0 && (
                     <EmptyState

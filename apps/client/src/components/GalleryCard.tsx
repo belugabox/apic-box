@@ -60,7 +60,7 @@ export const GalleryCard = ({
                             <p className="secondary-text">
                                 {gallery.description}
                             </p>
-                            <p className="secondary-text">
+                            <p className="secondary-text no-margin">
                                 {gallery.albums.length} albums
                             </p>
                         </div>

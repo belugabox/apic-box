@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router';
+import { max } from 'rxjs';
 
 import { GalleryCard } from '@/components/GalleryCard';
 import { useGalleries } from '@/services/gallery';
+import '@/style.css';
 
 export const Home = () => {
     const navigate = useNavigate();
@@ -33,17 +35,22 @@ export const Home = () => {
                         Saint-Fuscien et Estrées-sur-Noye.
                     </p>
                     {latestGallery && (
-                        <GalleryCard
-                            className=""
-                            gallery={latestGallery}
-                            onClick={() =>
-                                navigate(`/gallery/${latestGallery.id}`)
-                            }
-                        ></GalleryCard>
+                        <div
+                            className="center top-margin"
+                            style={{ maxWidth: '500px' }}
+                        >
+                            <GalleryCard
+                                className=""
+                                gallery={latestGallery}
+                                onClick={() =>
+                                    navigate(`/gallery/${latestGallery.id}`)
+                                }
+                            ></GalleryCard>
+                        </div>
                     )}
                     <div className="absolute row bottom right">
                         <a
-                            className="link"
+                            className="link social-link"
                             href="https://www.facebook.com/rpisentelette"
                             target="_blank"
                             rel="noopener noreferrer"
@@ -55,7 +62,7 @@ export const Home = () => {
                             />
                         </a>
                         <a
-                            className="link"
+                            className="link social-link"
                             href="https://chat.whatsapp.com/Jcz7TJyL6RiDuoaEbKqRPr"
                             target="_blank"
                             rel="noopener noreferrer"

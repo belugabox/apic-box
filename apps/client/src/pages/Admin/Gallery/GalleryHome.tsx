@@ -6,6 +6,7 @@ import { Gallery } from '@server/gallery/gallery.types';
 import { ErrorMessage } from '@/components/Error';
 import { GalleryCard } from '@/components/GalleryCard';
 import { StatusTag } from '@/components/StatusTag';
+import { SubNavigation } from '@/components/SubNavigation';
 import { useGalleries } from '@/services/gallery';
 import { spinner } from '@/services/spinner';
 

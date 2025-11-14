@@ -1,0 +1,22 @@
+/* Pulse animation for loading indicators */
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+.pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Grayscale effect for social media icons */
+.social-link img {
+    filter: grayscale(1);
+    transition: filter 0.3s;
+}
+.social-link img:hover {
+    filter: none;
+}
