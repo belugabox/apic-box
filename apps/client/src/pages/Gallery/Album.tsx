@@ -61,7 +61,7 @@ export const Album = () => {
                     <i>arrow_back</i>
                 </button>
 
-                <div>
+                <div className="max">
                     <h5 className="no-margin inline-block large-margin-left">
                         {gallery.name} - {album.name}
                     </h5>

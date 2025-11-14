@@ -10,6 +10,7 @@ interface MansoryBreakpoints {
     small?: number;
     medium?: number;
     large?: number;
+    extra?: number;
 }
 
 interface MansoryProps {
@@ -21,11 +22,12 @@ interface MansoryProps {
 export const Mansory = ({
     className,
     children,
-    breakpoints = { small: 1, medium: 2, large: 3 },
+    breakpoints = { small: 1, medium: 2, large: 3, extra: 4 },
 }: MansoryProps) => {
     const colsSmall = breakpoints.small ?? 1;
     const colsMedium = breakpoints.medium ?? 2;
     const colsLarge = breakpoints.large ?? 3;
+    const colsExtra = breakpoints.extra ?? 4;
     const [columnCount, setColumnCount] = useState(colsSmall);
 
     useEffect(() => {
@@ -35,8 +37,10 @@ export const Mansory = ({
                 setColumnCount(colsSmall);
             } else if (width < 840) {
                 setColumnCount(colsMedium);
-            } else {
+            } else if (width < 1200) {
                 setColumnCount(colsLarge);
+            } else {
+                setColumnCount(colsExtra);
             }
         };
 

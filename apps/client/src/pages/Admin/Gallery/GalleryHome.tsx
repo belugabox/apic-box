@@ -99,13 +99,12 @@ export const AdminGalleryHome = () => {
                 </dialog>
             )}
             {/* Bouton d'ajout */}
-            <button
-                className="primary large fixed margin center bottom"
-                onClick={() => handleAdd()}
-            >
-                <i>add</i>
-                <span>Créer une galerie</span>
-            </button>
+            <div className="fixed center bottom bottom-margin row">
+                <button className="primary" onClick={() => handleAdd()}>
+                    <i>add</i>
+                    <span>Créer une galerie</span>
+                </button>
+            </div>
         </div>
     );
 };

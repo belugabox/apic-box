@@ -62,7 +62,7 @@ export const AdminGallery = () => {
     };
 
     return (
-        <div>
+        <>
             <nav className="row left-align top-align">
                 <button
                     type="button"
@@ -82,45 +82,6 @@ export const AdminGallery = () => {
                         {albums.length > 1 ? 's' : ''}
                     </p>
                 </div>
-
-                <UploadImageBtn
-                    className="circle fill"
-                    icon="photo"
-                    useFunc={() => useGalleryUpdateCover(galleryId)}
-                    onSuccess={() => setShow(show)}
-                />
-                <button
-                    className="circle fill"
-                    onClick={async () => {
-                        const blob = await exportGallery(galleryId);
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `${gallery.name}.zip`;
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                        window.URL.revokeObjectURL(url);
-                    }}
-                >
-                    {!exportLoading ? (
-                        <i>file_download</i>
-                    ) : (
-                        <progress className={`circle small`}></progress>
-                    )}
-                </button>
-                <button
-                    className="circle fill"
-                    onClick={() => handleOpen('protect', gallery)}
-                >
-                    {gallery.isProtected ? <i>lock</i> : <i>lock_open</i>}
-                </button>
-                <button
-                    className="circle"
-                    onClick={() => handleOpen('edit', gallery)}
-                >
-                    <i>edit</i>
-                </button>
             </nav>
             <div className="grid">
                 {albums.map((album) => (
@@ -151,7 +112,7 @@ export const AdminGallery = () => {
                     </AlbumCard>
                 ))}
             </div>
-            <div className="medium-space"></div>
+            <div className="large-space"></div>
             {/* Modal d'édition */}
             {show === 'edit' && selected && (
                 <dialog className="active">
@@ -194,15 +155,79 @@ export const AdminGallery = () => {
                 </dialog>
             )}
             {/* Bouton d'ajout */}
-            <div className=" fixed margin center bottom">
+            <div className="fixed center bottom bottom-margin row">
                 <button
-                    className="primary large"
+                    className="primary"
                     onClick={() => handleOpen('addAlbum')}
                 >
                     <i>add</i>
                     <span>Créer un album</span>
                 </button>
+                <nav className="min active">
+                    <button className="circle fill">
+                        <i>more_vert</i>
+                    </button>
+                    <menu className="top left right-align transparent no-wrap">
+                        <li>
+                            <UploadImageBtn
+                                className="fill"
+                                icon="photo"
+                                text="Mettre une couverture"
+                                useFunc={() => useGalleryUpdateCover(galleryId)}
+                                onSuccess={() => setShow(show)}
+                            />
+                        </li>
+                        <li>
+                            <button
+                                className="fill"
+                                onClick={async () => {
+                                    const blob = await exportGallery(galleryId);
+                                    const url =
+                                        window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `${gallery.name}.zip`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    a.remove();
+                                    window.URL.revokeObjectURL(url);
+                                }}
+                            >
+                                {!exportLoading ? (
+                                    <i>file_download</i>
+                                ) : (
+                                    <progress
+                                        className={`circle small`}
+                                    ></progress>
+                                )}
+                                <span>Exporter les photos</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                className=" fill"
+                                onClick={() => handleOpen('protect', gallery)}
+                            >
+                                {gallery.isProtected ? (
+                                    <i>lock</i>
+                                ) : (
+                                    <i>lock_open</i>
+                                )}
+                                <span>Code secret</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                className="fill"
+                                onClick={() => handleOpen('edit', gallery)}
+                            >
+                                <i>edit</i>
+                                <span>Éditer la galerie</span>
+                            </button>
+                        </li>
+                    </menu>
+                </nav>
             </div>
-        </div>
+        </>
     );
 };

@@ -60,7 +60,7 @@ export const UploadImageBtn = ({
         <form onChange={handleSubmit(onChange)}>
             {error && <span className="error-text">{error.message}</span>}
             <button
-                className={`${className} ${!text ? 'circle' : ''} no-margin`}
+                className={`${className} ${!text ? 'circle' : ''}`}
                 type="button"
             >
                 {!loading ? (

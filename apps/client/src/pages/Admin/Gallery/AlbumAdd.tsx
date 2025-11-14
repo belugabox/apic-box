@@ -52,6 +52,7 @@ export const AdminGalleryAlbumAdd = ({
                         className={errors.name ? 'invalid' : ''}
                     />
                     <label>Nom</label>
+                    <span className="error">{errors.name?.message}</span>
                 </div>
                 <div className="field label border">
                     <input
@@ -59,12 +60,13 @@ export const AdminGalleryAlbumAdd = ({
                         type="text"
                         {...register('code', {
                             required: 'Le code est obligatoire.',
-                            min: {
+
+                            minLength: {
                                 value: 2,
                                 message:
                                     'Le code doit contenir au moins 2 lettres.',
                             },
-                            max: {
+                            maxLength: {
                                 value: 3,
                                 message:
                                     'Le code doit contenir au maximum 3 lettres.',
@@ -73,6 +75,7 @@ export const AdminGalleryAlbumAdd = ({
                         className={errors.code ? 'invalid' : ''}
                     />
                     <label>Code (3 lettres)</label>
+                    <span className="error">{errors.code?.message}</span>
                 </div>
                 <span className="error-text">{error?.message}</span>
                 <nav className="right-align">

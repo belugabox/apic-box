@@ -62,9 +62,7 @@ export const AdminGalleryProtect = ({
                         className={errors.password ? 'invalid' : ''}
                     />
                     <label>Code secret</label>
-                    <span className="error-text">
-                        {errors.password && errors.password.message}
-                    </span>
+                    <span className="error">{errors.password?.message}</span>
                 </div>
                 <span className="error-text">{error?.message}</span>
                 <nav className="right-align">

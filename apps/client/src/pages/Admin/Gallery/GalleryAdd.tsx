@@ -59,6 +59,7 @@ export const AdminGalleryAdd = ({
                         className={errors.name ? 'invalid' : ''}
                     />
                     <label>Nom</label>
+                    <span className="error">{errors.name?.message}</span>
                 </div>
                 <div className="field label border">
                     <input
@@ -70,6 +71,7 @@ export const AdminGalleryAdd = ({
                         className={errors.description ? 'invalid' : ''}
                     />
                     <label>Description</label>
+                    <span className="error">{errors.description?.message}</span>
                 </div>
                 <span className="error-text">{error?.message}</span>
                 <nav className="right-align">

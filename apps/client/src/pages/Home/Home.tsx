@@ -56,9 +56,9 @@ export const Home = () => {
                 </div>
                 <div className="center bottom">
                     <img
-                        src="/family.svg"
+                        src="/family.png"
                         alt="Logo APIC"
-                        style={{ maxWidth: '300px' }}
+                        style={{ width: '100%', maxWidth: '300px' }}
                     />
                 </div>
             </div>

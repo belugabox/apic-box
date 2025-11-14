@@ -45,7 +45,7 @@ export const AdminAlbum = () => {
 
     return (
         <div>
-            <nav className="row left-align bottom-align ">
+            <nav className="row left-align top-align ">
                 <button
                     type="button"
                     className="circle transparent"
@@ -55,13 +55,15 @@ export const AdminAlbum = () => {
                 >
                     <i>arrow_back</i>
                 </button>
-                <h4 className="no-margin inline-block large-margin-left">
-                    {gallery.name} - {album.name}
-                </h4>
-                <p>
-                    {album.images.length} photo
-                    {album.images.length > 1 ? 's' : ''}
-                </p>
+                <div className="max">
+                    <h5 className="no-margin inline-block large-margin-left">
+                        {gallery.name} - {album.name}
+                    </h5>
+                    <p className="no-margin">
+                        {album.images.length} photo
+                        {album.images.length > 1 ? 's' : ''}
+                    </p>
+                </div>
             </nav>
             {album.images.length === 0 && (
                 <EmptyState icon="photo_album" title={`L'album est vide`} />
@@ -87,7 +89,7 @@ export const AdminAlbum = () => {
                     ))}
                 </Mansory>
             )}
-            <div className="medium-space"></div>
+            <div className="large-space"></div>
             {/* Modal de suppression d'image */}
             {imageToDelete && (
                 <dialog className="active">
@@ -102,14 +104,19 @@ export const AdminAlbum = () => {
                 </dialog>
             )}
             {/* Bouton d'ajout */}
-            <div className="fixed margin center bottom">
+            <div className="fixed center bottom bottom-margin row">
                 <UploadImageBtn
-                    className="large"
+                    className="primary no-margin"
                     text="Ajouter des photos"
                     multiple
                     useFunc={() => useGalleryAddImages(albumId)}
                     onSuccess={() => setRefresh(!refresh)}
                 />
+                {/*<nav className="min active">
+                    <button className="circle fill">
+                        <i>more_vert</i>
+                    </button>
+                </nav>*/}
             </div>
         </div>
     );
