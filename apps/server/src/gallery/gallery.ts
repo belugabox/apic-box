@@ -458,7 +458,6 @@ export class GalleryManager {
                 continue;
             }
             const match = galleryItem.match(/^(\d+)\.[a-zA-Z0-9]+$/i);
-            console.log(match);
             if (match) {
                 const index = parseInt(match[1], 10);
                 if (index > maxIndex) {

@@ -16,31 +16,22 @@ export const Home = () => {
 
     return (
         <>
-            <div className="row vertical max" style={{ height: '100%' }}>
+            <div
+                className="row vertical max"
+                style={{
+                    height: '100%',
+                    backgroundImage: 'url(/family.png)',
+                    backgroundSize: '200px',
+                    backgroundPosition: 'center bottom',
+                    backgroundRepeat: 'no-repeat',
+                }}
+            >
                 <div className="center max">
                     <h4>Bienvenue sur le site de l'APIC Sentelette !</h4>
                     <p>
                         L'association des parents d'élèves de Sains-en-Amienois,
                         Saint-Fuscien et Estrées-sur-Noye.
                     </p>
-                    <div className="row">
-                        <a
-                            className="link"
-                            href="https://www.facebook.com/rpisentelette"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Facebook
-                        </a>
-                        <a
-                            className="link"
-                            href="https://chat.whatsapp.com/Jcz7TJyL6RiDuoaEbKqRPr"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            WhatsApp
-                        </a>
-                    </div>
                     {latestGallery && (
                         <GalleryCard
                             className=""
@@ -50,13 +41,32 @@ export const Home = () => {
                             }
                         ></GalleryCard>
                     )}
-                </div>
-                <div className="center bottom">
-                    <img
-                        src="/family.png"
-                        alt="Logo APIC"
-                        style={{ width: '100%', maxWidth: '300px' }}
-                    />
+                    <div className="absolute row bottom right">
+                        <a
+                            className="link"
+                            href="https://www.facebook.com/rpisentelette"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <img
+                                src="/social/facebook.png"
+                                alt="Facebook"
+                                className="tiny"
+                            />
+                        </a>
+                        <a
+                            className="link"
+                            href="https://chat.whatsapp.com/Jcz7TJyL6RiDuoaEbKqRPr"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <img
+                                src="/social/whatsapp.png"
+                                alt="Whatsapp"
+                                className="tiny"
+                            />
+                        </a>
+                    </div>
                 </div>
             </div>
         </>
