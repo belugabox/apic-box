@@ -9,7 +9,6 @@ interface GalleryLoginProps {
 
 export const GalleryLogin = ({ galleryId, onSuccess }: GalleryLoginProps) => {
     const [login, loading, loginError] = useGalleryLogin(galleryId);
-    //TODO Gérer l'erreur de login "credentials invalid"
     const {
         register,
         handleSubmit,

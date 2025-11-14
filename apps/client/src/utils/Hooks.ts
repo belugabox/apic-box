@@ -19,7 +19,10 @@ export function usePromise<T>(
                 setState(value);
                 setLoading(false);
             })
-            .catch(setError)
+            .catch((err) => {
+                setError(err);
+                setLoading(false);
+            })
             .finally(() => {
                 setLoading(false);
             });

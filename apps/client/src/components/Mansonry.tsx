@@ -30,24 +30,24 @@ export const Mansory = ({
     const colsExtra = breakpoints.extra ?? 4;
     const [columnCount, setColumnCount] = useState(colsSmall);
 
-    useEffect(() => {
-        const updateColumnCount = () => {
-            const width = window.innerWidth;
-            if (width < 600) {
-                setColumnCount(colsSmall);
-            } else if (width < 840) {
-                setColumnCount(colsMedium);
-            } else if (width < 1200) {
-                setColumnCount(colsLarge);
-            } else {
-                setColumnCount(colsExtra);
-            }
-        };
+    const updateColumnCount = () => {
+        const width = window.innerWidth;
+        if (width < 600) {
+            setColumnCount(colsSmall);
+        } else if (width < 840) {
+            setColumnCount(colsMedium);
+        } else if (width < 1200) {
+            setColumnCount(colsLarge);
+        } else {
+            setColumnCount(colsExtra);
+        }
+    };
 
+    useEffect(() => {
         updateColumnCount();
         window.addEventListener('resize', updateColumnCount);
         return () => window.removeEventListener('resize', updateColumnCount);
-    }, [colsSmall, colsMedium, colsLarge]);
+    }, [colsSmall, colsMedium, colsLarge, colsExtra]);
 
     // Extraire le ratio d'un enfant
     const getRatio = (child: ReactNode): number => {
