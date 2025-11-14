@@ -58,7 +58,7 @@ export const migrations: Migration[] = [
             // blog
             db.exec(`
                 CREATE TABLE IF NOT EXISTS blog (
-                    id TEXT PRIMARY KEY,
+                    id INTEGER PRIMARY KEY,
                     title TEXT NOT NULL,
                     content TEXT NOT NULL,
                     author TEXT NOT NULL,

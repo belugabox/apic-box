@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { Link, Outlet } from 'react-router';
+import { Link, Outlet, useLocation } from 'react-router';
 
 import { useLogout, useUser } from '../../services/auth';
 import { Login } from './Login';
 
 export const AdminHome = () => {
+    const location = useLocation();
+    const page = location.pathname;
     const [user] = useUser();
     const [logout] = useLogout();
-    const [activeTab, setActiveTab] = useState<'gallery'>('gallery');
 
     if (user?.role !== 'admin') {
         return <Login />;
@@ -18,10 +18,17 @@ export const AdminHome = () => {
             <div className="tabs left-align">
                 <Link
                     to="/admin/gallery"
-                    className={activeTab === 'gallery' ? 'active' : ''}
-                    onClick={() => setActiveTab('gallery')}
+                    className={
+                        page.startsWith('/admin/gallery') ? 'active' : ''
+                    }
                 >
                     Galerie
+                </Link>
+                <Link
+                    to="/admin/blog"
+                    className={page.startsWith('/admin/blog') ? 'active' : ''}
+                >
+                    Blog
                 </Link>
             </div>
 

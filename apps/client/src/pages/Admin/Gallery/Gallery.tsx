@@ -182,7 +182,7 @@ export const AdminGallery = () => {
                             <UploadImageBtn
                                 className="fill"
                                 icon="photo"
-                                text="Mettre une couverture"
+                                text="Modifier la couverture"
                                 useFunc={() => useGalleryUpdateCover(galleryId)}
                                 onSuccess={() => setShow(show)}
                             />
@@ -197,7 +197,7 @@ export const AdminGallery = () => {
                                 ) : (
                                     <i>lock_open</i>
                                 )}
-                                <span>Code secret</span>
+                                <span>Modifier le code secret</span>
                             </button>
                         </li>
                         <li>
@@ -206,7 +206,7 @@ export const AdminGallery = () => {
                                 onClick={() => handleOpen('edit', gallery)}
                             >
                                 <i>edit</i>
-                                <span>Éditer la galerie</span>
+                                <span>Modifier la galerie</span>
                             </button>
                         </li>
                     </menu>

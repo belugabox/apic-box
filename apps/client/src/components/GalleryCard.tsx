@@ -27,7 +27,7 @@ export const GalleryCard = ({
                 <div className="s4">
                     {cover && (
                         <img
-                            className="responsive medium"
+                            className="responsive"
                             src={cover}
                             alt={`${gallery.name} cover`}
                             style={{
@@ -45,7 +45,7 @@ export const GalleryCard = ({
                         </div>
                     )}
                 </div>
-                <div className={`s8 padding row vertical`}>
+                <div className={`s8 padding`}>
                     <div className="row max top-align">
                         <div className="max" style={{ width: '100%' }}>
                             <h5
@@ -70,11 +70,7 @@ export const GalleryCard = ({
                             </i>
                         </div>
                     </div>
-                    {children && (
-                        <nav className="bottom-align right-align">
-                            {children}
-                        </nav>
-                    )}
+                    {children && <nav className="right-align">{children}</nav>}
                 </div>
             </div>
         </CardBtn>

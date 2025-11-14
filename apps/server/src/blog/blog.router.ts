@@ -10,18 +10,8 @@ export const blogRoutes = () =>
     new Hono()
         .onError(errorHandler)
         .get('/all', async (c) => {
-            const limit = Math.min(Number(c.req.query('limit')) || 50, 500);
-            const offset = Number(c.req.query('offset')) || 0;
-
             const blogs = await blogManager.all();
-            const paginated = blogs.slice(offset, offset + limit);
-
-            return c.json({
-                data: paginated,
-                total: blogs.length,
-                limit,
-                offset,
-            });
+            return c.json(blogs);
         })
         .get(
             '/:id',

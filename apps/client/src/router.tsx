@@ -2,6 +2,7 @@ import { Navigate, createBrowserRouter } from 'react-router';
 
 import App from './App';
 import { AdminAlbum, AdminGallery, AdminHome } from './pages/Admin';
+import { AdminBlogHome } from './pages/Admin/Blog/BlogHome';
 import { AdminGalleryHome } from './pages/Admin/Gallery/GalleryHome';
 import { Gallery } from './pages/Gallery';
 import { Album } from './pages/Gallery/Album';
@@ -28,6 +29,10 @@ export const router = createBrowserRouter([
                     {
                         path: '*',
                         element: <></>,
+                    },
+                    {
+                        path: 'blog',
+                        element: <AdminBlogHome />,
                     },
                     {
                         path: 'gallery',

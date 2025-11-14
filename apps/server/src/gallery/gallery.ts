@@ -31,7 +31,7 @@ const GALLERY_DIR = path.resolve(
 );
 const THUMBNAIL_DIR = 'thumbnails';
 
-const WATERMARK_PATH = './assets/watermark.png';
+const WATERMARK_PATH = path.resolve('./assets/watermark.png');
 
 const IMAGE_THUMBNAIL_SIZE = 500;
 
@@ -45,6 +45,12 @@ export class GalleryManager {
 
         // Ensure gallery directory exists
         await mkdir(GALLERY_DIR, { recursive: true });
+
+        if ((await existsSync(WATERMARK_PATH)) === false) {
+            logger.warn(
+                `Watermark image not found at ${WATERMARK_PATH}, skipping watermarking`,
+            );
+        }
     }
 
     health = async () => {
@@ -540,6 +546,9 @@ export class GalleryManager {
             .toBuffer();
 
         if ((await existsSync(WATERMARK_PATH)) === false) {
+            logger.warn(
+                `Watermark image not found at ${WATERMARK_PATH}, skipping watermarking`,
+            );
             await sharp(thumbnailBuffer).toFile(thumbnailPath);
             return;
         }
