@@ -35,6 +35,7 @@ COPY --from=build /build/apps/client/package.json ./apps/client/
 COPY --from=build /build/apps/client/dist ./apps/client/dist/
 COPY --from=build /build/apps/server/package.json ./apps/server/
 COPY --from=build /build/apps/server/dist ./apps/server/dist/
+COPY --from=build /build/apps/server/assets ./apps/server/assets/
 
 # Installer pnpm et les dépendances de production uniquement
 RUN npm install -g pnpm
