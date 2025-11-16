@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router';
-import { max } from 'rxjs';
 
 import { GalleryCard } from '@/components/GalleryCard';
 import { useGalleries } from '@/services/gallery';
