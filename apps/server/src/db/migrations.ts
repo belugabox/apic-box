@@ -76,4 +76,16 @@ export const migrations: Migration[] = [
             db.exec('DROP TABLE IF EXISTS blog');
         },
     },
+    {
+        name: '002_add_album_order',
+        up: (db: Database) => {
+            db.exec(`
+                ALTER TABLE gallery_album ADD COLUMN orderIndex INTEGER DEFAULT 0
+            `);
+        },
+        down: (_db: Database) => {
+            // SQLite doesn't support DROP COLUMN directly, so we would need a more complex operation
+            // For now, this down migration is a no-op
+        },
+    },
 ];

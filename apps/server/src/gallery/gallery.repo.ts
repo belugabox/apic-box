@@ -14,6 +14,7 @@ type GalleryRow = Omit<
 
 type AlbumRow = Omit<Album, 'createdAt' | 'updatedAt' | 'images'> & {
     galleryId: number;
+    orderIndex: number;
     createdAt: string;
     updatedAt: string;
 };
@@ -68,10 +69,17 @@ export class GalleryRepository extends MappedRepository<GalleryRow, Gallery> {
         name: string,
         code: string,
     ): Promise<RunResult> => {
+        // Get all albums for this gallery to find the next orderIndex
+        const existingAlbums = await this.albumRepository.findMany({
+            galleryId,
+        });
+        const nextOrderIndex = existingAlbums.length;
+
         return this.albumRepository.create({
             galleryId,
             name,
             code,
+            orderIndex: nextOrderIndex,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         });
@@ -87,6 +95,13 @@ export class GalleryRepository extends MappedRepository<GalleryRow, Gallery> {
             code,
             updatedAt: new Date().toISOString(),
         });
+    };
+
+    updateAlbumOrder = async (
+        albumId: number,
+        orderIndex: number,
+    ): Promise<RunResult> => {
+        return this.albumRepository.updateOrder(albumId, orderIndex);
     };
 
     deleteAlbum = async (albumId: number): Promise<RunResult> => {
@@ -137,6 +152,13 @@ export class AlbumRepository extends MappedRepository<AlbumRow, Album> {
         const row = await this.repo.findById(albumId);
         if (!row) return undefined;
         return this.mapToDomain(row);
+    }
+
+    async updateOrder(albumId: number, orderIndex: number): Promise<RunResult> {
+        return this.repo.update(albumId, {
+            orderIndex,
+            updatedAt: new Date().toISOString(),
+        });
     }
 
     async addImage(

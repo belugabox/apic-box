@@ -360,4 +360,25 @@ export const galleryRoutes = () =>
                 await galleryManager.deleteImage(imageId);
                 return c.json({ message: 'Image deleted' });
             },
+        )
+        .post(
+            '/reorderAlbums',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'json',
+                z.object({
+                    galleryId: z.coerce.number(),
+                    albums: z.array(
+                        z.object({
+                            albumId: z.coerce.number(),
+                            orderIndex: z.coerce.number(),
+                        }),
+                    ),
+                }),
+            ),
+            async (c) => {
+                const { galleryId, albums } = c.req.valid('json');
+                await galleryManager.reorderAlbums(galleryId, albums);
+                return c.json({ message: 'Albums reordered' });
+            },
         );

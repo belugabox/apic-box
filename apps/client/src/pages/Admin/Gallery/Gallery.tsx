@@ -13,6 +13,7 @@ import {
     useGalleryExport,
     useGalleryUpdateCover,
 } from '@/services/gallery';
+import { galleryService } from '@/services/gallery/gallery';
 import { spinner } from '@/services/spinner';
 
 import { AdminGalleryAlbumAdd } from './AlbumAdd';
@@ -20,46 +21,103 @@ import { AdminGalleryAlbumDelete } from './AlbumDelete';
 import { AdminGalleryEdit } from './GalleryEdit';
 import { AdminGalleryProtect } from './GalleryProtect';
 
+type ModalType = 'edit' | 'protect' | 'addAlbum' | 'deleteAlbum';
+
 export const AdminGallery = () => {
     const navigate = useNavigate();
-    const [show, setShow] = useState<
-        'edit' | 'protect' | 'addAlbum' | 'deleteAlbum' | undefined
-    >(undefined);
-    const [selected, setSelected] = useState<Gallery | Album | undefined>();
-
     const params = useParams<{ galleryId: string }>();
+    const galleryId = Number(params.galleryId || 0);
 
-    if (!params.galleryId) {
-        return (
-            <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
-        );
-    }
+    const [show, setShow] = useState<ModalType>();
+    const [selected, setSelected] = useState<Gallery | Album>();
+    const [draggedAlbum, setDraggedAlbum] = useState<number | null>(null);
+    const [isReordering, setIsReordering] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    const galleryId = parseInt(params.galleryId, 10);
-
-    const [gallery, loading, error] = useGallery(galleryId, true, [show]);
+    const galleryFetchId = galleryId > 0 ? galleryId : undefined;
+    const [gallery, loading, error] = useGallery(galleryFetchId, true, [
+        show,
+        refreshTrigger,
+    ]);
     const [exportGallery, exportLoading] = useGalleryExport();
+    const updateCoverFunc = useGalleryUpdateCover(galleryId);
+
     spinner('AdminGallery', loading);
+
+    if (!params.galleryId)
+        return (
+            <EmptyState icon="photo_album" title="La galerie n'existe pas" />
+        );
+
     if (loading) return;
     if (error) return <ErrorMessage error={error} />;
-    if (!gallery) {
+    if (!gallery)
         return (
-            <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
+            <EmptyState icon="photo_album" title="La galerie n'existe pas" />
         );
-    }
 
     const albums = gallery.albums || [];
 
-    const handleOpen = (
-        newShow: typeof show,
-        newSelected?: typeof selected,
-    ) => {
-        setShow(newShow);
-        setSelected(newSelected);
-    };
     const handleClose = () => {
         setShow(undefined);
         setSelected(undefined);
+    };
+
+    const handleDragStart = (e: React.DragEvent, albumId: number) => {
+        setDraggedAlbum(albumId);
+        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = async (e: React.DragEvent, targetId: number) => {
+        e.preventDefault();
+        if (!draggedAlbum || draggedAlbum === targetId) {
+            setDraggedAlbum(null);
+            return;
+        }
+
+        const draggedIdx = albums.findIndex((a) => a.id === draggedAlbum);
+        const targetIdx = albums.findIndex((a) => a.id === targetId);
+
+        if (draggedIdx === -1 || targetIdx === -1) {
+            setDraggedAlbum(null);
+            return;
+        }
+
+        const newAlbums = [...albums];
+        const [movedAlbum] = newAlbums.splice(draggedIdx, 1);
+        newAlbums.splice(targetIdx, 0, movedAlbum);
+
+        setIsReordering(true);
+        try {
+            await galleryService.reorderAlbums(
+                galleryId,
+                newAlbums.map((album, index) => ({
+                    albumId: album.id,
+                    orderIndex: index,
+                })),
+            );
+            setRefreshTrigger((prev) => prev + 1);
+        } finally {
+            setIsReordering(false);
+            setDraggedAlbum(null);
+        }
+    };
+
+    const handleExport = async () => {
+        const blob = await exportGallery(galleryId);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${gallery.name}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
     };
 
     return (
@@ -67,37 +125,61 @@ export const AdminGallery = () => {
             <SubNavigation onClickBack={() => navigate('/admin/gallery')}>
                 {gallery.name}
             </SubNavigation>
+
             <div className="grid">
                 {albums.map((album) => (
-                    <AlbumCard
-                        className="s12 m6"
+                    <div
                         key={album.id}
-                        galleryId={galleryId}
-                        album={album}
+                        draggable={!isReordering}
+                        onDragStart={(e) => handleDragStart(e, album.id)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, album.id)}
+                        onDragEnd={() => setDraggedAlbum(null)}
+                        className="s12 m6"
+                        style={{
+                            opacity: isReordering
+                                ? 0.6
+                                : draggedAlbum === album.id
+                                  ? 0.5
+                                  : 1,
+                            cursor: isReordering ? 'wait' : 'grab',
+                            transition: 'opacity 0.2s',
+                        }}
                     >
-                        <nav>
-                            <button
-                                className="circle fill"
-                                onClick={() => handleOpen('deleteAlbum', album)}
-                            >
-                                <i>delete</i>
-                            </button>
-                            <button
-                                className="circle"
-                                onClick={() =>
-                                    navigate(
-                                        `/admin/gallery/${galleryId}/${album.id}`,
-                                    )
-                                }
-                            >
-                                <i>edit</i>
-                            </button>
-                        </nav>
-                    </AlbumCard>
+                        <AlbumCard
+                            className="s12"
+                            galleryId={galleryId}
+                            album={album}
+                        >
+                            <nav>
+                                <button
+                                    className="circle fill"
+                                    onClick={() => {
+                                        setShow('deleteAlbum');
+                                        setSelected(album);
+                                    }}
+                                >
+                                    <i>delete</i>
+                                </button>
+                                <button
+                                    className="circle"
+                                    onClick={() =>
+                                        navigate(
+                                            `/admin/gallery/${galleryId}/${album.id}`,
+                                        )
+                                    }
+                                >
+                                    <i>edit</i>
+                                </button>
+                            </nav>
+                        </AlbumCard>
+                    </div>
                 ))}
             </div>
+
             <div className="large-space"></div>
-            {/* Modal d'édition */}
+
+            {/* Modals */}
             {show === 'edit' && selected && (
                 <dialog className="active">
                     <AdminGalleryEdit
@@ -107,8 +189,6 @@ export const AdminGallery = () => {
                     />
                 </dialog>
             )}
-
-            {/* Modal d'ajout d'un album */}
             {show === 'addAlbum' && (
                 <dialog className="active">
                     <AdminGalleryAlbumAdd
@@ -118,7 +198,6 @@ export const AdminGallery = () => {
                     />
                 </dialog>
             )}
-            {/* Modal de suppression */}
             {show === 'deleteAlbum' && selected && (
                 <dialog className="active">
                     <AdminGalleryAlbumDelete
@@ -128,7 +207,6 @@ export const AdminGallery = () => {
                     />
                 </dialog>
             )}
-            {/* Modal de protection */}
             {show === 'protect' && selected && (
                 <dialog className="active">
                     <AdminGalleryProtect
@@ -138,42 +216,31 @@ export const AdminGallery = () => {
                     />
                 </dialog>
             )}
-            {/* Bouton d'ajout */}
+
             <div className="fixed center bottom bottom-margin row">
                 <button
                     className="primary"
-                    onClick={() => handleOpen('addAlbum')}
+                    onClick={() => setShow('addAlbum')}
+                    disabled={isReordering}
                 >
                     <i>add</i>
                     <span>Créer un album</span>
                 </button>
                 <nav className="min active">
-                    <button className="circle fill">
+                    <button className="circle fill" disabled={isReordering}>
                         <i>more_vert</i>
                     </button>
                     <menu className="top left right-align transparent no-wrap">
                         <li>
                             <button
                                 className="fill"
-                                onClick={async () => {
-                                    const blob = await exportGallery(galleryId);
-                                    const url =
-                                        window.URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `${gallery.name}.zip`;
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    a.remove();
-                                    window.URL.revokeObjectURL(url);
-                                }}
+                                onClick={handleExport}
+                                disabled={isReordering || exportLoading}
                             >
                                 {!exportLoading ? (
                                     <i>upload</i>
                                 ) : (
-                                    <progress
-                                        className={`circle small`}
-                                    ></progress>
+                                    <progress className="circle small"></progress>
                                 )}
                                 <span>Exporter les photos</span>
                             </button>
@@ -183,27 +250,33 @@ export const AdminGallery = () => {
                                 className="fill"
                                 icon="photo"
                                 text="Modifier la couverture"
-                                useFunc={() => useGalleryUpdateCover(galleryId)}
-                                onSuccess={() => setShow(show)}
+                                useFunc={() => updateCoverFunc}
+                                onSuccess={() => {}}
                             />
                         </li>
                         <li>
                             <button
-                                className=" fill"
-                                onClick={() => handleOpen('protect', gallery)}
+                                className="fill"
+                                onClick={() => {
+                                    setShow('protect');
+                                    setSelected(gallery);
+                                }}
+                                disabled={isReordering}
                             >
-                                {gallery.isProtected ? (
-                                    <i>lock</i>
-                                ) : (
-                                    <i>lock_open</i>
-                                )}
+                                <i>
+                                    {gallery.isProtected ? 'lock' : 'lock_open'}
+                                </i>
                                 <span>Modifier le code secret</span>
                             </button>
                         </li>
                         <li>
                             <button
                                 className="fill"
-                                onClick={() => handleOpen('edit', gallery)}
+                                onClick={() => {
+                                    setShow('edit');
+                                    setSelected(gallery);
+                                }}
+                                disabled={isReordering}
                             >
                                 <i>edit</i>
                                 <span>Modifier la galerie</span>

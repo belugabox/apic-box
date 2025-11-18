@@ -26,6 +26,7 @@ export type Album = {
     updatedAt: Date;
 
     galleryId: number;
+    orderIndex: number;
 };
 
 export type Image = {

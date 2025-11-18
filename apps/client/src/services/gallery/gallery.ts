@@ -194,6 +194,23 @@ export class GalleryService {
             ),
         );
     };
+
+    reorderAlbums = async (
+        galleryId: number,
+        albums: Array<{ albumId: number; orderIndex: number }>,
+    ): Promise<void> => {
+        await callRpc(
+            serverApi.gallery.reorderAlbums.$post(
+                {
+                    json: { galleryId: galleryId.toString(), albums },
+                },
+                {
+                    headers: authService.headers(),
+                },
+            ),
+        );
+    };
+
     deleteImage = async (imageId: number): Promise<void> => {
         await callRpc(
             serverApi.gallery.deleteImage.$post(

@@ -104,10 +104,12 @@ export class GalleryManager {
                 createdAt: gallery.createdAt,
                 updatedAt: gallery.updatedAt,
                 isProtected: gallery.isProtected,
-                albums: gallery.albums.map((album) => ({
-                    ...album,
-                    images: [],
-                })),
+                albums: gallery.albums
+                    .sort((a, b) => a.orderIndex - b.orderIndex)
+                    .map((album) => ({
+                        ...album,
+                        images: [],
+                    })),
             }));
     };
 
@@ -119,6 +121,8 @@ export class GalleryManager {
         if (!gallery || !(isAdmin || gallery.status === 'published')) {
             return undefined;
         }
+        // Sort albums by orderIndex
+        gallery.albums.sort((a, b) => a.orderIndex - b.orderIndex);
         return gallery;
     };
 
@@ -424,6 +428,17 @@ export class GalleryManager {
 
         await this.repo.deleteAlbum(albumId);
         logger.info(`Album deleted: ${albumId}`);
+    };
+
+    reorderAlbums = async (
+        galleryId: number,
+        albumOrders: Array<{ albumId: number; orderIndex: number }>,
+    ): Promise<void> => {
+        logger.info(`Reordering albums for gallery ${galleryId}`);
+        for (const { albumId, orderIndex } of albumOrders) {
+            await this.repo.updateAlbumOrder(albumId, orderIndex);
+        }
+        logger.info(`Albums reordered for gallery ${galleryId}`);
     };
 
     // IMAGE
