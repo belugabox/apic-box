@@ -20,12 +20,12 @@ export const Navigation = () => {
             </Link>
             <div className="max center-align"></div>
             <nav className="">
-                <Link
+                {/*<Link
                     to="/gallery"
                     className={page.startsWith('/gallery') ? 'active' : ''}
                 >
                     <i>photo</i>
-                </Link>
+                </Link>*/}
                 <Link
                     to="/admin"
                     className={page.startsWith('/admin') ? 'active' : ''}
