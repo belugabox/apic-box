@@ -30,7 +30,7 @@ export const Navigation = () => {
                     to="/admin"
                     className={page.startsWith('/admin') ? 'active' : ''}
                 >
-                    <i>admin_panel_settings</i>
+                    <i className="secondary-text">admin_panel_settings</i>
                 </Link>
             </nav>
         </nav>

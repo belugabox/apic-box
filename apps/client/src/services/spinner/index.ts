@@ -3,13 +3,13 @@ import { BehaviorSubject, distinctUntilChanged } from 'rxjs';
 
 const elements = new BehaviorSubject<Record<string, boolean>>({});
 
-export const spinner = (key: string, show: boolean) => {
+export const useSpinner = (key: string, show: boolean) => {
     useEffect(() => {
         elements.next({ ...elements.value, [key]: show });
-    }, [show]);
+    }, [key, show]);
 };
 
-export const useSpinner = () => {
+export const useLoadingState = () => {
     const [state, setState] = useState(false);
     useEffect(() => {
         const subscription = elements.pipe(distinctUntilChanged()).subscribe({

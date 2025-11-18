@@ -51,13 +51,13 @@ export class AuthService {
     }
 
     // Get stored user (internal)
-    private getStoredUser(): any {
+    private getStoredUser() {
         const user = localStorage.getItem('user');
         return user ? JSON.parse(user) : null;
     }
 
     // Get stored user (public via BehaviorSubject)
-    getUser(): any {
+    getUser() {
         return this.user.getValue();
     }
 

@@ -14,7 +14,7 @@ import {
     useGalleryUpdateCover,
 } from '@/services/gallery';
 import { galleryService } from '@/services/gallery/gallery';
-import { spinner } from '@/services/spinner';
+import { useSpinner } from '@/services/spinner';
 
 import { AdminGalleryAlbumAdd } from './AlbumAdd';
 import { AdminGalleryAlbumDelete } from './AlbumDelete';
@@ -42,7 +42,7 @@ export const AdminGallery = () => {
     const [exportGallery, exportLoading] = useGalleryExport();
     const updateCoverFunc = useGalleryUpdateCover(galleryId);
 
-    spinner('AdminGallery', loading);
+    useSpinner('AdminGallery', loading);
 
     if (!params.galleryId)
         return (
@@ -50,11 +50,12 @@ export const AdminGallery = () => {
         );
 
     if (loading) return;
-    if (error) return <ErrorMessage error={error} />;
-    if (!gallery)
+    if (error?.message === 'NotFoundError' || !gallery) {
         return (
             <EmptyState icon="photo_album" title="La galerie n'existe pas" />
         );
+    }
+    if (error) return <ErrorMessage error={error} />;
 
     const albums = gallery.albums || [];
 

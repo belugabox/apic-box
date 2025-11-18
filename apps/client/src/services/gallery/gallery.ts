@@ -282,7 +282,7 @@ export class GalleryService {
         if (file) formData.append('file', file);
 
         const headers = authService.headers();
-        delete (headers as any)['Content-Type'];
+        delete headers['Content-Type'];
 
         const response = await fetch('/api/gallery/updateCover', {
             method: 'POST',
@@ -306,7 +306,7 @@ export class GalleryService {
         });
 
         const headers = authService.headers();
-        delete (headers as any)['Content-Type'];
+        delete headers['Content-Type'];
 
         const response = await fetch('/api/gallery/addImages', {
             method: 'POST',
@@ -324,7 +324,7 @@ export class GalleryService {
 
     export = async (galleryId: number): Promise<Blob> => {
         const headers = authService.headers();
-        delete (headers as any)['Content-Type'];
+        delete headers['Content-Type'];
 
         const response = await fetch(`/api/gallery/export/${galleryId}`, {
             method: 'GET',
@@ -359,6 +359,7 @@ export class GalleryService {
         return `data:image/jpeg;base64,${btoa(binary)}`;
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private transformImage = (image: any): Image => ({
         ...image,
         createdAt: new Date(image.createdAt),
@@ -366,20 +367,24 @@ export class GalleryService {
         album: image.album ? this.transformAlbum(image.album) : undefined,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private transformAlbum = (album: any): Album => ({
         ...album,
         createdAt: new Date(album.createdAt),
         updatedAt: new Date(album.updatedAt),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         images: album.images.map((img: any) => this.transformImage(img)),
         gallery: album.gallery
             ? this.transformGallery(album.gallery)
             : undefined,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private transformGallery = (gallery: any): Gallery => ({
         ...gallery,
         createdAt: new Date(gallery.createdAt),
         updatedAt: new Date(gallery.updatedAt),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         albums: gallery.albums.map((album: any) => this.transformAlbum(album)),
     });
 }

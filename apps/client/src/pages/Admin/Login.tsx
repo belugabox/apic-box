@@ -16,8 +16,14 @@ export const Login = () => {
         },
     });
 
-    const onSubmit = async (data: any) => {
-        await login(data.username, data.password);
+    const onSubmit = async ({
+        username,
+        password,
+    }: {
+        username: string;
+        password: string;
+    }) => {
+        await login(username, password);
     };
 
     return (

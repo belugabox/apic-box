@@ -12,9 +12,12 @@ export const AdminGalleryImagesButton = ({
     onClose,
     onSuccess,
 }: AdminGalleryImagesAddProps) => {
+    // Call hook at component level, not in callback
+    const addImages = useGalleryAddImages(albumId);
+    
     return (
         <UploadImageBtn
-            useFunc={() => useGalleryAddImages(albumId)}
+            useFunc={() => addImages}
             onClose={onClose}
             onSuccess={onSuccess}
         />

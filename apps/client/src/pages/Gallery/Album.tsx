@@ -7,7 +7,7 @@ import { ImageCard } from '@/components/ImageCard';
 import { Mansory } from '@/components/Mansonry';
 import { SubNavigation } from '@/components/SubNavigation';
 import { useGallery } from '@/services/gallery';
-import { spinner } from '@/services/spinner';
+import { useSpinner } from '@/services/spinner';
 
 import { GalleryLogin } from './Login';
 
@@ -16,14 +16,9 @@ export const Album = () => {
     const params = useParams<{ galleryId: string; albumId: string }>();
     const [refresh, setRefresh] = useState(false);
 
-    if (!params.galleryId) {
-        return (
-            <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
-        );
-    }
-    const galleryId = parseInt(params.galleryId, 10);
+    const galleryId = parseInt(params.galleryId || '', 10);
     const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
-    spinner('Album', loading);
+    useSpinner('Album', loading);
     if (loading) return;
     if (error?.name === 'UnauthorizedError') {
         return (
@@ -31,6 +26,11 @@ export const Album = () => {
                 galleryId={galleryId}
                 onSuccess={() => setRefresh(!refresh)}
             />
+        );
+    }
+    if (!params.galleryId) {
+        return (
+            <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
         );
     }
     if (error) return <ErrorMessage error={error} />;

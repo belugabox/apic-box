@@ -11,7 +11,7 @@ import {
     useBlogUpdate,
     useBlogs,
 } from '@/services/blog';
-import { spinner } from '@/services/spinner';
+import { useSpinner } from '@/services/spinner';
 
 export const AdminBlogHome = () => {
     const [show, setShow] = useState<'add' | 'edit' | 'delete' | undefined>(
@@ -19,7 +19,7 @@ export const AdminBlogHome = () => {
     );
     const [selected, setSelected] = useState<Blog | undefined>();
     const [blogs, loading, error] = useBlogs(true, [show]);
-    spinner('AdminBlogHome', loading);
+    useSpinner('AdminBlogHome', loading);
     if (loading) return;
     if (error) return <ErrorMessage error={error} />;
 
@@ -252,7 +252,6 @@ export const AdminBlogDelete = ({
     const handleConfirmDelete = async () => {
         try {
             if (blog) {
-                console.log('Deleting blog:', blog);
                 await deleteBlog(blog.id);
             }
             onSuccess?.();

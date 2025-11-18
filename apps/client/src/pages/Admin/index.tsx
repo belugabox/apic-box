@@ -1,3 +1,3 @@
-export * from './Home';
-export * from './Gallery/Gallery';
-export * from './Gallery/Album';
+export { AdminHome } from './Home';
+export { AdminGallery } from './Gallery/Gallery';
+export { AdminAlbum } from './Gallery/Album';

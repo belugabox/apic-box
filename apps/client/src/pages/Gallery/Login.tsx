@@ -19,8 +19,12 @@ export const GalleryLogin = ({ galleryId, onSuccess }: GalleryLoginProps) => {
         },
     });
 
-    const onSubmit = async (data: any) => {
-        await login(data.passwordGallery);
+    const onSubmit = async ({
+        passwordGallery,
+    }: {
+        passwordGallery: string;
+    }) => {
+        await login(passwordGallery);
         onSuccess?.();
     };
 

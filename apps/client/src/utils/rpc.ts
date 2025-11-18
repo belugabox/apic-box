@@ -32,8 +32,8 @@ export const callRpc = async <T>(
 
     if (!response.ok) {
         try {
-            const error = (await response.json()) as { error?: string };
-            throw new RpcError(response.status, error.error, error);
+            const error = (await response.json()) as { name?: string };
+            throw new RpcError(response.status, error.name, error);
         } catch (err) {
             if (err instanceof RpcError) throw err;
             throw new RpcError(response.status, 'Unknown error');

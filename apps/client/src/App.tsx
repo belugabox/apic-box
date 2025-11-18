@@ -2,10 +2,10 @@ import { Outlet } from 'react-router';
 
 import { Navigation } from './components/Navigation';
 import { Spinner } from './components/Spinner';
-import { useSpinner } from './services/spinner';
+import { useLoadingState } from './services/spinner';
 
 export const App = () => {
-    const loading = useSpinner();
+    const loading = useLoadingState();
     return (
         <>
             <header className="fixed">

@@ -30,20 +30,19 @@ export const Mansory = ({
     const colsExtra = breakpoints.extra ?? 4;
     const [columnCount, setColumnCount] = useState(colsSmall);
 
-    const updateColumnCount = () => {
-        const width = window.innerWidth;
-        if (width < 600) {
-            setColumnCount(colsSmall);
-        } else if (width < 840) {
-            setColumnCount(colsMedium);
-        } else if (width < 1200) {
-            setColumnCount(colsLarge);
-        } else {
-            setColumnCount(colsExtra);
-        }
-    };
-
     useEffect(() => {
+        const updateColumnCount = () => {
+            const width = window.innerWidth;
+            if (width < 600) {
+                setColumnCount(colsSmall);
+            } else if (width < 840) {
+                setColumnCount(colsMedium);
+            } else if (width < 1200) {
+                setColumnCount(colsLarge);
+            } else {
+                setColumnCount(colsExtra);
+            }
+        };
         updateColumnCount();
         window.addEventListener('resize', updateColumnCount);
         return () => window.removeEventListener('resize', updateColumnCount);

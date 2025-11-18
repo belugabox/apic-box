@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { SubNavigation } from '@/components/SubNavigation';
 import { useGallery } from '@/services/gallery';
-import { spinner } from '@/services/spinner';
+import { useSpinner } from '@/services/spinner';
 
 import { GalleryLogin } from './Login';
 
@@ -15,17 +15,16 @@ export const Gallery = () => {
     const params = useParams<{ galleryId: string }>();
     const [refresh, setRefresh] = useState(false);
 
-    if (!params.galleryId) {
+    const galleryId = parseInt(params.galleryId || '', 10);
+
+    const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
+    useSpinner('Gallery', loading);
+    if (loading) return;
+    if (error?.message === 'NotFoundError' || !params.galleryId) {
         return (
             <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
         );
     }
-
-    const galleryId = parseInt(params.galleryId, 10);
-
-    const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
-    spinner('Gallery', loading);
-    if (loading) return;
     if (error?.name === 'UnauthorizedError') {
         return (
             <GalleryLogin

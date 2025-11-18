@@ -7,7 +7,7 @@ import { ErrorMessage } from '@/components/Error';
 import { GalleryCard } from '@/components/GalleryCard';
 import { StatusTag } from '@/components/StatusTag';
 import { useGalleries } from '@/services/gallery';
-import { spinner } from '@/services/spinner';
+import { useSpinner } from '@/services/spinner';
 
 import { AdminGalleryAdd } from './GalleryAdd';
 import { AdminGalleryDelete } from './GalleryDelete';
@@ -23,7 +23,7 @@ export const AdminGalleryHome = () => {
         showAdd,
         showDelete,
     ]);
-    spinner('AdminGalleryHome', loading);
+    useSpinner('AdminGalleryHome', loading);
     if (loading) return;
     if (error) return <ErrorMessage error={error} />;
 

@@ -5,13 +5,13 @@ import { ErrorMessage } from '@/components/Error';
 import { GalleryCard } from '@/components/GalleryCard';
 import { SubNavigation } from '@/components/SubNavigation';
 import { useGalleries } from '@/services/gallery';
-import { spinner } from '@/services/spinner';
+import { useSpinner } from '@/services/spinner';
 
 export const GalleryHome = () => {
     const navigate = useNavigate();
     const [galleries, loading, error] = useGalleries();
 
-    spinner('GalleryHome', loading);
+    useSpinner('GalleryHome', loading);
     if (loading) return;
     if (error) return <ErrorMessage error={error} />;
 

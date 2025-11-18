@@ -10,7 +10,7 @@ import { Mansory } from '@/components/Mansonry';
 import { SubNavigation } from '@/components/SubNavigation';
 import { UploadImageBtn } from '@/components/UploadImageBtn';
 import { useGallery, useGalleryAddImages } from '@/services/gallery';
-import { spinner } from '@/services/spinner';
+import { useSpinner } from '@/services/spinner';
 
 import { AdminGalleryAlbumEdit } from './AlbumEdit';
 import { AdminGalleryImageDelete } from './ImageDelete';
@@ -23,19 +23,17 @@ export const AdminAlbum = () => {
     const [albumToEdit, setAlbumToEdit] = useState<Album | null>(null);
     const galleryId = parseInt(params.galleryId || '', 10);
     const [gallery, loading, error] = useGallery(galleryId, true, [refresh]);
-    spinner('AdminAlbum', loading);
+    const albumId = parseInt(params.albumId || '', 10);
+    const addImages = useGalleryAddImages(albumId);
+
+    useSpinner('AdminAlbum', loading);
     if (loading) return;
-    if (error) return <ErrorMessage error={error} />;
-    if (!gallery) {
+    if (error?.message === 'NotFoundError' || !gallery) {
         return (
             <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
         );
     }
-
-    if (!params.albumId) {
-        return <EmptyState icon="photo_album" title={`L'album n'existe pas`} />;
-    }
-    const albumId = parseInt(params.albumId, 10);
+    if (error) return <ErrorMessage error={error} />;
     const album = gallery?.albums.find((a) => a.id === albumId);
     if (!album) {
         return <EmptyState icon="photo_album" title={`L'album n'existe pas`} />;
@@ -105,7 +103,7 @@ export const AdminAlbum = () => {
                     className="primary no-margin"
                     text="Ajouter des photos"
                     multiple
-                    useFunc={() => useGalleryAddImages(albumId)}
+                    useFunc={() => addImages}
                     onSuccess={() => setRefresh(!refresh)}
                 />
                 <nav className="min active">
