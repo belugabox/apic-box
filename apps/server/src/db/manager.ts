@@ -2,16 +2,14 @@ import SQLite, { Database } from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 
+import { DATA_FILE_PATH } from '../tools/env';
 import { logger } from '../tools/logger';
 import { Migrator } from '../tools/migrator';
 import { migrations } from './migrations';
 import { Repository } from './repositories';
 import { RunResult } from './types';
 
-const DB_FILE = path.resolve(
-    process.env.DATA_FILE_PATH ?? './data',
-    'db.sqlite',
-);
+const DB_FILE = path.resolve(DATA_FILE_PATH, 'db.sqlite');
 
 export class DbManager {
     private dbInstance: Database | undefined;

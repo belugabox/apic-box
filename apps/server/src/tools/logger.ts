@@ -1,9 +1,9 @@
 import { pino } from 'pino';
 
-import { config } from './config';
+import { LOG_LEVEL } from './env';
 
 export const logger = pino({
-    level: config.LOG_LEVEL,
+    level: LOG_LEVEL,
     transport: {
         target: 'pino-pretty',
         options: {

@@ -10,6 +10,7 @@ import { addImageWatermark } from 'sharp-watermark';
 
 import { AuthRole } from '@server/auth';
 import { authManager } from '@server/core';
+import { DATA_FILE_PATH, GALLERY_JWT_SECRET } from '@server/tools/env';
 import { UnauthorizedError } from '@server/tools/errorHandler';
 import { generateExcel } from '@server/tools/excel';
 import { logger } from '@server/tools/logger';
@@ -17,18 +18,7 @@ import { logger } from '@server/tools/logger';
 import { GalleryRepository } from './gallery.repo';
 import { Album, Gallery } from './gallery.types';
 
-export let GALLERY_JWT_SECRET: string;
-
-if (!process.env.GALLERY_JWT_SECRET) {
-    throw new Error('GALLERY_JWT_SECRET environment variable is required');
-}
-
-GALLERY_JWT_SECRET = process.env.GALLERY_JWT_SECRET;
-
-const GALLERY_DIR = path.resolve(
-    process.env.DATA_FILE_PATH ?? './data',
-    'gallery',
-);
+const GALLERY_DIR = path.resolve(DATA_FILE_PATH, 'gallery');
 const THUMBNAIL_DIR = 'thumbnails';
 
 const WATERMARK_PATH = path.resolve('./assets/watermark.png');

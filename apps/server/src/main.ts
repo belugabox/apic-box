@@ -7,7 +7,8 @@ import { join } from 'path';
 
 import { health, init, start } from './core';
 import { router } from './router';
-import { isValid } from './tools/config';
+// Load and validate environment variables
+import './tools/env';
 import { logger } from './tools/logger';
 import { requestLoggerMiddleware } from './tools/requestLoggerMiddleware';
 import { timeoutMiddleware } from './tools/timeoutMiddleware';
@@ -54,14 +55,12 @@ const startServer = () => {
     //initWS(server);
 };
 
-if (isValid) {
-    (async () => {
-        await init();
-        await health();
-        await start();
-        startServer();
-    })().catch((err) => {
-        logger.error(err, 'Failed to start server');
-        process.exit(1);
-    });
-}
+(async () => {
+    await init();
+    await health();
+    await start();
+    startServer();
+})().catch((err) => {
+    logger.error(err, 'Failed to start server');
+    process.exit(1);
+});

@@ -4,6 +4,11 @@ import { sign, verify } from 'hono/jwt';
 
 import { db } from '@server/db';
 import { MappedRepository } from '@server/db';
+import {
+    ADMIN_PASSWORD,
+    JWT_REFRESH_SECRET,
+    JWT_SECRET,
+} from '@server/tools/env';
 import { ForbiddenError, UnauthorizedError } from '@server/tools/errorHandler';
 import { logger } from '@server/tools/logger';
 
@@ -12,18 +17,6 @@ import { AuthRole, User } from './auth.types';
 type UserRow = Omit<User, 'role'> & {
     role: string;
 };
-
-export let JWT_SECRET: string;
-export let JWT_REFRESH_SECRET: string;
-
-if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
-    throw new Error(
-        'JWT_SECRET and JWT_REFRESH_SECRET environment variables are required',
-    );
-}
-
-JWT_SECRET = process.env.JWT_SECRET;
-JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 export class AuthManager extends MappedRepository<UserRow, User> {
     constructor() {
@@ -44,18 +37,10 @@ export class AuthManager extends MappedRepository<UserRow, User> {
             'SELECT COUNT(*) as count FROM user',
         );
         if (emptyTable && emptyTable.count <= 0) {
-            const defaultAdminPassword =
-                process.env.ADMIN_PASSWORD ||
-                (() => {
-                    throw new Error(
-                        'ADMIN_PASSWORD environment variable is required for first setup',
-                    );
-                })();
-
             await this.add({
                 id: 0,
                 username: 'admin',
-                password: defaultAdminPassword,
+                password: ADMIN_PASSWORD,
                 role: AuthRole.ADMIN,
             });
             logger.info(`Default admin user created with username: "admin"`);
