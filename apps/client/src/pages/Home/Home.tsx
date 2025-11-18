@@ -1,19 +1,14 @@
 import { useNavigate } from 'react-router';
 
 import { GalleryCard } from '@/components/GalleryCard';
-import { useGalleries } from '@/services/gallery';
+import { useLatestBlog } from '@/services/blog';
+import { useLatestGallery } from '@/services/gallery';
 import '@/style.css';
 
 export const Home = () => {
     const navigate = useNavigate();
-    const [galleries] = useGalleries();
-
-    const latestGallery =
-        galleries && galleries.length > 0
-            ? galleries.reduce((latest, current) =>
-                  current.createdAt > latest.createdAt ? current : latest,
-              )
-            : undefined;
+    const [latestGallery] = useLatestGallery();
+    const [latestBlog] = useLatestBlog();
 
     return (
         <>
@@ -28,11 +23,15 @@ export const Home = () => {
                 }}
             >
                 <div className="center max">
-                    <h4>Bienvenue sur le site de l'APIC Sentelette !</h4>
-                    <p>
-                        L'association des parents d'élèves de Sains-en-Amienois,
-                        Saint-Fuscien et Estrées-sur-Noye.
-                    </p>
+                    {latestBlog && (
+                        <div
+                            className="center top-margin padding"
+                            style={{ maxWidth: '600px' }}
+                        >
+                            <h4>{latestBlog.title}</h4>
+                            <p>{latestBlog.content}</p>
+                        </div>
+                    )}
                     {latestGallery && (
                         <div
                             className="center top-margin"

@@ -9,6 +9,9 @@ export const useGalleries = (
     deps?: React.DependencyList,
 ) => usePromise(() => galleryService.all(fromAdmin), [...(deps || [])]);
 
+export const useLatestGallery = (fromAdmin?: boolean) =>
+    usePromise(() => galleryService.latest(fromAdmin), []);
+
 export const useGallery = (
     galleryId?: number,
     fromAdmin?: boolean,

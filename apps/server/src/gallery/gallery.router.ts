@@ -21,6 +21,16 @@ export const galleryRoutes = () =>
             );
             return c.json(galleries);
         })
+        .get('/latest', async (c) => {
+            const galleries = await galleryManager.all(
+                await authManager.isAdmin(c),
+            );
+            const sortedGalleries = galleries.sort(
+                (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+            );
+            const latestGallery = sortedGalleries[0];
+            return c.json(latestGallery);
+        })
         .get(
             '/:galleryId',
             galleryManager.checkAccess(),

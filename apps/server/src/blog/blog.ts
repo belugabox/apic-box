@@ -1,5 +1,6 @@
 import { db } from '@server/db';
 import { MappedRepository } from '@server/db';
+import { GalleryStatus } from '@server/gallery/gallery.types';
 import { logger } from '@server/tools/logger';
 
 import { Blog } from './blog.types';
@@ -24,15 +25,30 @@ export class BlogManager extends MappedRepository<BlogRow, Blog> {
         };
     }
 
-    init = async () => {};
+    init = async () => {
+        const emptyTable = await db.get<{ count: number }>(
+            'SELECT COUNT(*) as count FROM blog',
+        );
+        if (emptyTable && emptyTable.count <= 0) {
+            await this.add({
+                title: `Bienvenue sur le site de l'APIC Sentelette !`,
+                content: `L'association des parents d'élèves de Sains-en-Amienois, Saint-Fuscien et Estrées-sur-Noye.`,
+                author: 'APIC',
+                status: GalleryStatus.PUBLISHED,
+            });
+            logger.info(`Default admin user created with username: "admin"`);
+        }
+    };
 
     health = async () => {
         const result = await this.findOne({});
         return result ? 'healthy' : 'healthy';
     };
 
-    all = async (): Promise<Blog[]> => {
-        return this.findAll();
+    all = async (isAdmin: boolean): Promise<Blog[]> => {
+        return (await this.findAll()).filter((blog) => {
+            return isAdmin || blog.status === 'published';
+        });
     };
 
     get = async (id: string): Promise<Blog | undefined> => {
@@ -48,6 +64,7 @@ export class BlogManager extends MappedRepository<BlogRow, Blog> {
             title: blog.title,
             content: blog.content,
             author: blog.author,
+            status: blog.status,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         } as any);
@@ -62,6 +79,7 @@ export class BlogManager extends MappedRepository<BlogRow, Blog> {
             title: blog.title,
             content: blog.content,
             author: blog.author,
+            status: blog.status,
             updatedAt: new Date().toISOString(),
         });
         logger.info(`Blog post updated: ${blog.title}`);

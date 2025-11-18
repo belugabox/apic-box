@@ -62,6 +62,7 @@ export const migrations: Migration[] = [
                     title TEXT NOT NULL,
                     content TEXT NOT NULL,
                     author TEXT NOT NULL,
+                    status TEXT NOT NULL,
                     createdAt TEXT NOT NULL,
                     updatedAt TEXT NOT NULL
                 )

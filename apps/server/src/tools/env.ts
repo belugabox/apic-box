@@ -23,18 +23,18 @@ export const DATA_FILE_PATH = process.env.DATA_FILE_PATH || './data';
 // ============================================================================
 // AUTHENTICATION - JWT CONFIGURATION
 // ============================================================================
-export const JWT_SECRET = process.env.JWT_SECRET;
-export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 // Validate JWT secrets are provided
-if (!JWT_SECRET) {
+if (!process.env.JWT_SECRET) {
     throw new Error('Missing required environment variable: JWT_SECRET');
 }
-if (!JWT_REFRESH_SECRET) {
+if (!process.env.JWT_REFRESH_SECRET) {
     throw new Error(
         'Missing required environment variable: JWT_REFRESH_SECRET',
     );
 }
+export const JWT_SECRET = process.env.JWT_SECRET;
+export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 // ============================================================================
 // ADMIN CONFIGURATION
@@ -44,14 +44,13 @@ export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 // ============================================================================
 // GALLERY CONFIGURATION
 // ============================================================================
-export const GALLERY_JWT_SECRET = process.env.GALLERY_JWT_SECRET;
-
 // Validate Gallery JWT secret is provided
-if (!GALLERY_JWT_SECRET) {
+if (!process.env.GALLERY_JWT_SECRET) {
     throw new Error(
         'Missing required environment variable: GALLERY_JWT_SECRET',
     );
 }
+export const GALLERY_JWT_SECRET = process.env.GALLERY_JWT_SECRET;
 
 // ============================================================================
 // ENVIRONMENT SUMMARY (for debugging)

@@ -4,14 +4,23 @@ import z from 'zod';
 
 import { AuthRole } from '@server/auth';
 import { authManager, blogManager } from '@server/core';
+import { GalleryStatus } from '@server/gallery/gallery.types';
 import { NotFoundError, errorHandler } from '@server/tools/errorHandler';
 
 export const blogRoutes = () =>
     new Hono()
         .onError(errorHandler)
         .get('/all', async (c) => {
-            const blogs = await blogManager.all();
+            const blogs = await blogManager.all(await authManager.isAdmin(c));
             return c.json(blogs);
+        })
+        .get('/latest', async (c) => {
+            const blogs = await blogManager.all(await authManager.isAdmin(c));
+            const sortedBlogs = blogs.sort(
+                (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+            );
+            const latestBlog = sortedBlogs[0];
+            return c.json(latestBlog);
         })
         .get(
             '/:id',
@@ -39,6 +48,7 @@ export const blogRoutes = () =>
                     title: z.string(),
                     content: z.string(),
                     author: z.string(),
+                    status: z.enum(GalleryStatus),
                 }),
             ),
             async (c) => {
@@ -57,6 +67,7 @@ export const blogRoutes = () =>
                     title: z.string(),
                     content: z.string(),
                     author: z.string(),
+                    status: z.enum(GalleryStatus),
                 }),
             ),
             async (c) => {

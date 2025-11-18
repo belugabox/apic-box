@@ -17,18 +17,18 @@ export const AdminHome = () => {
         <>
             <div className="tabs left-align">
                 <Link
+                    to="/admin/blog"
+                    className={page.startsWith('/admin/blog') ? 'active' : ''}
+                >
+                    Blog
+                </Link>
+                <Link
                     to="/admin/gallery"
                     className={
                         page.startsWith('/admin/gallery') ? 'active' : ''
                     }
                 >
                     Galerie
-                </Link>
-                <Link
-                    to="/admin/blog"
-                    className={page.startsWith('/admin/blog') ? 'active' : ''}
-                >
-                    Blog
                 </Link>
             </div>
 

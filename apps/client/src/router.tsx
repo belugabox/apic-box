@@ -24,7 +24,7 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         index: true,
-                        element: <Navigate to="gallery" replace />,
+                        element: <Navigate to="blog" replace />,
                     },
                     {
                         path: '*',

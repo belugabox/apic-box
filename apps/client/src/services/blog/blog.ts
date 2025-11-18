@@ -6,18 +6,42 @@ import { authService } from '../auth';
 import { serverApi } from '../server';
 
 export class BlogService {
-    all = async (): Promise<Blog[]> => {
-        const data = await callRpc(serverApi.blog.all.$get({}));
+    all = async (fromAdmin?: boolean): Promise<Blog[]> => {
+        const data = await callRpc(
+            serverApi.blog.all.$get(
+                {},
+                {
+                    headers: fromAdmin ? authService.headers() : {},
+                },
+            ),
+        );
         return data
             .map((blog) => this.transformBlog(blog))
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     };
 
-    get = async (id: number): Promise<Blog> => {
+    latest = async (fromAdmin?: boolean): Promise<Blog | null> => {
         const data = await callRpc(
-            serverApi.blog[':id'].$get({
-                param: { id: id.toString() },
-            }),
+            serverApi.blog.latest.$get(
+                {},
+                {
+                    headers: fromAdmin ? authService.headers() : {},
+                },
+            ),
+        );
+        return this.transformBlog(data);
+    };
+
+    get = async (id: number, fromAdmin?: boolean): Promise<Blog> => {
+        const data = await callRpc(
+            serverApi.blog[':id'].$get(
+                {
+                    param: { id: id.toString() },
+                },
+                {
+                    headers: fromAdmin ? authService.headers() : {},
+                },
+            ),
         );
         return this.transformBlog(data);
     };
@@ -48,6 +72,7 @@ export class BlogService {
                         title: blog.title,
                         content: blog.content,
                         author: blog.author,
+                        status: blog.status,
                     },
                 },
                 {
@@ -70,6 +95,7 @@ export class BlogService {
         );
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private transformBlog = (blog: any): Blog => ({
         ...blog,
         createdAt: new Date(blog.createdAt),

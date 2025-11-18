@@ -20,7 +20,19 @@ export class GalleryService {
                 },
             ),
         );
-        return data.map((gallery: any) => this.transformGallery(gallery));
+        return data.map((gallery) => this.transformGallery(gallery));
+    };
+
+    latest = async (fromAdmin?: boolean): Promise<Gallery | null> => {
+        const data = await callRpc(
+            serverApi.gallery.latest.$get(
+                {},
+                {
+                    headers: fromAdmin ? authService.headers() : {},
+                },
+            ),
+        );
+        return this.transformGallery(data);
     };
 
     get = async (galleryId: number, fromAdmin?: boolean): Promise<Gallery> => {

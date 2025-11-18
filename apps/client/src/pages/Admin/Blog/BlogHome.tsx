@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Blog } from '@server/blog/blog.types';
+import { GalleryStatus } from '@server/gallery/gallery.types';
 
 import { ErrorMessage } from '@/components/Error';
 import {
@@ -17,7 +18,7 @@ export const AdminBlogHome = () => {
         undefined,
     );
     const [selected, setSelected] = useState<Blog | undefined>();
-    const [blogs, loading, error] = useBlogs([show]);
+    const [blogs, loading, error] = useBlogs(true, [show]);
     spinner('AdminBlogHome', loading);
     if (loading) return;
     if (error) return <ErrorMessage error={error} />;
@@ -35,9 +36,13 @@ export const AdminBlogHome = () => {
     };
 
     return (
-        <div className="row vertical max">
+        <div className=" vertical max">
             {blogs?.map((blog) => (
-                <article key={blog.id} className="center max padding">
+                <article
+                    key={blog.id}
+                    className="center max padding"
+                    style={{ maxWidth: '600px' }}
+                >
                     <h3>{blog.title}</h3>
                     <p>{blog.content}</p>
                     <p className="right-align small-text">
@@ -123,12 +128,14 @@ export const AdminBlogAddEdit = ({
             title: blog?.title || '',
             content: blog?.content || '',
             author: blog?.author || 'APIC',
+            status: blog?.status || GalleryStatus.DRAFT,
         },
     });
     const onSubmit = async (data: {
         title: string;
         content: string;
         author: string;
+        status: GalleryStatus;
     }) => {
         if (blog?.id) {
             await update({
@@ -140,6 +147,7 @@ export const AdminBlogAddEdit = ({
                 title: data.title,
                 content: data.content,
                 author: data.author,
+                status: data.status,
             });
         }
         reset();
@@ -189,6 +197,21 @@ export const AdminBlogAddEdit = ({
                     />
                     <label>Auteur</label>
                     <span className="error">{errors.author?.message}</span>
+                </div>
+                <div className="field label border">
+                    <select
+                        id="status"
+                        {...register('status', {
+                            required: 'Le statut est obligatoire.',
+                        })}
+                        className={errors.status ? 'invalid' : ''}
+                    >
+                        <option value={GalleryStatus.DRAFT}>Brouillon</option>
+                        <option value={GalleryStatus.PUBLISHED}>Publié</option>
+                        <option value={GalleryStatus.ARCHIVED}>Archivé</option>
+                    </select>
+                    <label>Statut</label>
+                    <span className="error">{errors.status?.message}</span>
                 </div>
                 <span className="error-text">
                     {addError?.message ?? updateError?.message}
