@@ -18,8 +18,10 @@ type AlbumRow = Omit<Album, 'createdAt' | 'updatedAt' | 'images'> & {
     updatedAt: string;
 };
 
-type ImageRow = Omit<Image, 'createdAt' | 'updatedAt'> & {
+type ImageRow = Omit<Image, 'createdAt' | 'updatedAt' | 'fullcode'> & {
     albumId: number;
+    createdAt: string;
+    updatedAt: string;
 };
 
 export class GalleryRepository extends MappedRepository<GalleryRow, Gallery> {
@@ -75,6 +77,18 @@ export class GalleryRepository extends MappedRepository<GalleryRow, Gallery> {
         });
     };
 
+    updateAlbum = async (
+        albumId: number,
+        name: string,
+        code: string,
+    ): Promise<RunResult> => {
+        return this.albumRepository.update(albumId, {
+            name,
+            code,
+            updatedAt: new Date().toISOString(),
+        });
+    };
+
     deleteAlbum = async (albumId: number): Promise<RunResult> => {
         return this.albumRepository.delete(albumId);
     };
@@ -105,7 +119,7 @@ export class AlbumRepository extends MappedRepository<AlbumRow, Album> {
     }
     protected async initializeSchema(): Promise<void> {}
     protected async mapToDomain(row: AlbumRow): Promise<Album> {
-        const images = await this.imageRepository.findByAlbumId(row.id);
+        const images = await this.imageRepository.findByAlbum(row);
         return {
             ...row,
             images,
@@ -136,6 +150,8 @@ export class AlbumRepository extends MappedRepository<AlbumRow, Album> {
             filename,
             code,
             ratio,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         });
     }
 
@@ -149,15 +165,19 @@ export class ImageRepository extends MappedRepository<ImageRow, Image> {
         super(db, 'gallery_album_image');
     }
     protected async initializeSchema(): Promise<void> {}
-    protected async mapToDomain(row: ImageRow): Promise<Image> {
+    protected async mapToDomain(
+        row: ImageRow,
+        album?: AlbumRow,
+    ): Promise<Image> {
         return {
             ...row,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            fullcode: `${album?.code ?? '???'}${row.code}`,
+            createdAt: new Date(row.createdAt),
+            updatedAt: new Date(row.updatedAt),
         } satisfies Image;
     }
-    async findByAlbumId(albumId: number): Promise<Image[]> {
-        const rows = await this.repo.findMany({ albumId });
-        return Promise.all(rows.map((row) => this.mapToDomain(row)));
+    async findByAlbum(album: AlbumRow): Promise<Image[]> {
+        const rows = await this.repo.findMany({ albumId: album.id });
+        return Promise.all(rows.map((row) => this.mapToDomain(row, album)));
     }
 }

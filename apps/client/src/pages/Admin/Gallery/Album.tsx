@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { Image } from '@server/gallery/gallery.types';
+import { Album, Image } from '@server/gallery/gallery.types';
 
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
@@ -12,6 +12,7 @@ import { UploadImageBtn } from '@/components/UploadImageBtn';
 import { useGallery, useGalleryAddImages } from '@/services/gallery';
 import { spinner } from '@/services/spinner';
 
+import { AdminGalleryAlbumEdit } from './AlbumEdit';
 import { AdminGalleryImageDelete } from './ImageDelete';
 
 export const AdminAlbum = () => {
@@ -19,12 +20,8 @@ export const AdminAlbum = () => {
     const params = useParams<{ galleryId: string; albumId: string }>();
     const [refresh, setRefresh] = useState(false);
     const [imageToDelete, setImageToDelete] = useState<Image | null>(null);
-    if (!params.galleryId) {
-        return (
-            <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
-        );
-    }
-    const galleryId = parseInt(params.galleryId, 10);
+    const [albumToEdit, setAlbumToEdit] = useState<Album | null>(null);
+    const galleryId = parseInt(params.galleryId || '', 10);
     const [gallery, loading, error] = useGallery(galleryId, true, [refresh]);
     spinner('AdminAlbum', loading);
     if (loading) return;
@@ -49,7 +46,7 @@ export const AdminAlbum = () => {
             <SubNavigation
                 onClickBack={() => navigate('/admin/gallery/' + galleryId)}
             >
-                {gallery.name} - {album.name}
+                {gallery.name} - {album.name} ({album.code})
             </SubNavigation>
             {album.images.length === 0 && (
                 <EmptyState icon="photo_album" title={`L'album est vide`} />
@@ -63,7 +60,7 @@ export const AdminAlbum = () => {
                             image={image}
                             zoomable={true}
                         >
-                            <div className="max">{image.code}</div>
+                            <div className="max">{image.fullcode}</div>
                             <button
                                 type="button"
                                 className="circle small transparent"
@@ -89,6 +86,19 @@ export const AdminAlbum = () => {
                     />
                 </dialog>
             )}
+            {/* Modal d'édition d'album */}
+            {albumToEdit && (
+                <dialog className="active">
+                    <AdminGalleryAlbumEdit
+                        album={albumToEdit}
+                        onClose={() => setAlbumToEdit(null)}
+                        onSuccess={() => {
+                            setAlbumToEdit(null);
+                            setRefresh(!refresh);
+                        }}
+                    />
+                </dialog>
+            )}
             {/* Bouton d'ajout */}
             <div className="fixed center bottom bottom-margin row">
                 <UploadImageBtn
@@ -98,11 +108,14 @@ export const AdminAlbum = () => {
                     useFunc={() => useGalleryAddImages(albumId)}
                     onSuccess={() => setRefresh(!refresh)}
                 />
-                {/*<nav className="min active">
-                    <button className="circle fill">
-                        <i>more_vert</i>
+                <nav className="min active">
+                    <button
+                        className="circle fill"
+                        onClick={() => setAlbumToEdit(album)}
+                    >
+                        <i>edit</i>
                     </button>
-                </nav>*/}
+                </nav>
             </div>
         </div>
     );

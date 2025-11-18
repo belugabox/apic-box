@@ -308,7 +308,7 @@ export class GalleryManager {
             for (const image of album.images) {
                 data.push({
                     Album: album.name,
-                    Code: image.code,
+                    Code: image.fullcode,
                 });
             }
         }
@@ -343,7 +343,7 @@ export class GalleryManager {
                     archive.append(imageBuffer, {
                         name: path.join(
                             'photos',
-                            image.code + path.extname(image.filename),
+                            image.fullcode + path.extname(image.filename),
                         ),
                     });
                 } catch (err) {
@@ -397,6 +397,19 @@ export class GalleryManager {
         const albumPath = await this.getAlbumPath(albumId);
         await mkdir(albumPath, { recursive: true });
         logger.info(`Album created with ID: ${albumId}`);
+    };
+
+    updateAlbum = async (
+        albumId: number,
+        name: string,
+        code: string,
+    ): Promise<void> => {
+        logger.info(
+            `Updating album ${albumId} with name "${name}" and code "${code}"`,
+        );
+        code = code.toUpperCase();
+        await this.repo.updateAlbum(albumId, name, code);
+        logger.info(`Album updated with ID: ${albumId}`);
     };
 
     deleteAlbum = async (albumId: number): Promise<void> => {
@@ -465,7 +478,7 @@ export class GalleryManager {
 
         // generate code
         const shortCode = `${String(currentIndex).padStart(3, '0')}`;
-        const code = `${album.code}${shortCode}`;
+        const code = `${shortCode}`;
         const filename = `${shortCode}${path.extname(file.name)}`;
 
         // add image to database

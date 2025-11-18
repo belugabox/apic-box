@@ -51,6 +51,8 @@ export const migrations: Migration[] = [
                             filename TEXT NOT NULL,
                             code TEXT NOT NULL,
                             ratio REAL NOT NULL,
+                            createdAt TEXT NOT NULL,
+                            updatedAt TEXT NOT NULL,
                             FOREIGN KEY (albumId) REFERENCES gallery_album(id) ON DELETE CASCADE
                         );`,
             );

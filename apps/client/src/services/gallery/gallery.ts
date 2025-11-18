@@ -161,6 +161,27 @@ export class GalleryService {
             ),
         );
     };
+    updateAlbum = async (
+        albumId: number,
+        name: string,
+        code: string,
+    ): Promise<void> => {
+        await callRpc(
+            serverApi.gallery.updateAlbum.$post(
+                {
+                    form: {
+                        albumId: albumId.toString(),
+                        name,
+                        code,
+                    },
+                },
+                {
+                    headers: authService.headers(),
+                },
+            ),
+        );
+    };
+
     deleteAlbum = async (albumId: number): Promise<void> => {
         await callRpc(
             serverApi.gallery.deleteAlbum.$post(

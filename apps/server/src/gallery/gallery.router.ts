@@ -296,6 +296,23 @@ export const galleryRoutes = () =>
             },
         )
         .post(
+            '/updateAlbum',
+            authManager.authMiddleware(AuthRole.ADMIN),
+            zValidator(
+                'form',
+                z.object({
+                    albumId: z.coerce.number(),
+                    name: z.string(),
+                    code: z.string().min(2).max(3),
+                }),
+            ),
+            async (c) => {
+                const { albumId, name, code } = c.req.valid('form');
+                await galleryManager.updateAlbum(albumId, name, code);
+                return c.json({ message: 'Album updated' });
+            },
+        )
+        .post(
             '/deleteAlbum',
             authManager.authMiddleware(AuthRole.ADMIN),
             zValidator(

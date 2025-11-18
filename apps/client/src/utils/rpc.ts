@@ -1,23 +1,52 @@
 import { ClientResponse } from 'hono/client';
 
+// Classe d'erreur personnalisée pour les appels RPC
+export class RpcError extends Error {
+    constructor(
+        public status: number,
+        public code?: string,
+        public details?: unknown,
+    ) {
+        super(code || `RPC Error: ${status}`);
+        this.name = 'RpcError';
+        Object.setPrototypeOf(this, RpcError.prototype);
+    }
+}
+
+// Types utiles
+const BINARY_CONTENT_TYPES = [
+    'image',
+    'application/pdf',
+    'application/octet-stream',
+];
+
+const isBinaryResponse = (contentType: string | null): boolean =>
+    contentType
+        ? BINARY_CONTENT_TYPES.some((type) => contentType.includes(type))
+        : false;
+
 export const callRpc = async <T>(
     rpc: Promise<ClientResponse<T>>,
 ): Promise<T> => {
-    const data = await rpc;
+    const response = await rpc;
 
-    if (!data.ok) {
-        const res = (await data.json()) as any;
-        throw res?.error || res;
+    if (!response.ok) {
+        try {
+            const error = (await response.json()) as { error?: string };
+            throw new RpcError(response.status, error.error, error);
+        } catch (err) {
+            if (err instanceof RpcError) throw err;
+            throw new RpcError(response.status, 'Unknown error');
+        }
     }
 
-    // Vérifier si c'est une réponse binaire (image)
-    const contentType = data.headers.get('Content-Type');
-    if (contentType?.includes('image')) {
-        const arrayBuffer = await data.arrayBuffer();
+    // Déterminer le type de réponse
+    const contentType = response.headers.get('Content-Type');
+    if (isBinaryResponse(contentType)) {
+        const arrayBuffer = await response.arrayBuffer();
         return new Uint8Array(arrayBuffer) as T;
     }
 
-    // Sinon, parser comme du JSON
-    const res = (await data.json()) as T;
-    return res;
+    // Parser comme du JSON
+    return (await response.json()) as T;
 };

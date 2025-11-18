@@ -129,7 +129,7 @@ export const Album = () => {
                             image={image}
                             zoomable={true}
                         >
-                            {image.code}
+                            {image.fullcode}
                         </ImageCard>
                     ))}
                 </Mansory>

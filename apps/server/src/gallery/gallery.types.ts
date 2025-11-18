@@ -37,4 +37,6 @@ export type Image = {
     updatedAt: Date;
 
     albumId: number;
+
+    fullcode: string;
 };

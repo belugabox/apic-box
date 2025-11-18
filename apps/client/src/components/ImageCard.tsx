@@ -48,7 +48,7 @@ export const ImageCard = ({
                     {imageData && (
                         <img
                             src={imageData}
-                            alt={image?.code}
+                            alt={image?.fullcode}
                             style={{
                                 width: '100%',
                                 aspectRatio: square ? '1/1' : image?.ratio,
@@ -81,7 +81,7 @@ export const ImageCard = ({
                     >
                         <img
                             src={imageData}
-                            alt={image?.code}
+                            alt={image?.fullcode}
                             style={{
                                 width: '100%',
                                 height: '100%',

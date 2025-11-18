@@ -71,6 +71,11 @@ export const useGalleryAddAlbum = (galleryId: number) =>
         galleryService.addAlbum(galleryId, name, code),
     );
 
+export const useGalleryUpdateAlbum = (albumId: number) =>
+    usePromiseFunc((name: string, code: string) =>
+        galleryService.updateAlbum(albumId, name, code),
+    );
+
 export const useGalleryDeleteAlbum = () =>
     usePromiseFunc((albumId: number) => galleryService.deleteAlbum(albumId));
 

@@ -32,7 +32,7 @@ export const AdminGalleryImageDelete = ({
             <h5>Confirmer la suppression</h5>
             <p>
                 Êtes-vous sûr de vouloir supprimer l'image{' '}
-                <strong>"{image?.code}"</strong> ?
+                <strong>"{image?.fullcode}"</strong> ?
             </p>
             <span className="error-text">{error?.message}</span>
             <nav className="right-align">
