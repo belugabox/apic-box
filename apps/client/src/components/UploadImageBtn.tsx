@@ -75,7 +75,7 @@ export const UploadImageBtn = ({
                     type="file"
                     multiple={multiple}
                     style={{ cursor: 'pointer' }}
-                    accept=".jpg,.jpeg,.JPG,.JPEG,image/jpeg"
+                    accept=".jpg,.jpeg,.png,.JPG,.JPEG,.PNG,image/jpeg,image/png"
                     ref={fileInputRef}
                     className={errors.files ? 'invalid' : ''}
                 />

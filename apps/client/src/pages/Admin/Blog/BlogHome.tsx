@@ -5,6 +5,7 @@ import { Blog } from '@server/blog/blog.types';
 import { GalleryStatus } from '@server/gallery/gallery.types';
 
 import { ErrorMessage } from '@/components/Error';
+import { StatusTag } from '@/components/StatusTag';
 import {
     useBlogAdd,
     useBlogDelete,
@@ -50,6 +51,9 @@ export const AdminBlogHome = () => {
                         {blog.createdAt.toLocaleDateString()}
                     </p>
                     <nav className="right-align">
+                        <div className="max left-align">
+                            <StatusTag status={blog.status} />
+                        </div>
                         <button
                             className="circle fill"
                             onClick={() => handleOpen('delete', blog)}

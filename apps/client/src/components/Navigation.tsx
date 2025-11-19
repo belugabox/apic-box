@@ -5,21 +5,23 @@ export const Navigation = () => {
     const page = location.pathname;
 
     return (
-        <nav className="">
+        <nav
+            className="center"
+            style={{
+                maxWidth: '1000px',
+            }}
+        >
             <Link to="/" className={page === '/' ? 'active' : ''}>
                 <div>
                     <img
-                        src="/logo.png"
+                        src="/logo_title.png"
                         alt="APIC Logo"
-                        className="round large tiny-padding surface-bright"
+                        style={{ height: '3rem' }}
                     />
-                </div>
-                <div className="left-align left-margin">
-                    <h6 className="bold black-text">APIC Sentelette</h6>
                 </div>
             </Link>
             <div className="max center-align"></div>
-            <nav className="">
+            <nav className="secondary-text">
                 {/*<Link
                     to="/gallery"
                     className={page.startsWith('/gallery') ? 'active' : ''}
@@ -30,7 +32,7 @@ export const Navigation = () => {
                     to="/admin"
                     className={page.startsWith('/admin') ? 'active' : ''}
                 >
-                    <i className="secondary-text">admin_panel_settings</i>
+                    <i className="">admin_panel_settings</i>
                 </Link>
             </nav>
         </nav>

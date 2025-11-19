@@ -200,7 +200,12 @@ export class GalleryManager {
 
     setCover = async (galleryId: number, file: File): Promise<void> => {
         const coverPath = await this.getCoverPath(galleryId);
-        await this.generateThumbnail(await file.arrayBuffer(), coverPath, 600);
+        await this.generateThumbnail(
+            await file.arrayBuffer(),
+            coverPath,
+            false,
+            600,
+        );
 
         await this.repo.update(galleryId, {
             updatedAt: new Date().toISOString(),
@@ -232,7 +237,7 @@ export class GalleryManager {
         const coverPath = path.join(
             GALLERY_DIR,
             galleryId.toString(),
-            'cover.jpg',
+            'cover.png',
         );
         return coverPath;
     };
@@ -550,23 +555,34 @@ export class GalleryManager {
     private async generateThumbnail(
         buffer: ArrayBuffer,
         thumbnailPath: string,
+        watermark: boolean = true,
         size?: number,
     ): Promise<void> {
-        const thumbnailBuffer = await sharp(buffer)
-            .resize(
-                size || IMAGE_THUMBNAIL_SIZE,
-                size || IMAGE_THUMBNAIL_SIZE,
-                {
-                    fit: 'inside',
-                },
-            )
-            .jpeg({ quality: 90 })
-            .toBuffer();
+        // Detect if this is a cover image based on the path
+        const isCover = thumbnailPath.includes('cover.png');
+        const format = isCover ? 'png' : 'jpeg';
+
+        const resized = sharp(buffer).resize(
+            size || IMAGE_THUMBNAIL_SIZE,
+            size || IMAGE_THUMBNAIL_SIZE,
+            {
+                fit: 'inside',
+            },
+        );
+
+        const thumbnailBuffer = await (format === 'png'
+            ? resized.png().toBuffer()
+            : resized.jpeg({ quality: 90 }).toBuffer());
 
         if ((await existsSync(WATERMARK_PATH)) === false) {
             logger.warn(
                 `Watermark image not found at ${WATERMARK_PATH}, skipping watermarking`,
             );
+            await sharp(thumbnailBuffer).toFile(thumbnailPath);
+            return;
+        }
+
+        if (!watermark) {
             await sharp(thumbnailBuffer).toFile(thumbnailPath);
             return;
         }

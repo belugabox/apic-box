@@ -16,7 +16,7 @@ export const Home = () => {
                 className="row vertical max"
                 style={{
                     height: '100%',
-                    backgroundImage: 'url(/family.png)',
+                    backgroundImage: 'url(/undraw_family_6gj8.svg)',
                     backgroundSize: '200px',
                     backgroundPosition: 'center bottom',
                     backgroundRepeat: 'no-repeat',
@@ -24,10 +24,7 @@ export const Home = () => {
             >
                 <div className="center max">
                     {latestBlog && (
-                        <div
-                            className="center top-margin padding"
-                            style={{ maxWidth: '600px' }}
-                        >
+                        <div className="center top-margin padding">
                             <h4>{latestBlog.title}</h4>
                             <p>{latestBlog.content}</p>
                         </div>
@@ -35,15 +32,17 @@ export const Home = () => {
                     {latestGallery && (
                         <div
                             className="center top-margin"
-                            style={{ maxWidth: '500px' }}
+                            style={{ maxWidth: '600px' }}
                         >
-                            <GalleryCard
-                                className=""
-                                gallery={latestGallery}
-                                onClick={() =>
-                                    navigate(`/gallery/${latestGallery.id}`)
-                                }
-                            ></GalleryCard>
+                            <GalleryCard className="" gallery={latestGallery}>
+                                <button
+                                    onClick={() =>
+                                        navigate(`/gallery/${latestGallery.id}`)
+                                    }
+                                >
+                                    Voir la galerie
+                                </button>
+                            </GalleryCard>
                         </div>
                     )}
                     <div className="absolute row bottom right">

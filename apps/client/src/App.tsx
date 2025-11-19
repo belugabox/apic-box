@@ -8,11 +8,23 @@ export const App = () => {
     const loading = useLoadingState();
     return (
         <>
-            <header className="fixed">
+            <header
+                className=" white"
+                style={{
+                    height: '100%',
+                    borderBottom: '1px solid #00000015',
+                    boxShadow: '#00000010 0px 6px 8px 0px',
+                }}
+            >
                 <Navigation />
             </header>
             {loading && <Spinner></Spinner>}
-            <main className="responsive padding">
+            <main
+                className="responsive padding "
+                style={{
+                    maxWidth: '1000px',
+                }}
+            >
                 <Outlet />
             </main>
         </>

@@ -27,12 +27,11 @@ export const GalleryCard = ({
                 <div className="s4">
                     {cover && (
                         <img
-                            className="responsive"
+                            className="responsive padding"
                             src={cover}
                             alt={`${gallery.name} cover`}
                             style={{
                                 objectFit: 'contain',
-                                backgroundColor: '#ffffff',
                             }}
                         />
                     )}

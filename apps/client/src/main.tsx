@@ -6,7 +6,7 @@ import { RouterProvider } from 'react-router';
 
 import { router } from './router';
 
-ui('theme', '#6750a4');
+ui('theme', '#6553BA');
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
