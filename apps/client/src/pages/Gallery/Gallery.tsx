@@ -25,7 +25,7 @@ export const Gallery = () => {
             <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
         );
     }
-    if (error?.name === 'UnauthorizedError') {
+    if (error?.message === 'UnauthorizedError') {
         return (
             <GalleryLogin
                 galleryId={galleryId}

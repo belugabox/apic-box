@@ -20,7 +20,7 @@ export const Album = () => {
     const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
     useSpinner('Album', loading);
     if (loading) return;
-    if (error?.name === 'UnauthorizedError') {
+    if (error?.message === 'UnauthorizedError') {
         return (
             <GalleryLogin
                 galleryId={galleryId}
