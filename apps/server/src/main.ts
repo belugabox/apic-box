@@ -4,8 +4,12 @@ import * as fs from 'fs';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { join } from 'path';
+import 'reflect-metadata';
 
 import { health, init, start } from './core';
+import { AppDataSource } from './db';
+import { GalleryStatus } from './gallery/gallery.types';
+import { Blog, BlogModule } from './modules/module';
 import { router } from './router';
 // Load and validate environment variables
 import './tools/env';
@@ -56,6 +60,26 @@ const startServer = () => {
 };
 
 (async () => {
+    await AppDataSource.initialize()
+        .then(async () => {
+            logger.info('TypeORM Data Source has been initialized!');
+
+            const test = new BlogModule();
+            await test.health();
+            await test.add({
+                title: 'First Post',
+                content: 'This is the content of the first post.',
+                author: 'Author Name',
+                status: GalleryStatus.DRAFT,
+            });
+            await test.edit(1, { title: 'Updated First Post' });
+        })
+        .catch((err) => {
+            logger.error(
+                'Error during TypeORM Data Source initialization',
+                err,
+            );
+        });
     await init();
     await health();
     await start();

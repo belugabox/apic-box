@@ -5,6 +5,7 @@ import path from 'path';
 import { DATA_FILE_PATH } from '../tools/env';
 import { logger } from '../tools/logger';
 import { Migrator } from '../tools/migrator';
+import { AppDataSource } from './index';
 import { migrations } from './migrations';
 import { Repository } from './repositories';
 import { RunResult } from './types';
@@ -20,6 +21,11 @@ export class DbManager {
     }
 
     health = async (): Promise<void> => {
+        // Initialize TypeORM connection
+        if (!AppDataSource.isInitialized) {
+            await AppDataSource.initialize();
+            logger.info('TypeORM connection initialized');
+        }
         await this.getDb();
     };
 

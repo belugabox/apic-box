@@ -3,6 +3,7 @@ import { MappedRepository } from '@server/db';
 import { GalleryStatus } from '@server/gallery/gallery.types';
 import { logger } from '@server/tools/logger';
 
+import '../modules/module';
 import { Blog } from './blog.types';
 
 type BlogRow = Omit<Blog, 'createdAt' | 'updatedAt'> & {
