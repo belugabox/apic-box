@@ -34,15 +34,13 @@ export const Home = () => {
                             className="center top-margin"
                             style={{ maxWidth: '600px' }}
                         >
-                            <GalleryCard className="" gallery={latestGallery}>
-                                <button
-                                    onClick={() =>
-                                        navigate(`/gallery/${latestGallery.id}`)
-                                    }
-                                >
-                                    Voir la galerie
-                                </button>
-                            </GalleryCard>
+                            <GalleryCard
+                                className=""
+                                gallery={latestGallery}
+                                onClick={() =>
+                                    navigate(`/gallery/${latestGallery.id}`)
+                                }
+                            ></GalleryCard>
                         </div>
                     )}
                     <div className="absolute row bottom right">
