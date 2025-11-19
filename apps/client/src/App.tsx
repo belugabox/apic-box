@@ -20,7 +20,7 @@ export const App = () => {
             </header>
             {loading && <Spinner></Spinner>}
             <main
-                className="responsive padding "
+                className="responsive"
                 style={{
                     maxWidth: '1000px',
                 }}
