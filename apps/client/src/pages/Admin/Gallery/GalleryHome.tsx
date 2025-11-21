@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Gallery } from '@server/gallery/gallery.types';
+import type { Gallery } from '@server/modules/gallery';
 
 import { ErrorMessage } from '@/components/Error';
 import { GalleryCard } from '@/components/GalleryCard';
@@ -44,7 +44,7 @@ export const AdminGalleryHome = () => {
         setShowDelete(false);
         setSelectedGallery(undefined);
     };
-
+    
     return (
         <div>
             <div className="grid">

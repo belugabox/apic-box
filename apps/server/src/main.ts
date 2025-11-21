@@ -6,11 +6,7 @@ import { cors } from 'hono/cors';
 import { join } from 'path';
 import 'reflect-metadata';
 
-import { health, init, start } from './core';
-import { AppDataSource } from './db';
-import { GalleryStatus } from './gallery/gallery.types';
-import { Blog, BlogModule } from './modules/module';
-import { router } from './router';
+import { health, init, routes } from './core';
 // Load and validate environment variables
 import './tools/env';
 import { logger } from './tools/logger';
@@ -31,8 +27,8 @@ const app = new Hono();
 app.use('/api/*', cors());
 app.use('/api/*', requestLoggerMiddleware());
 app.use('/api/*', timeoutMiddleware(30000));
-const routes = app.basePath('/api').route('/', router());
-export type ServerType = typeof routes;
+const appRoutes = app.basePath('/api').route('/', routes());
+export type ServerType = typeof appRoutes;
 
 // ---
 app.use(
@@ -60,29 +56,8 @@ const startServer = () => {
 };
 
 (async () => {
-    await AppDataSource.initialize()
-        .then(async () => {
-            logger.info('TypeORM Data Source has been initialized!');
-
-            const test = new BlogModule();
-            await test.health();
-            await test.add({
-                title: 'First Post',
-                content: 'This is the content of the first post.',
-                author: 'Author Name',
-                status: GalleryStatus.DRAFT,
-            });
-            await test.edit(1, { title: 'Updated First Post' });
-        })
-        .catch((err) => {
-            logger.error(
-                'Error during TypeORM Data Source initialization',
-                err,
-            );
-        });
     await init();
     await health();
-    await start();
     startServer();
 })().catch((err) => {
     logger.error(err, 'Failed to start server');

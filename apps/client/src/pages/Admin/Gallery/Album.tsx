@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { Album, Image } from '@server/gallery/gallery.types';
+import type { Album, Image } from '@server/modules/gallery';
 
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
@@ -28,13 +28,13 @@ export const AdminAlbum = () => {
 
     useSpinner('AdminAlbum', loading);
     if (loading) return;
-    if (error?.message === 'NotFoundError' || !gallery) {
+    if (error?.name === 'NotFoundError' || !gallery) {
         return (
             <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
         );
     }
     if (error) return <ErrorMessage error={error} />;
-    const album = gallery?.albums.find((a) => a.id === albumId);
+    const album = gallery?.albums?.find((a) => a.id === albumId);
     if (!album) {
         return <EmptyState icon="photo_album" title={`L'album n'existe pas`} />;
     }
@@ -46,10 +46,10 @@ export const AdminAlbum = () => {
             >
                 {gallery.name} - {album.name} ({album.code})
             </SubNavigation>
-            {album.images.length === 0 && (
+            {album.images?.length === 0 && (
                 <EmptyState icon="photo_album" title={`L'album est vide`} />
             )}
-            {album.images.length > 0 && (
+            {album.images && album.images.length > 0 && (
                 <Mansory>
                     {album.images.map((image) => (
                         <ImageCard

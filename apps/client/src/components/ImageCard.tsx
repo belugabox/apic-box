@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 
-import { Image } from '@server/gallery/gallery.types';
+import type { Image } from '@server/modules/gallery';
 
 import { useGalleryImage } from '@/services/gallery';
 

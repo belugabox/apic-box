@@ -1,9 +1,9 @@
 import { db } from '@server/db';
 import { MappedRepository } from '@server/db';
-import { GalleryStatus } from '@server/gallery/gallery.types';
+import { EntityStatus } from '@server/modules/shared.types';
 import { logger } from '@server/tools/logger';
 
-import '../modules/module';
+import '../modules/base.module';
 import { Blog } from './blog.types';
 
 type BlogRow = Omit<Blog, 'createdAt' | 'updatedAt'> & {
@@ -35,7 +35,7 @@ export class BlogManager extends MappedRepository<BlogRow, Blog> {
                 title: `Bienvenue sur le site de l'APIC Sentelette !`,
                 content: `L'association des parents d'élèves de Sains-en-Amienois, Saint-Fuscien et Estrées-sur-Noye.`,
                 author: 'APIC',
-                status: GalleryStatus.PUBLISHED,
+                status: EntityStatus.PUBLISHED,
             });
             logger.info(`Default admin user created with username: "admin"`);
         }

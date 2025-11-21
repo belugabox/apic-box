@@ -4,7 +4,7 @@ import z from 'zod';
 
 import { AuthRole } from '@server/auth';
 import { authManager, blogManager } from '@server/core';
-import { GalleryStatus } from '@server/gallery/gallery.types';
+import { EntityStatus } from '@server/modules/shared.types';
 import { NotFoundError, errorHandler } from '@server/tools/errorHandler';
 
 export const blogRoutes = () =>
@@ -48,7 +48,7 @@ export const blogRoutes = () =>
                     title: z.string(),
                     content: z.string(),
                     author: z.string(),
-                    status: z.enum(GalleryStatus),
+                    status: z.enum(EntityStatus),
                 }),
             ),
             async (c) => {
@@ -67,7 +67,7 @@ export const blogRoutes = () =>
                     title: z.string(),
                     content: z.string(),
                     author: z.string(),
-                    status: z.enum(GalleryStatus),
+                    status: z.enum(EntityStatus),
                 }),
             ),
             async (c) => {

@@ -1,9 +1,11 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
+import { Entity } from 'typeorm';
 import { z } from 'zod';
 
 import { AuthRole } from '@server/auth';
 import { authManager, galleryManager } from '@server/core';
+import { EntityStatus } from '@server/modules/shared.types';
 import {
     BadRequestError,
     NotFoundError,
@@ -60,7 +62,7 @@ export const galleryRoutes = () =>
                 z.object({
                     name: z.string(),
                     description: z.string(),
-                    status: z.enum(GalleryStatus),
+                    status: z.enum(EntityStatus),
                 }),
             ),
             async (c) => {
@@ -82,7 +84,7 @@ export const galleryRoutes = () =>
                     id: z.coerce.number(),
                     name: z.string(),
                     description: z.string(),
-                    status: z.enum(GalleryStatus),
+                    status: z.enum(EntityStatus),
                 }),
             ),
             async (c) => {

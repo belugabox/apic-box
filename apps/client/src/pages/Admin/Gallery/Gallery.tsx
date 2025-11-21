@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { Album, Gallery } from '@server/gallery/gallery.types';
+import type { Album, Gallery } from '@server/modules/gallery';
 
 import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
@@ -50,7 +50,7 @@ export const AdminGallery = () => {
         );
 
     if (loading) return;
-    if (error?.message === 'NotFoundError' || !gallery) {
+    if (error?.name === 'NotFoundError' || !gallery) {
         return (
             <EmptyState icon="photo_album" title="La galerie n'existe pas" />
         );
@@ -126,7 +126,9 @@ export const AdminGallery = () => {
             <SubNavigation onClickBack={() => navigate('/admin/gallery')}>
                 {gallery.name}
             </SubNavigation>
-
+            {albums.length === 0 && (
+                <EmptyState icon="photo_album" title={`La galerie est vide`} />
+            )}
             <div className="grid">
                 {albums.map((album) => (
                     <div

@@ -1,15 +1,11 @@
 import path from 'path';
 import { DataSource } from 'typeorm';
 
-import { Blog } from '@server/modules/module';
-import { logger } from '@server/tools/logger';
+import { User } from '@server/modules/auth';
+import { Blog } from '@server/modules/blog';
+import { Album, Gallery, Image } from '@server/modules/gallery';
 
 import { DATA_FILE_PATH } from '../tools/env';
-
-/**
- * Module DB - Exports centralisés
- * Utilisation : import { AppDataSource } from '@server/db'
- */
 
 export { db, createDbInstance, getDb } from './singleton';
 export { DbManager } from './manager';
@@ -17,14 +13,12 @@ export { Repository, MappedRepository } from './repositories';
 export type { RunResult } from './types';
 export { migrations } from './migrations';
 
-logger.info('Initializing TypeORM DB connection... ' + DATA_FILE_PATH);
-
 export const AppDataSource = new DataSource({
     type: 'better-sqlite3',
     database: path.resolve(DATA_FILE_PATH, 'db_typeorm.sqlite'),
     synchronize: true,
     logging: false,
-    entities: [Blog],
+    entities: [User, Blog, Gallery, Album, Image],
     migrationsRun: false,
     migrationsTableName: 'migrations',
     migrationsTransactionMode: 'all',

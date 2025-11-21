@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-import { Gallery } from '@server/gallery/gallery.types';
+import type { Gallery } from '@server/modules/gallery';
 
 import { useGalleryCover } from '@/services/gallery';
 
@@ -60,7 +60,7 @@ export const GalleryCard = ({
                                 {gallery.description}
                             </p>
                             <p className="secondary-text no-margin">
-                                {gallery.albums.length} albums
+                                {gallery.albums?.length} albums
                             </p>
                         </div>
                         <div>

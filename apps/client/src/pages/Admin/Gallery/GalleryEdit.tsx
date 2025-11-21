@@ -1,8 +1,9 @@
 import { useForm } from 'react-hook-form';
 
-import { Gallery, GalleryStatus } from '@server/gallery/gallery.types';
+import type { Gallery } from '@server/modules/gallery';
 
 import { useGalleryUpdate } from '@/services/gallery';
+import { EntityStatus } from '@server/modules/shared.types';
 
 interface AdminGalleryEditProps {
     gallery: Gallery;
@@ -83,9 +84,9 @@ export const AdminGalleryEdit = ({
                         })}
                         className={errors.status ? 'invalid' : ''}
                     >
-                        <option value={GalleryStatus.DRAFT}>Brouillon</option>
-                        <option value={GalleryStatus.PUBLISHED}>Publié</option>
-                        <option value={GalleryStatus.ARCHIVED}>Archivé</option>
+                        <option value={EntityStatus.DRAFT}>Brouillon</option>
+                        <option value={EntityStatus.PUBLISHED}>Publié</option>
+                        <option value={EntityStatus.ARCHIVED}>Archivé</option>
                     </select>
                     <label>Statut</label>
                     <span className="error">{errors.status?.message}</span>

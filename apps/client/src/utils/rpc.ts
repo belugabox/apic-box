@@ -4,11 +4,14 @@ import { ClientResponse } from 'hono/client';
 export class RpcError extends Error {
     constructor(
         public status: number,
-        public code?: string,
+        public name: string,
+        public message: string,
         public details?: unknown,
     ) {
-        super(code || `RPC Error: ${status}`);
-        this.name = 'RpcError';
+        super(message || `RPC Error: ${status}`);
+        this.name = name;
+        this.message = message || `RPC Error: ${status}`;
+        this.details = details;
         Object.setPrototypeOf(this, RpcError.prototype);
     }
 }
@@ -32,11 +35,24 @@ export const callRpc = async <T>(
 
     if (!response.ok) {
         try {
-            const error = (await response.json()) as { name?: string };
-            throw new RpcError(response.status, error.name, error);
+            const error = (await response.json()) as {
+                name: string;
+                message: string;
+            };
+            throw new RpcError(
+                response.status,
+                error.name,
+                error.message,
+                error,
+            );
         } catch (err) {
             if (err instanceof RpcError) throw err;
-            throw new RpcError(response.status, 'Unknown error');
+            throw new RpcError(
+                response.status,
+                'Unknown error',
+                'An unknown error occurred',
+                err,
+            );
         }
     }
 

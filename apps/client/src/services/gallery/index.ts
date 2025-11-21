@@ -1,4 +1,4 @@
-import { Gallery, Image } from '@server/gallery/gallery.types';
+import type { Gallery, Image } from '@server/modules/gallery';
 
 import { usePromise, usePromiseFunc } from '@/utils/Hooks';
 

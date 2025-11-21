@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 
-import { Album } from '@server/gallery/gallery.types';
+import type { Album } from '@server/modules/gallery';
 
 import { useGalleryUpdateAlbum } from '@/services/gallery';
 

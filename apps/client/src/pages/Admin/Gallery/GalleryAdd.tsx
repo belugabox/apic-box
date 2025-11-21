@@ -1,8 +1,9 @@
 import { useForm } from 'react-hook-form';
 
-import { Gallery, GalleryStatus } from '@server/gallery/gallery.types';
+import type { Gallery } from '@server/modules/gallery';
 
 import { useGalleryAdd } from '@/services/gallery';
+import { EntityStatus } from '@server/modules/shared.types';
 
 interface AdminGalleryAddProps {
     onClose?: () => void;
@@ -25,7 +26,7 @@ export const AdminGalleryAdd = ({
             id: 0,
             name: '',
             description: '',
-            status: GalleryStatus.DRAFT,
+            status: EntityStatus.DRAFT,
             createdAt: new Date(),
             updatedAt: new Date(),
             isProtected: false,

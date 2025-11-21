@@ -1,4 +1,4 @@
-import { Album } from '@server/gallery/gallery.types';
+import type { Album } from '@server/modules/gallery';
 
 import { useGalleryDeleteAlbum } from '@/services/gallery';
 
@@ -32,7 +32,7 @@ export const AdminGalleryAlbumDelete = ({
             <h5>Confirmer la suppression</h5>
             <p>
                 Êtes-vous sûr de vouloir supprimer l'album{' '}
-                <strong>"{album?.name}"</strong> ({album?.images.length} photos)
+                <strong>"{album?.name}"</strong> ({album?.images?.length} photos)
                 ?
             </p>
             <span className="error-text">{error?.message}</span>

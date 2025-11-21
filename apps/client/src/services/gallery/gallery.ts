@@ -1,4 +1,4 @@
-import { Album, Gallery, Image } from '@server/gallery/gallery.types';
+import type { Album, Gallery, Image } from '@server/modules/gallery';
 
 import { callRpc } from '@/utils/rpc';
 
@@ -37,9 +37,9 @@ export class GalleryService {
 
     get = async (galleryId: number, fromAdmin?: boolean): Promise<Gallery> => {
         const data = await callRpc(
-            serverApi.gallery[':galleryId'].$get(
+            serverApi.gallery[':id'].$get(
                 {
-                    param: { galleryId: galleryId.toString() },
+                    param: { id: galleryId.toString() },
                 },
                 {
                     headers: fromAdmin
@@ -66,8 +66,8 @@ export class GalleryService {
 
     delete = async (id: number) => {
         await callRpc(
-            serverApi.gallery.delete[':id'].$delete(
-                { param: { id: String(id) } },
+            serverApi.gallery[':id'].$delete(
+                { param: { id: id.toString() } },
                 {
                     headers: authService.headers(),
                 },
@@ -77,10 +77,10 @@ export class GalleryService {
 
     update = async (gallery: Gallery): Promise<void> => {
         await callRpc(
-            serverApi.gallery.update.$post(
+            serverApi.gallery[':id'].$patch(
                 {
+                    param: { id: gallery.id.toString() },
                     form: {
-                        id: gallery.id.toString(),
                         name: gallery.name,
                         description: gallery.description,
                         status: gallery.status,
@@ -98,8 +98,9 @@ export class GalleryService {
         password: string,
     ): Promise<string | void> => {
         const data = await callRpc(
-            serverApi.gallery.login.$post({
-                form: { galleryId: galleryId.toString(), password },
+            serverApi.gallery[':galleryId'].login.$post({
+                param: { galleryId: galleryId.toString() },
+                form: { password },
             }),
         );
         if (data.token) {
@@ -113,10 +114,10 @@ export class GalleryService {
         password?: string,
     ): Promise<void> => {
         await callRpc(
-            serverApi.gallery.updatePassword.$post(
+            serverApi.gallery[':galleryId'].updatePassword.$post(
                 {
+                    param: { galleryId: galleryId.toString() },
                     form: {
-                        galleryId: galleryId.toString(),
                         password: password || '',
                     },
                 },
@@ -126,34 +127,17 @@ export class GalleryService {
             ),
         );
     };
-    album = async (
-        galleryId: number,
-        albumId: number,
-        fromAdmin?: boolean,
-    ): Promise<Album> => {
-        const data = await callRpc(
-            serverApi.gallery.album[':albumId'].$get(
-                {
-                    param: { albumId: albumId.toString() },
-                },
-                {
-                    headers: fromAdmin
-                        ? authService.headers()
-                        : this.headers(galleryId),
-                },
-            ),
-        );
-        return this.transformAlbum(data);
-    };
+
     addAlbum = async (
         galleryId: number,
         name: string,
         code: string,
     ): Promise<void> => {
         await callRpc(
-            serverApi.gallery.addAlbum.$post(
+            serverApi.gallery[':galleryId'].addAlbum.$post(
                 {
-                    form: { galleryId: galleryId.toString(), name, code },
+                    param: { galleryId: galleryId.toString() },
+                    form: { name, code },
                 },
                 {
                     headers: authService.headers(),
@@ -167,10 +151,10 @@ export class GalleryService {
         code: string,
     ): Promise<void> => {
         await callRpc(
-            serverApi.gallery.updateAlbum.$post(
+            serverApi.gallery.album[':albumId'].$patch(
                 {
+                    param: { albumId: albumId.toString() },
                     form: {
-                        albumId: albumId.toString(),
                         name,
                         code,
                     },
@@ -184,9 +168,9 @@ export class GalleryService {
 
     deleteAlbum = async (albumId: number): Promise<void> => {
         await callRpc(
-            serverApi.gallery.deleteAlbum.$post(
+            serverApi.gallery.album[':albumId'].$delete(
                 {
-                    form: { albumId: albumId.toString() },
+                    param: { albumId: albumId.toString() },
                 },
                 {
                     headers: authService.headers(),
@@ -197,12 +181,13 @@ export class GalleryService {
 
     reorderAlbums = async (
         galleryId: number,
-        albums: Array<{ albumId: number; orderIndex: number }>,
+        albumOrders: Array<{ albumId: number; orderIndex: number }>,
     ): Promise<void> => {
         await callRpc(
-            serverApi.gallery.reorderAlbums.$post(
+            serverApi.gallery[':galleryId'].reorderAlbums.$post(
                 {
-                    json: { galleryId: galleryId.toString(), albums },
+                    param: { galleryId: galleryId.toString() },
+                    json: { albumOrders },
                 },
                 {
                     headers: authService.headers(),
@@ -213,9 +198,9 @@ export class GalleryService {
 
     deleteImage = async (imageId: number): Promise<void> => {
         await callRpc(
-            serverApi.gallery.deleteImage.$post(
+            serverApi.gallery.image[':imageId'].$delete(
                 {
-                    form: { imageId: imageId.toString() },
+                    param: { imageId: imageId.toString() },
                 },
                 {
                     headers: authService.headers(),
@@ -230,7 +215,7 @@ export class GalleryService {
         imageId: number,
         updatedAt?: string,
     ): Promise<string> => {
-        let url = `/api/gallery/image/${imageId}/thumbnail`;
+        let url = `/api/gallery/image/${imageId}`;
         if (updatedAt) {
             // Ajouter un query parameter pour invalider le cache lors d'une mise à jour
             const timestamp = new Date(updatedAt).getTime();
@@ -257,7 +242,7 @@ export class GalleryService {
         galleryId: number,
         updatedAt?: string,
     ): Promise<string | undefined> => {
-        let url = `/api/gallery/cover/${galleryId}`;
+        let url = `/api/gallery/${galleryId}/cover`;
         if (updatedAt) {
             // Ajouter un query parameter pour invalider le cache lors d'une mise à jour
             const timestamp = new Date(updatedAt).getTime();
@@ -278,13 +263,12 @@ export class GalleryService {
 
     updateCover = async (galleryId: number, file?: File): Promise<string> => {
         const formData = new FormData();
-        formData.append('galleryId', galleryId.toString());
         if (file) formData.append('file', file);
 
         const headers = authService.headers();
         delete headers['Content-Type'];
 
-        const response = await fetch('/api/gallery/updateCover', {
+        const response = await fetch(`/api/gallery/${galleryId}/updateCover`, {
             method: 'POST',
             body: formData,
             headers,
@@ -300,7 +284,6 @@ export class GalleryService {
 
     addImages = async (albumId: number, files: File[]) => {
         const formData = new FormData();
-        formData.append('albumId', albumId.toString());
         files.forEach((file) => {
             formData.append('files', file);
         });
@@ -308,11 +291,14 @@ export class GalleryService {
         const headers = authService.headers();
         delete headers['Content-Type'];
 
-        const response = await fetch('/api/gallery/addImages', {
-            method: 'POST',
-            body: formData,
-            headers,
-        });
+        const response = await fetch(
+            `/api/gallery/album/${albumId}/addImages`,
+            {
+                method: 'POST',
+                body: formData,
+                headers,
+            },
+        );
 
         if (!response.ok) {
             const error = await response.json();
@@ -326,7 +312,7 @@ export class GalleryService {
         const headers = authService.headers();
         delete headers['Content-Type'];
 
-        const response = await fetch(`/api/gallery/export/${galleryId}`, {
+        const response = await fetch(`/api/gallery/${galleryId}/export`, {
             method: 'GET',
             headers,
         });
@@ -373,7 +359,7 @@ export class GalleryService {
         createdAt: new Date(album.createdAt),
         updatedAt: new Date(album.updatedAt),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        images: album.images.map((img: any) => this.transformImage(img)),
+        images: album.images?.map((img: any) => this.transformImage(img)),
         gallery: album.gallery
             ? this.transformGallery(album.gallery)
             : undefined,
@@ -385,7 +371,7 @@ export class GalleryService {
         createdAt: new Date(gallery.createdAt),
         updatedAt: new Date(gallery.updatedAt),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        albums: gallery.albums.map((album: any) => this.transformAlbum(album)),
+        albums: gallery.albums?.map((album: any) => this.transformAlbum(album)),
     });
 }
 

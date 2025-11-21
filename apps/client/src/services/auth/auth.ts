@@ -1,6 +1,6 @@
 import { BehaviorSubject } from 'rxjs';
 
-import { User } from '@server/auth/auth.types';
+import { User } from '@server/modules/shared.types';
 
 import { callRpc } from '@/utils/rpc';
 

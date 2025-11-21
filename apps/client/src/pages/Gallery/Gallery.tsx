@@ -20,12 +20,12 @@ export const Gallery = () => {
     const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
     useSpinner('Gallery', loading);
     if (loading) return;
-    if (error?.message === 'NotFoundError' || !params.galleryId) {
+    if (error?.name === 'NotFoundError' || !params.galleryId) {
         return (
             <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
         );
     }
-    if (error?.message === 'UnauthorizedError') {
+    if (error?.name === 'UnauthorizedError') {
         return (
             <GalleryLogin
                 galleryId={galleryId}
@@ -45,14 +45,14 @@ export const Gallery = () => {
             <SubNavigation onClickBack={() => navigate('/gallery')}>
                 {gallery.name}
             </SubNavigation>
-            {gallery.albums.length === 0 && (
+            {gallery.albums?.length === 0 && (
                 <EmptyState
                     icon="photo_album"
                     title={`Aucun album pour le moment`}
                 />
             )}
             <div className="grid">
-                {gallery.albums.map((album) => (
+                {gallery.albums?.map((album) => (
                     <AlbumCard
                         className="s12 m6"
                         key={album.name}

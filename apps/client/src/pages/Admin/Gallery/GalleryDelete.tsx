@@ -1,4 +1,4 @@
-import { Gallery } from '@server/gallery/gallery.types';
+import type { Gallery } from '@server/modules/gallery';
 
 import { useGalleryDelete } from '@/services/gallery';
 

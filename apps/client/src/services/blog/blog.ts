@@ -1,14 +1,18 @@
-import { Blog } from '@server/blog/blog.types';
+import type { Blog } from '@server/modules/blog';
 
 import { callRpc } from '@/utils/rpc';
 
 import { authService } from '../auth';
 import { serverApi } from '../server';
 
+export class Service {
+    constructor() {}
+}
+
 export class BlogService {
     all = async (fromAdmin?: boolean): Promise<Blog[]> => {
         const data = await callRpc(
-            serverApi.blog.all.$get(
+            serverApi.blog.$all(
                 {},
                 {
                     headers: fromAdmin ? authService.headers() : {},
@@ -65,10 +69,10 @@ export class BlogService {
         blog: Omit<Blog, 'createdAt' | 'updatedAt'>,
     ): Promise<void> => {
         await callRpc(
-            serverApi.blog.update.$post(
+            serverApi.blog[':id'].$patch(
                 {
+                    param: { id: blog.id.toString() },
                     form: {
-                        id: blog.id.toString(),
                         title: blog.title,
                         content: blog.content,
                         author: blog.author,
@@ -81,10 +85,11 @@ export class BlogService {
             ),
         );
     };
+    edit = this.updateBlog;
 
     delete = async (id: number): Promise<void> => {
         await callRpc(
-            serverApi.blog.delete[':id'].$delete(
+            serverApi.blog[':id'].$delete(
                 {
                     param: { id: id.toString() },
                 },

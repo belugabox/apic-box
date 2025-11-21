@@ -1,3 +1,5 @@
+import { EntityStatus } from '@server/modules/shared.types';
+
 export enum GalleryStatus {
     DRAFT = 'draft',
     PUBLISHED = 'published',
@@ -10,7 +12,7 @@ export type Gallery = {
     id: number;
     name: string;
     description: string;
-    status: GalleryStatus;
+    status: EntityStatus;
     albums: Album[];
     createdAt: Date;
     updatedAt: Date;

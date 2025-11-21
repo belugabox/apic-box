@@ -1,25 +1,20 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { Blog } from '@server/blog/blog.types';
-import { GalleryStatus } from '@server/gallery/gallery.types';
+import type { Blog } from '@server/modules/blog';
 
 import { ErrorMessage } from '@/components/Error';
 import { StatusTag } from '@/components/StatusTag';
-import {
-    useBlogAdd,
-    useBlogDelete,
-    useBlogUpdate,
-    useBlogs,
-} from '@/services/blog';
 import { useSpinner } from '@/services/spinner';
+import { blogService } from '@/services/blog.service';
+import { EntityStatus } from '@server/modules/shared.types';
 
 export const AdminBlogHome = () => {
     const [show, setShow] = useState<'add' | 'edit' | 'delete' | undefined>(
         undefined,
     );
     const [selected, setSelected] = useState<Blog | undefined>();
-    const [blogs, loading, error] = useBlogs(true, [show]);
+    const [blogs, loading, error] = blogService.useAll(true, [show]);
     useSpinner('AdminBlogHome', loading);
     if (loading) return;
     if (error) return <ErrorMessage error={error} />;
@@ -120,8 +115,8 @@ export const AdminBlogAddEdit = ({
     onClose,
     onSuccess,
 }: AdminBlogAddEditProps) => {
-    const [add, addLoading, addError] = useBlogAdd();
-    const [update, updateLoading, updateError] = useBlogUpdate();
+    const [add, addLoading, addError] = blogService.useAdd();
+    const [update, updateLoading, updateError] = blogService.useEdit();
     const {
         register,
         handleSubmit,
@@ -132,19 +127,18 @@ export const AdminBlogAddEdit = ({
             title: blog?.title || '',
             content: blog?.content || '',
             author: blog?.author || 'APIC',
-            status: blog?.status || GalleryStatus.DRAFT,
+            status: blog?.status || EntityStatus.DRAFT,
         },
     });
     const onSubmit = async (data: {
         title: string;
         content: string;
         author: string;
-        status: GalleryStatus;
+        status: EntityStatus;
     }) => {
         if (blog?.id) {
-            await update({
-                ...data,
-                id: blog.id,
+            await update(blog.id, {
+                ...data
             });
         } else {
             await add({
@@ -210,9 +204,9 @@ export const AdminBlogAddEdit = ({
                         })}
                         className={errors.status ? 'invalid' : ''}
                     >
-                        <option value={GalleryStatus.DRAFT}>Brouillon</option>
-                        <option value={GalleryStatus.PUBLISHED}>Publié</option>
-                        <option value={GalleryStatus.ARCHIVED}>Archivé</option>
+                        <option value={EntityStatus.DRAFT}>Brouillon</option>
+                        <option value={EntityStatus.PUBLISHED}>Publié</option>
+                        <option value={EntityStatus.ARCHIVED}>Archivé</option>
                     </select>
                     <label>Statut</label>
                     <span className="error">{errors.status?.message}</span>
@@ -251,7 +245,7 @@ export const AdminBlogDelete = ({
     onClose,
     onSuccess,
 }: AdminBlogDeleteProps) => {
-    const [deleteBlog, loading, error] = useBlogDelete();
+    const [deleteBlog, loading, error] = blogService.useDelete();
 
     const handleConfirmDelete = async () => {
         try {
