@@ -1,4 +1,4 @@
-import { EntityStatus } from '@server/modules/shared.types';
+import { EntityStatus } from '@shared';
 
 interface StatusTagProps {
     status: EntityStatus | EntityStatus;

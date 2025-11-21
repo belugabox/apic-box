@@ -1,9 +1,8 @@
 import { useForm } from 'react-hook-form';
 
-import type { Gallery } from '@server/modules/gallery';
 
 import { useGalleryUpdate } from '@/services/gallery';
-import { EntityStatus } from '@server/modules/shared.types';
+import { Gallery, EntityStatus } from '@shared';
 
 interface AdminGalleryEditProps {
     gallery: Gallery;

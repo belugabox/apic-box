@@ -58,7 +58,7 @@ export class BlogManager extends MappedRepository<BlogRow, Blog> {
     };
 
     add = async (
-        blog: Omit<Blog, 'id' | 'createdAt' | 'updatedAt'>,
+        blog: Omit<Blog, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>,
     ): Promise<void> => {
         logger.info(`Creating blog post: ${blog.title} by ${blog.author}`);
         await this.repo.create({

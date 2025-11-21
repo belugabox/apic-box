@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-import type { Album } from '@server/modules/gallery';
+import type { Album } from '@shared';
 
 import { CardBtn } from './CardBtn';
 import { ImageCard } from './ImageCard';

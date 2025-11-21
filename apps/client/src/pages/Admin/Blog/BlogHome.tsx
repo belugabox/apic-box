@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import type { Blog } from '@server/modules/blog';
-
 import { ErrorMessage } from '@/components/Error';
 import { StatusTag } from '@/components/StatusTag';
 import { useSpinner } from '@/services/spinner';
 import { blogService } from '@/services/blog.service';
-import { EntityStatus } from '@server/modules/shared.types';
+import { Blog, EntityStatus } from '@shared';
 
 export const AdminBlogHome = () => {
     const [show, setShow] = useState<'add' | 'edit' | 'delete' | undefined>(
@@ -43,7 +41,7 @@ export const AdminBlogHome = () => {
                     <p>{blog.content}</p>
                     <p className="right-align small-text">
                         Par {blog.author} le{' '}
-                        {blog.createdAt.toLocaleDateString()}
+                        {new Date(blog.createdAt).toLocaleDateString()}
                     </p>
                     <nav className="right-align">
                         <div className="max left-align">

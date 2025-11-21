@@ -1,4 +1,4 @@
-import type { Album, Gallery, Image } from '@server/modules/gallery';
+import type { Album, Gallery, Image } from '@shared';
 
 import { callRpc } from '@/utils/rpc';
 
@@ -51,11 +51,17 @@ export class GalleryService {
         return this.transformGallery(data);
     };
 
-    add = async (gallery: Omit<Gallery, 'id' | 'createdAt' | 'updatedAt'>) => {
+    add = async (
+        gallery: Omit<Gallery, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>,
+    ) => {
         await callRpc(
             serverApi.gallery.add.$post(
                 {
-                    form: gallery,
+                    form: {
+                        name: gallery.name,
+                        status: gallery.status,
+                        description: gallery.description,
+                    },
                 },
                 {
                     headers: authService.headers(),
@@ -82,8 +88,8 @@ export class GalleryService {
                     param: { id: gallery.id.toString() },
                     form: {
                         name: gallery.name,
-                        description: gallery.description,
                         status: gallery.status,
+                        description: gallery.description,
                     },
                 },
                 {

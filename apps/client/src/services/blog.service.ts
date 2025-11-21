@@ -1,4 +1,4 @@
-import type { Blog } from '@server/modules/blog';
+import { Blog } from '@shared';
 
 import { BaseService } from './base.service';
 import { serverApi } from './server';

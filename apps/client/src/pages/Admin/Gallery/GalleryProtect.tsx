@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 
-import type { Gallery } from '@server/modules/gallery';
+import type { Gallery } from '@shared';
 
 import { useGalleryUpdatePassword } from '@/services/gallery';
 

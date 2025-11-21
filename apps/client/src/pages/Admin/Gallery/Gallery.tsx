@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import type { Album, Gallery } from '@server/modules/gallery';
+import type { Album, Gallery } from '@shared';
 
 import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';

@@ -1,10 +1,4 @@
-import { EntityStatus } from '@server/modules/shared.types';
-
-export enum GalleryStatus {
-    DRAFT = 'draft',
-    PUBLISHED = 'published',
-    ARCHIVED = 'archived',
-}
+import { EntityStatus } from '../modules/shared.types';
 
 export type GalleryLight = Omit<Gallery, 'albums'>;
 

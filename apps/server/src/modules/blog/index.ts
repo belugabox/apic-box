@@ -1,5 +1,5 @@
 import { type } from 'arktype';
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 import { BaseModule, EntityWithDefaultColumns } from '../base.module';
 import { EntityStatus } from '../shared.types';
@@ -23,7 +23,16 @@ export class BlogModule extends BaseModule<Blog> {
 }
 
 @Entity('blogs')
-export class Blog extends EntityWithDefaultColumns {
+export class Blog implements EntityWithDefaultColumns {
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @Column('datetime', { nullable: false })
+    createdAt: Date = new Date();
+
+    @Column('datetime', { nullable: false })
+    updatedAt: Date = new Date();
+
     @Column('text', { nullable: false })
     title: string = '';
 
@@ -35,6 +44,18 @@ export class Blog extends EntityWithDefaultColumns {
 
     @Column('text', { nullable: false })
     status: EntityStatus = EntityStatus.DRAFT;
+
+    toDTO = () => {
+        return {
+            id: this.id,
+            title: this.title,
+            content: this.content,
+            author: this.author,
+            status: this.status,
+            createdAt: this.createdAt.toISOString(),
+            updatedAt: this.updatedAt.toISOString(),
+        };
+    };
 }
 
 const BlogAddSchema = type({

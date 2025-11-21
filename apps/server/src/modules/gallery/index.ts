@@ -17,6 +17,7 @@ import {
     JoinColumn,
     ManyToOne,
     OneToMany,
+    PrimaryGeneratedColumn,
     Repository,
 } from 'typeorm';
 
@@ -66,37 +67,42 @@ export class GalleryModule extends BaseModule<Gallery> {
     }
 
     // ---
-    all = async (): Promise<Gallery[]> => {
+    all = async (isAdmin?: boolean): Promise<Gallery[]> => {
         const galleries = await this.repo.find({
             relations: ['albums', 'albums.images', 'albums.images.album'],
         });
-        return galleries.map((gallery) => ({
-            ...gallery,
-            password: undefined,
-            albums: gallery.albums?.sort(
-                (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0),
-            ),
-        }));
+        return galleries
+            .filter(
+                (gallery) =>
+                    isAdmin || gallery.status === EntityStatus.PUBLISHED,
+            )
+            .map((gallery) => ({
+                ...gallery,
+                password: undefined,
+                albums: gallery.albums?.sort(
+                    (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0),
+                ),
+            }));
     };
 
-    get = async (id: number): Promise<Gallery | null> => {
+    get = async (id: number, isAdmin?: boolean): Promise<Gallery | null> => {
         const gallery = await this.repo.findOne({
             where: { id },
             relations: ['albums', 'albums.images', 'albums.images.album'],
         });
-        return (
-            gallery && {
-                ...gallery,
-                password: undefined,
-                albums: gallery?.albums?.sort(
-                    (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0),
-                ),
-            }
-        );
+        return gallery && (isAdmin || gallery.status === EntityStatus.PUBLISHED)
+            ? {
+                  ...gallery,
+                  password: undefined,
+                  albums: gallery?.albums?.sort(
+                      (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0),
+                  ),
+              }
+            : null;
     };
 
     add = async (
-        item: Omit<Gallery, 'id' | 'createdAt' | 'updatedAt'>,
+        item: Omit<Gallery, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>,
     ): Promise<Gallery> => {
         const newGallery = await super.add(item);
 
@@ -107,7 +113,7 @@ export class GalleryModule extends BaseModule<Gallery> {
     };
 
     delete = async (id: number): Promise<boolean> => {
-        const gallery = await this.get(id);
+        const gallery = await this.get(id, true);
         if (!gallery) {
             return false;
         }
@@ -191,7 +197,6 @@ export class GalleryModule extends BaseModule<Gallery> {
             // Galerie non protégée, accès libre
             return await next();
         }
-        const hashedPassword = gallery.password;
 
         // Galerie protégée, vérifier le token
         if (!token) {
@@ -312,11 +317,16 @@ export class GalleryModule extends BaseModule<Gallery> {
         galleryId: number,
         album: Omit<
             Album,
-            'id' | 'createdAt' | 'updatedAt' | 'gallery' | 'orderIndex'
+            | 'id'
+            | 'createdAt'
+            | 'updatedAt'
+            | 'gallery'
+            | 'orderIndex'
+            | 'toDTO'
         >,
     ): Promise<Album> => {
         // Add album into database
-        const gallery = await this.get(galleryId);
+        const gallery = await this.get(galleryId, true);
         if (!gallery) {
             throw new Error('Gallery not found');
         }
@@ -345,7 +355,7 @@ export class GalleryModule extends BaseModule<Gallery> {
     updateAlbum = async (
         albumId: number,
         album: Partial<
-            Omit<Album, 'id' | 'createdAt' | 'updatedAt' | 'gallery'>
+            Omit<Album, 'id' | 'createdAt' | 'updatedAt' | 'toDTO' | 'gallery'>
         >,
     ): Promise<Album | null> => {
         // Update album into database
@@ -518,15 +528,15 @@ export class GalleryModule extends BaseModule<Gallery> {
         return new Hono()
             .onError(errorHandler)
             .all('/', async (c) => {
-                const items = await this.all();
+                const items = await this.all(await authManager.isAdmin(c));
                 return c.json(items);
             })
             .get('/all', async (c) => {
-                const items = await this.all();
+                const items = await this.all(await authManager.isAdmin(c));
                 return c.json(items);
             })
             .get('/latest', async (c) => {
-                const items = await this.all();
+                const items = await this.all(await authManager.isAdmin(c));
                 const sortedItems = items.sort(
                     (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
                 );
@@ -535,7 +545,7 @@ export class GalleryModule extends BaseModule<Gallery> {
             })
             .get('/:id', this.checkAccess(), async (c) => {
                 const id = Number(c.req.param('id'));
-                const item = await this.get(id);
+                const item = await this.get(id, await authManager.isAdmin(c));
                 if (!item) {
                     throw new NotFoundError(
                         `Item ${this.name} ${id} not found`,
@@ -546,7 +556,7 @@ export class GalleryModule extends BaseModule<Gallery> {
             .post(
                 '/add',
                 authManager.authMiddleware(AuthRole.ADMIN),
-                arktypeValidator('form', this.addSchema),
+                arktypeValidator('form', GalleryAddSchema),
                 async (c) => {
                     const formData = c.req.valid('form');
                     const newItem = await this.add(formData);
@@ -556,7 +566,7 @@ export class GalleryModule extends BaseModule<Gallery> {
             .patch(
                 '/:id',
                 authManager.authMiddleware(AuthRole.ADMIN),
-                arktypeValidator('form', this.editSchema),
+                arktypeValidator('form', GalleryEditSchema),
                 async (c) => {
                     const formData = c.req.valid('form');
                     const id = Number(c.req.param('id'));
@@ -876,7 +886,16 @@ const saveImageBuffer = async (
 
 // Types and Schemas
 @Entity('galleries')
-export class Gallery extends EntityWithDefaultColumns {
+export class Gallery implements EntityWithDefaultColumns {
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @Column('datetime', { nullable: false })
+    createdAt: Date = new Date();
+
+    @Column('datetime', { nullable: false })
+    updatedAt: Date = new Date();
+
     @Column('text', { nullable: false })
     name: string = '';
 
@@ -909,10 +928,32 @@ export class Gallery extends EntityWithDefaultColumns {
     pathCover? = () => {
         return path.join(GALLERY_DIR, this.id.toString(), 'cover.png');
     };
+
+    toDTO = () => {
+        return {
+            id: this.id,
+            name: this.name,
+            description: this.description,
+            status: this.status,
+            isProtected: !!this.password,
+            albums: this.albums?.map((album) => album.toDTO()),
+            createdAt: this.createdAt.toISOString(),
+            updatedAt: this.updatedAt.toISOString(),
+        };
+    };
 }
 
 @Entity('galleries_albums')
-export class Album extends EntityWithDefaultColumns {
+export class Album implements EntityWithDefaultColumns {
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @Column('datetime', { nullable: false })
+    createdAt: Date = new Date();
+
+    @Column('datetime', { nullable: false })
+    updatedAt: Date = new Date();
+
     @ManyToOne(() => Gallery, (gallery) => gallery.albums, {
         onDelete: 'CASCADE',
     })
@@ -939,10 +980,32 @@ export class Album extends EntityWithDefaultColumns {
             this.id.toString(),
         );
     };
+
+    toDTO = () => {
+        return {
+            id: this.id,
+            code: this.code,
+            name: this.name,
+            orderIndex: this.orderIndex,
+            galleryId: this.gallery.id,
+            images: this.images?.map((image) => image.toDTO()),
+            createdAt: this.createdAt.toISOString(),
+            updatedAt: this.updatedAt.toISOString(),
+        };
+    };
 }
 
 @Entity('galleries_albums_images')
-export class Image extends EntityWithDefaultColumns {
+export class Image implements EntityWithDefaultColumns {
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @Column('datetime', { nullable: false })
+    createdAt: Date = new Date();
+
+    @Column('datetime', { nullable: false })
+    updatedAt: Date = new Date();
+
     @ManyToOne(() => Album, (album) => album.images)
     @JoinColumn({ name: 'albumId' })
     album: Album = new Album();
@@ -974,18 +1037,29 @@ export class Image extends EntityWithDefaultColumns {
             this.filename,
         );
     };
+
+    toDTO = () => {
+        return {
+            id: this.id,
+            code: this.code,
+            filename: this.filename,
+            ratio: this.ratio,
+            albumId: this.album.id,
+            fullcode: `${this.album.code}${this.code}`,
+            createdAt: this.createdAt.toISOString(),
+            updatedAt: this.updatedAt.toISOString(),
+        };
+    };
 }
 
 const GalleryAddSchema = type({
     name: 'string',
     description: 'string',
     status: type.valueOf(EntityStatus),
-    password: 'string | undefined',
 });
 
 const GalleryEditSchema = type({
     name: 'string',
     description: 'string',
     status: type.valueOf(EntityStatus),
-    password: 'string | undefined',
 });

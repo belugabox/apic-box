@@ -2,12 +2,9 @@ import { arktypeValidator } from '@hono/arktype-validator';
 import { Type } from 'arktype';
 import { Hono } from 'hono';
 import {
-    Column,
     DeepPartial,
-    Entity,
     EntityTarget,
     FindOptionsWhere,
-    PrimaryGeneratedColumn,
     Repository,
 } from 'typeorm';
 
@@ -17,19 +14,16 @@ import { AppDataSource } from '@server/db';
 import { NotFoundError, errorHandler } from '@server/tools/errorHandler';
 import { logger } from '@server/tools/logger';
 
-export class EntityWithDefaultColumns {
-    @PrimaryGeneratedColumn()
-    id!: number;
+export interface EntityWithDefaultColumns {
+    id: number;
+    createdAt: Date;
+    updatedAt: Date;
 
-    @Column('datetime', { nullable: false })
-    createdAt: Date = new Date();
-
-    @Column('datetime', { nullable: false })
-    updatedAt: Date = new Date();
+    toDTO: () => object;
 }
 
-type AddType<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt'>;
-type EditType<T> = Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>;
+type AddType<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>;
+type EditType<T> = Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>>;
 
 // Generic Module Class
 export class BaseModule<T extends EntityWithDefaultColumns> {
@@ -54,11 +48,11 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
     }
 
     // CRUD Operations
-    async all(): Promise<T[]> {
+    async all(_isAdmin?: boolean): Promise<T[]> {
         return this.repo.find();
     }
 
-    async get(id: number): Promise<T | null> {
+    async get(id: number, _isAdmin?: boolean): Promise<T | null> {
         const item = await this.repo.findOneBy({ id } as FindOptionsWhere<T>);
         return item;
     }
@@ -108,11 +102,11 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
             .onError(errorHandler)
             .all('/', async (c) => {
                 const items = await this.all();
-                return c.json(items);
+                return c.json(items.map((i) => i.toDTO()));
             })
             .get('/all', async (c) => {
                 const items = await this.all();
-                return c.json(items);
+                return c.json(items.map((i) => i.toDTO()));
             })
             .get('/latest', async (c) => {
                 const items = await this.all();
@@ -120,7 +114,7 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
                     (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
                 );
                 const latestBlog = sortedItems[0];
-                return c.json(latestBlog);
+                return c.json(latestBlog.toDTO());
             })
             .get('/:id', async (c) => {
                 const id = Number(c.req.param('id'));
@@ -130,7 +124,7 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
                         `Item ${this.name} ${id} not found`,
                     );
                 }
-                return c.json(item);
+                return c.json(item.toDTO());
             })
             .post(
                 '/add',
@@ -139,7 +133,10 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
                 async (c) => {
                     const formData = c.req.valid('form');
                     const newItem = await this.add(formData as AddType<T>);
-                    return c.json({ message: 'Item added', item: newItem });
+                    return c.json({
+                        message: 'Item added',
+                        item: newItem.toDTO(),
+                    });
                 },
             )
             .patch(
@@ -160,7 +157,7 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
                     }
                     return c.json({
                         message: 'Item edited',
-                        item: updatedItem,
+                        item: updatedItem.toDTO(),
                     });
                 },
             )

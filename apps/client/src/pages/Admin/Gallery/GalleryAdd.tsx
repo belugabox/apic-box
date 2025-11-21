@@ -1,9 +1,7 @@
 import { useForm } from 'react-hook-form';
 
-import type { Gallery } from '@server/modules/gallery';
-
 import { useGalleryAdd } from '@/services/gallery';
-import { EntityStatus } from '@server/modules/shared.types';
+import { Gallery, EntityStatus } from '@shared';
 
 interface AdminGalleryAddProps {
     onClose?: () => void;
@@ -27,11 +25,11 @@ export const AdminGalleryAdd = ({
             name: '',
             description: '',
             status: EntityStatus.DRAFT,
-            createdAt: new Date(),
-            updatedAt: new Date(),
             isProtected: false,
             albums: [],
-        } satisfies Gallery,
+            createdAt: '',
+            updatedAt: '',
+        },
     });
 
     const onSubmit = async (gallery: Gallery) => {

@@ -1,4 +1,4 @@
-import { Blog } from '@server/blog/blog.types';
+import { Blog } from '@shared';
 
 import { usePromise, usePromiseFunc } from '@/utils/Hooks';
 
@@ -22,8 +22,9 @@ export const useBlog = (
     );
 
 export const useBlogAdd = () =>
-    usePromiseFunc((blog: Omit<Blog, 'id' | 'createdAt' | 'updatedAt'>) =>
-        blogService.add(blog),
+    usePromiseFunc(
+        (blog: Omit<Blog, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>) =>
+            blogService.add(blog),
     );
 
 export const useBlogUpdate = () =>

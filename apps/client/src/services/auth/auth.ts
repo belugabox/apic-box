@@ -1,6 +1,5 @@
+import { User } from '@shared';
 import { BehaviorSubject } from 'rxjs';
-
-import { User } from '@server/modules/shared.types';
 
 import { callRpc } from '@/utils/rpc';
 

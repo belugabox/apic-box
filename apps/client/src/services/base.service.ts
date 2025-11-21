@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { ClientRequestOptions } from 'hono';
 import { ClientResponse } from 'hono/client';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
@@ -9,44 +10,39 @@ import { authService } from './auth';
 
 export interface EntityWithDefaults {
     id: number;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: string;
+    updatedAt: string;
 }
 
-type ApiFormat<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt'> & {
-    createdAt?: string;
-    updatedAt?: string;
-};
-
-export interface ServiceWithDefaults<T, R> {
+export interface ServiceWithDefaults<T> {
     $all: (
-        args?: {} | undefined,
+        args?: object | undefined,
         options?: ClientRequestOptions<unknown> | undefined,
-    ) => Promise<ClientResponse<R[], ContentfulStatusCode, 'json'>>;
+    ) => Promise<ClientResponse<T[], ContentfulStatusCode, 'json'>>;
 
     all: {
         $get: (
-            args?: {} | undefined,
+            args?: object | undefined,
             options?: ClientRequestOptions<unknown> | undefined,
-        ) => Promise<ClientResponse<R[], ContentfulStatusCode, 'json'>>;
+        ) => Promise<ClientResponse<T[], ContentfulStatusCode, 'json'>>;
     };
 
     latest: {
         $get: (
-            args?: {} | undefined,
+            args?: object | undefined,
             options?: ClientRequestOptions<unknown> | undefined,
-        ) => Promise<ClientResponse<R, ContentfulStatusCode, 'json'>>;
+        ) => Promise<ClientResponse<T, ContentfulStatusCode, 'json'>>;
     };
 
     add: {
         $post: (
             args: {
-                form: Omit<T, 'id' | 'createdAt' | 'updatedAt'>;
+                form: Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>;
             },
             options?: ClientRequestOptions<unknown> | undefined,
         ) => Promise<
             ClientResponse<
-                { message: string; item: R },
+                { message: string; item: T },
                 ContentfulStatusCode,
                 'json'
             >
@@ -59,16 +55,18 @@ export interface ServiceWithDefaults<T, R> {
                 param: { id: string };
             },
             options?: ClientRequestOptions<unknown> | undefined,
-        ) => Promise<ClientResponse<R, ContentfulStatusCode, 'json'>>;
+        ) => Promise<ClientResponse<T, ContentfulStatusCode, 'json'>>;
         $patch: (
             args: {
                 param: { id: string };
-                form: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>;
+                form: Partial<
+                    Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>
+                >;
             },
             options?: ClientRequestOptions<unknown> | undefined,
         ) => Promise<
             ClientResponse<
-                { message: string; item: R },
+                { message: string; item: T },
                 ContentfulStatusCode,
                 'json'
             >
@@ -84,27 +82,8 @@ export interface ServiceWithDefaults<T, R> {
     };
 }
 
-const transformDates = (
-    item: any & {
-        createdAt: string;
-        updatedAt: string;
-    },
-) => {
-    return {
-        ...item,
-        createdAt: new Date(item.createdAt),
-        updatedAt: new Date(item.updatedAt),
-    } as typeof item & {
-        createdAt: Date;
-        updatedAt: Date;
-    };
-};
-
-export abstract class BaseService<
-    T extends EntityWithDefaults,
-    R = ApiFormat<T>,
-> {
-    constructor(private api: ServiceWithDefaults<T, R>) {}
+export abstract class BaseService<T extends EntityWithDefaults> {
+    constructor(private api: ServiceWithDefaults<T>) {}
 
     // CRUD Operations
     all = async (fromAdmin?: boolean) => {
@@ -115,7 +94,7 @@ export abstract class BaseService<
                     headers: fromAdmin ? authService.headers() : {},
                 },
             ),
-        ).then((all) => all.map((data) => transformDates(data)));
+        );
     };
 
     latest = async (fromAdmin?: boolean) => {
@@ -126,7 +105,7 @@ export abstract class BaseService<
                     headers: fromAdmin ? authService.headers() : {},
                 },
             ),
-        ).then((data) => transformDates(data));
+        );
     };
 
     get = async (id: number, fromAdmin?: boolean) => {
@@ -139,11 +118,11 @@ export abstract class BaseService<
                     headers: fromAdmin ? authService.headers() : {},
                 },
             ),
-        ).then((data) => transformDates(data));
+        );
     };
 
     add = async (
-        item: Omit<T, 'id' | 'createdAt' | 'updatedAt'>,
+        item: Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>,
     ): Promise<void> => {
         await callRpc(
             this.api.add.$post(
@@ -159,7 +138,7 @@ export abstract class BaseService<
 
     edit = async (
         id: number,
-        item: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>,
+        item: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>>,
     ): Promise<void> => {
         await callRpc(
             this.api[':id'].$patch(
@@ -198,15 +177,18 @@ export abstract class BaseService<
         usePromise<T>(() => this.get(id, fromAdmin), [...(deps || [])]);
 
     useAdd = () =>
-        usePromiseFunc((item: Omit<T, 'id' | 'createdAt' | 'updatedAt'>) =>
-            this.add(item),
+        usePromiseFunc(
+            (item: Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>) =>
+                this.add(item),
         );
 
     useEdit = () =>
         usePromiseFunc(
             (
                 id: number,
-                item: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>,
+                item: Partial<
+                    Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>
+                >,
             ) => this.edit(id, item),
         );
 

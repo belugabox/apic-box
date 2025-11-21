@@ -1,4 +1,4 @@
-import type { Gallery, Image } from '@server/modules/gallery';
+import type { Gallery, Image } from '@shared';
 
 import { usePromise, usePromiseFunc } from '@/utils/Hooks';
 
@@ -37,10 +37,10 @@ export const useGalleryImage = (
                       galleryId,
                       fromAdmin,
                       image.id,
-                      image.updatedAt.toISOString(),
+                      image.updatedAt,
                   )
                 : Promise.resolve(undefined),
-        [image?.id, image?.updatedAt.toISOString()],
+        [image?.id, image?.updatedAt],
     );
 
 export const useGalleryAdd = () =>
@@ -51,7 +51,7 @@ export const useGalleryUpdate = () =>
 
 export const useGalleryCover = (gallery: Gallery) =>
     usePromise(
-        () => galleryService.cover(gallery.id, gallery.updatedAt.toISOString()),
+        () => galleryService.cover(gallery.id, gallery.updatedAt),
         [gallery.id, gallery.updatedAt],
     );
 

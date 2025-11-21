@@ -1,10 +1,9 @@
 import path from 'path';
 import { DataSource } from 'typeorm';
 
-import { User } from '@server/modules/auth';
-import { Blog } from '@server/modules/blog';
-import { Album, Gallery, Image } from '@server/modules/gallery';
-
+import { User } from '../modules/auth/types';
+import { Blog } from '../modules/blog';
+import { Album, Gallery, Image } from '../modules/gallery';
 import { DATA_FILE_PATH } from '../tools/env';
 
 export { db, createDbInstance, getDb } from './singleton';

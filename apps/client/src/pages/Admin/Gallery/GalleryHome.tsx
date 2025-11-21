@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import type { Gallery } from '@server/modules/gallery';
+import type { Gallery } from '@shared';
 
 import { ErrorMessage } from '@/components/Error';
 import { GalleryCard } from '@/components/GalleryCard';

@@ -1,9 +1,7 @@
 import { arktypeValidator } from '@hono/arktype-validator';
-import { type } from 'arktype';
 import bcrypt from 'bcryptjs';
 import { Context, Hono } from 'hono';
 import { sign, verify } from 'hono/jwt';
-import { Column, Entity } from 'typeorm';
 
 import {
     ADMIN_PASSWORD,
@@ -16,7 +14,14 @@ import {
     UnauthorizedError,
 } from '@server/tools/errorHandler';
 
-import { BaseModule, EntityWithDefaultColumns } from '../base.module';
+import { BaseModule } from '../base.module';
+import {
+    User,
+    UserAddSchema,
+    UserEditSchema,
+    UserLoginSchema,
+    UserRole,
+} from './types';
 
 export class AuthModule extends BaseModule<User> {
     constructor() {
@@ -30,12 +35,14 @@ export class AuthModule extends BaseModule<User> {
         await this.addIfEmpty({
             username: 'admin',
             password: ADMIN_PASSWORD,
-            role: AuthRole.ADMIN,
+            role: UserRole.ADMIN,
         });
     };
 
     // CRUD Operations
-    add = async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
+    add = async (
+        user: Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>,
+    ) => {
         const hashedPassword = await bcrypt.hash(user.password, 10);
         return super.add({
             ...user,
@@ -73,12 +80,12 @@ export class AuthModule extends BaseModule<User> {
 
     verifyAccessToken = async (token: string) => {
         const payload = await verify(token, JWT_SECRET);
-        return payload as { username: string; role: AuthRole };
+        return payload as { username: string; role: UserRole };
     };
 
     verifyRefreshToken = async (token: string) => {
         const payload = await verify(token, JWT_REFRESH_SECRET);
-        return payload as { username: string; role: AuthRole };
+        return payload as { username: string; role: UserRole };
     };
 
     //
@@ -92,10 +99,10 @@ export class AuthModule extends BaseModule<User> {
             return false;
         }
         const payload = await this.verifyAccessToken(token);
-        return payload && payload.role === AuthRole.ADMIN;
+        return payload && payload.role === UserRole.ADMIN;
     };
     authMiddleware =
-        (role?: AuthRole) => async (c: Context, next: () => Promise<void>) => {
+        (role?: UserRole) => async (c: Context, next: () => Promise<void>) => {
             const authHeader = c.req.header('Authorization');
             if (!authHeader) {
                 throw new UnauthorizedError('Aucun token fourni');
@@ -145,37 +152,3 @@ export class AuthModule extends BaseModule<User> {
         );
     }
 }
-
-@Entity('users')
-export class User extends EntityWithDefaultColumns {
-    @Column('text', { nullable: false })
-    username: string = '';
-
-    @Column('text', { nullable: false })
-    password: string = '';
-
-    @Column('text', { nullable: false })
-    role: AuthRole = AuthRole.USER;
-}
-
-export enum AuthRole {
-    ADMIN = 'admin',
-    USER = 'user',
-}
-
-const UserLoginSchema = type({
-    username: 'string',
-    password: 'string',
-});
-
-const UserAddSchema = type({
-    username: 'string',
-    password: 'string',
-    role: type.valueOf(AuthRole),
-});
-
-const UserEditSchema = type({
-    username: 'string',
-    password: 'string',
-    role: type.valueOf(AuthRole),
-});

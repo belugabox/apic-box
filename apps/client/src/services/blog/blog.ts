@@ -1,4 +1,4 @@
-import type { Blog } from '@server/modules/blog';
+import type { Blog } from '@shared';
 
 import { callRpc } from '@/utils/rpc';
 
@@ -21,7 +21,11 @@ export class BlogService {
         );
         return data
             .map((blog) => this.transformBlog(blog))
-            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+            .sort(
+                (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime(),
+            );
     };
 
     latest = async (fromAdmin?: boolean): Promise<Blog | null> => {
@@ -51,7 +55,7 @@ export class BlogService {
     };
 
     add = async (
-        blog: Omit<Blog, 'id' | 'createdAt' | 'updatedAt'>,
+        blog: Omit<Blog, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>,
     ): Promise<void> => {
         await callRpc(
             serverApi.blog.add.$post(

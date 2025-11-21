@@ -1,4 +1,4 @@
-import type { Album } from '@server/modules/gallery';
+import type { Album } from '@shared';
 
 import { useGalleryDeleteAlbum } from '@/services/gallery';
 

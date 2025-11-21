@@ -1,6 +1,5 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import { Entity } from 'typeorm';
 import { z } from 'zod';
 
 import { AuthRole } from '@server/auth';
@@ -11,8 +10,6 @@ import {
     NotFoundError,
     errorHandler,
 } from '@server/tools/errorHandler';
-
-import { GalleryStatus } from './gallery.types';
 
 export const galleryRoutes = () =>
     new Hono()

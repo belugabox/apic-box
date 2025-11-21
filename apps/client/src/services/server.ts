@@ -1,6 +1,5 @@
+import type { ServerType } from '@shared';
 import { hc } from 'hono/client';
-
-import type { ServerType } from '@server/main';
 
 const serverClient = hc<ServerType>(`${window.location.origin}/`);
 export const serverApi = serverClient.api;

@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-import type { Gallery } from '@server/modules/gallery';
+import type { Gallery } from '@shared';
 
 import { useGalleryCover } from '@/services/gallery';
 
