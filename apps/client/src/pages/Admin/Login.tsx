@@ -57,7 +57,7 @@ export const Login = () => {
                     )}
                 </div>
                 <nav className="right-align">
-                    <span className="error-text">{loginError?.name}</span>
+                    <span className="error-text">{loginError?.message}</span>
                     <button type="submit">
                         {!loading ? (
                             <i>login</i>

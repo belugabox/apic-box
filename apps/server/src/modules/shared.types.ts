@@ -1,11 +1,11 @@
 import { ServerType as ServerTypeDef } from '../main';
 import type { User as UserORM } from './auth/types';
-import type { Blog as BlogORM } from './blog';
+import type { Blog as BlogORM } from './blog/types';
 import type {
     Album as AlbumORM,
     Gallery as GalleryORM,
     Image as ImageORM,
-} from './gallery';
+} from './gallery/types';
 
 export enum EntityStatus {
     DRAFT = 'draft',

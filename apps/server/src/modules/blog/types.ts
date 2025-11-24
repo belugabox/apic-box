@@ -1,9 +1,10 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 import { EntityWithDefaultColumns } from '../base.module';
+import { EntityStatus } from '../shared.types';
 
-@Entity('users')
-export class User implements EntityWithDefaultColumns {
+@Entity('blogs')
+export class Blog implements EntityWithDefaultColumns {
     @PrimaryGeneratedColumn()
     id!: number;
 
@@ -14,26 +15,26 @@ export class User implements EntityWithDefaultColumns {
     updatedAt: Date = new Date();
 
     @Column('text', { nullable: false })
-    username: string = '';
+    title: string = '';
 
     @Column('text', { nullable: false })
-    password: string = '';
+    content: string = '';
 
     @Column('text', { nullable: false })
-    role: UserRole = UserRole.USER;
+    author: string = '';
+
+    @Column('text', { nullable: false })
+    status: EntityStatus = EntityStatus.DRAFT;
 
     toDTO = () => {
         return {
             id: this.id,
-            username: this.username,
-            role: this.role,
+            title: this.title,
+            content: this.content,
+            author: this.author,
+            status: this.status,
             createdAt: this.createdAt.toISOString(),
             updatedAt: this.updatedAt.toISOString(),
         };
     };
-}
-
-export enum UserRole {
-    ADMIN = 'admin',
-    USER = 'user',
 }

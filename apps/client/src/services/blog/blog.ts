@@ -1,5 +1,6 @@
 import type { Blog } from '@shared';
 
+import { usePromise, usePromiseFunc } from '@/utils/Hooks';
 import { callRpc } from '@/utils/rpc';
 
 import { authService } from '../auth';
@@ -11,14 +12,15 @@ export class Service {
 
 export class BlogService {
     all = async (fromAdmin?: boolean): Promise<Blog[]> => {
-        const data = await callRpc(
-            serverApi.blog.$all(
+        const response = await callRpc(
+            serverApi.blog.all.$get(
                 {},
                 {
                     headers: fromAdmin ? authService.headers() : {},
                 },
             ),
         );
+        const data = response.blogs;
         return data
             .map((blog) => this.transformBlog(blog))
             .sort(
@@ -29,7 +31,7 @@ export class BlogService {
     };
 
     latest = async (fromAdmin?: boolean): Promise<Blog | null> => {
-        const data = await callRpc(
+        const response = await callRpc(
             serverApi.blog.latest.$get(
                 {},
                 {
@@ -37,11 +39,11 @@ export class BlogService {
                 },
             ),
         );
-        return this.transformBlog(data);
+        return this.transformBlog(response.blog);
     };
 
     get = async (id: number, fromAdmin?: boolean): Promise<Blog> => {
-        const data = await callRpc(
+        const response = await callRpc(
             serverApi.blog[':id'].$get(
                 {
                     param: { id: id.toString() },
@@ -51,7 +53,7 @@ export class BlogService {
                 },
             ),
         );
-        return this.transformBlog(data);
+        return this.transformBlog(response.blog);
     };
 
     add = async (
@@ -103,6 +105,37 @@ export class BlogService {
             ),
         );
     };
+
+    // Hooks
+    useAll = (fromAdmin?: boolean, deps?: React.DependencyList) =>
+        usePromise<Blog[]>(() => this.all(fromAdmin), [...(deps || [])]);
+
+    useLatest = (fromAdmin?: boolean, deps?: React.DependencyList) =>
+        usePromise<Blog | null>(
+            () => this.latest(fromAdmin),
+            [...(deps || [])],
+        );
+
+    useGet = (id: number, fromAdmin?: boolean, deps?: React.DependencyList) =>
+        usePromise<Blog>(() => this.get(id, fromAdmin), [...(deps || [])]);
+
+    useAdd = () =>
+        usePromiseFunc(
+            (item: Omit<Blog, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>) =>
+                this.add(item),
+        );
+
+    useEdit = () =>
+        usePromiseFunc(
+            (
+                id: number,
+                item: Partial<
+                    Omit<Blog, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>
+                >,
+            ) => this.edit({ ...item, id } as Blog),
+        );
+
+    useDelete = () => usePromiseFunc((id: number) => this.delete(id));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private transformBlog = (blog: any): Blog => ({

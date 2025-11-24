@@ -12,7 +12,7 @@ export class GalleryService {
     }
 
     all = async (fromAdmin?: boolean): Promise<Gallery[]> => {
-        const data = await callRpc(
+        const response = await callRpc(
             serverApi.gallery.all.$get(
                 {},
                 {
@@ -20,11 +20,13 @@ export class GalleryService {
                 },
             ),
         );
-        return data.map((gallery) => this.transformGallery(gallery));
+        return response.galleries.map((gallery) =>
+            this.transformGallery(gallery),
+        );
     };
 
     latest = async (fromAdmin?: boolean): Promise<Gallery | null> => {
-        const data = await callRpc(
+        const response = await callRpc(
             serverApi.gallery.latest.$get(
                 {},
                 {
@@ -32,14 +34,14 @@ export class GalleryService {
                 },
             ),
         );
-        return this.transformGallery(data);
+        return this.transformGallery(response.gallery);
     };
 
     get = async (galleryId: number, fromAdmin?: boolean): Promise<Gallery> => {
-        const data = await callRpc(
-            serverApi.gallery[':id'].$get(
+        const response = await callRpc(
+            serverApi.gallery[':galleryId'].$get(
                 {
-                    param: { id: galleryId.toString() },
+                    param: { galleryId: galleryId.toString() },
                 },
                 {
                     headers: fromAdmin
@@ -48,7 +50,7 @@ export class GalleryService {
                 },
             ),
         );
-        return this.transformGallery(data);
+        return this.transformGallery(response.gallery);
     };
 
     add = async (
@@ -72,8 +74,8 @@ export class GalleryService {
 
     delete = async (id: number) => {
         await callRpc(
-            serverApi.gallery[':id'].$delete(
-                { param: { id: id.toString() } },
+            serverApi.gallery[':galleryId'].$delete(
+                { param: { galleryId: id.toString() } },
                 {
                     headers: authService.headers(),
                 },
@@ -83,9 +85,9 @@ export class GalleryService {
 
     update = async (gallery: Gallery): Promise<void> => {
         await callRpc(
-            serverApi.gallery[':id'].$patch(
+            serverApi.gallery[':galleryId'].$patch(
                 {
-                    param: { id: gallery.id.toString() },
+                    param: { galleryId: gallery.id.toString() },
                     form: {
                         name: gallery.name,
                         status: gallery.status,
@@ -193,7 +195,7 @@ export class GalleryService {
             serverApi.gallery[':galleryId'].reorderAlbums.$post(
                 {
                     param: { galleryId: galleryId.toString() },
-                    json: { albumOrders },
+                    form: { albumOrders },
                 },
                 {
                     headers: authService.headers(),

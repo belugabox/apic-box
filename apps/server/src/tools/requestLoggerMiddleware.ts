@@ -8,6 +8,7 @@ interface RequestLog {
     statusCode: number;
     duration: number;
     timestamp: string;
+    errorMessage?: string;
 }
 
 /**
@@ -33,6 +34,10 @@ export const requestLoggerMiddleware =
                 duration,
                 timestamp: new Date().toISOString(),
             };
+
+            if (c.error) {
+                logEntry.errorMessage = c.error.name + ' - ' + c.error.message;
+            }
 
             // Log en fonction du status
             if (status >= 500) {

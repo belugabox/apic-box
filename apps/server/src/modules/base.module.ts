@@ -1,18 +1,14 @@
 import { arktypeValidator } from '@hono/arktype-validator';
 import { Type } from 'arktype';
 import { Hono } from 'hono';
-import {
-    DeepPartial,
-    EntityTarget,
-    FindOptionsWhere,
-    Repository,
-} from 'typeorm';
+import { EntityTarget } from 'typeorm';
 
-import { AuthRole } from '@server/auth/auth.types';
-import { authManager } from '@server/core';
-import { AppDataSource } from '@server/db';
+import { db } from '@server/db';
 import { NotFoundError, errorHandler } from '@server/tools/errorHandler';
-import { logger } from '@server/tools/logger';
+
+import { UserRole } from './auth/types';
+import { ModuleRepository } from './module-repository';
+import { Utils } from './utils';
 
 export interface EntityWithDefaultColumns {
     id: number;
@@ -27,7 +23,7 @@ type EditType<T> = Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>>;
 
 // Generic Module Class
 export class BaseModule<T extends EntityWithDefaultColumns> {
-    protected repo!: Repository<T>;
+    protected repo!: ModuleRepository<T>;
 
     constructor(
         public name: string,
@@ -38,7 +34,7 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
 
     // Initialization & Health Check
     async init(): Promise<void> {
-        this.repo = AppDataSource.getRepository(this.T);
+        this.repo = new ModuleRepository<T>(db.getRepository(this.T));
         return;
     }
 
@@ -49,51 +45,31 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
 
     // CRUD Operations
     async all(_isAdmin?: boolean): Promise<T[]> {
-        return this.repo.find();
+        return this.repo.all();
+    }
+
+    async latest(): Promise<T | null> {
+        return this.repo.latest();
     }
 
     async get(id: number, _isAdmin?: boolean): Promise<T | null> {
-        const item = await this.repo.findOneBy({ id } as FindOptionsWhere<T>);
-        return item;
+        return this.repo.get(id);
     }
 
     async add(item: AddType<T>): Promise<T> {
-        const newItem = this.repo.create({
-            ...item,
-            id: undefined,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        } as DeepPartial<T>);
-        const savedItem = await this.repo.save(newItem);
-        logger.info({ item: savedItem }, `${this.name} > add`);
-        return savedItem;
+        return this.repo.add(item);
     }
 
     async edit(id: number, item: EditType<T>): Promise<T | null> {
-        const existing = await this.repo.findOneBy({
-            id,
-        } as FindOptionsWhere<T>);
-        if (!existing) {
-            logger.warn(`${this.name} ${id} not found for edit`);
-            return null;
-        }
-        const updatedItem = this.repo.merge(existing, {
-            ...item,
-            updatedAt: new Date(),
-        } as DeepPartial<T>);
-        const savedItem = await this.repo.save(updatedItem);
-        logger.info({ item: savedItem }, `${this.name} > edit`);
-        return savedItem;
+        return this.repo.edit(id, item);
     }
 
     async addIfEmpty(item: AddType<T>): Promise<T | null> {
-        if ((await this.repo.count()) > 0) return null;
-        return this.add(item);
+        return this.repo.addIfEmpty(item);
     }
 
     async delete(id: number): Promise<boolean> {
-        const result = await this.repo.delete(id);
-        return !!result.affected && result.affected > 0;
+        return this.repo.deleteById(id);
     }
 
     // Routes
@@ -109,12 +85,8 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
                 return c.json(items.map((i) => i.toDTO()));
             })
             .get('/latest', async (c) => {
-                const items = await this.all();
-                const sortedItems = items.sort(
-                    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-                );
-                const latestBlog = sortedItems[0];
-                return c.json(latestBlog.toDTO());
+                const item = await this.latest();
+                return c.json(item?.toDTO());
             })
             .get('/:id', async (c) => {
                 const id = Number(c.req.param('id'));
@@ -128,7 +100,7 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
             })
             .post(
                 '/add',
-                authManager.authMiddleware(AuthRole.ADMIN),
+                Utils.authMiddleware(UserRole.ADMIN),
                 arktypeValidator('form', this.addSchema),
                 async (c) => {
                     const formData = c.req.valid('form');
@@ -141,7 +113,7 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
             )
             .patch(
                 '/:id',
-                authManager.authMiddleware(AuthRole.ADMIN),
+                Utils.authMiddleware(UserRole.ADMIN),
                 arktypeValidator('form', this.editSchema),
                 async (c) => {
                     const formData = c.req.valid('form');
@@ -161,20 +133,16 @@ export class BaseModule<T extends EntityWithDefaultColumns> {
                     });
                 },
             )
-            .delete(
-                '/:id',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                async (c) => {
-                    const id = Number(c.req.param('id'));
-                    const success = await this.delete(id);
-                    if (!success) {
-                        throw new NotFoundError(
-                            `Item ${this.name} ${id} not found`,
-                        );
-                    }
-                    return c.json({ message: 'Item deleted' });
-                },
-            );
+            .delete('/:id', Utils.authMiddleware(UserRole.ADMIN), async (c) => {
+                const id = Number(c.req.param('id'));
+                const success = await this.delete(id);
+                if (!success) {
+                    throw new NotFoundError(
+                        `Item ${this.name} ${id} not found`,
+                    );
+                }
+                return c.json({ message: 'Item deleted' });
+            });
         return routes;
     }
 }

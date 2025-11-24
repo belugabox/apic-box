@@ -1,12 +1,3 @@
-import { Blog } from '@shared';
+import { blogService as blogSvc } from './blog/blog';
 
-import { BaseService } from './base.service';
-import { serverApi } from './server';
-
-class BlogService extends BaseService<Blog> {
-    constructor() {
-        super(serverApi.blog);
-    }
-}
-
-export const blogService = new BlogService();
+export const blogService = blogSvc;

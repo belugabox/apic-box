@@ -17,6 +17,16 @@ export class RpcError extends Error {
 }
 
 // Types utiles
+type ErrorResponse = {
+    success?: boolean;
+    errors?: Array<{
+        message: string;
+        [key: string]: unknown;
+    }>;
+    name?: string;
+    message?: string;
+    [key: string]: unknown;
+};
 const BINARY_CONTENT_TYPES = [
     'image',
     'application/pdf',
@@ -32,18 +42,28 @@ export const callRpc = async <T>(
     rpc: Promise<ClientResponse<T>>,
 ): Promise<T> => {
     const response = await rpc;
-
+    console.log('RPC Response:', response);
     if (!response.ok) {
         try {
-            const error = (await response.json()) as {
-                name: string;
-                message: string;
-            };
+            const errorData = (await response.json()) as ErrorResponse;
+
+            // Handle Arktype validation errors
+            if (errorData.success === false && errorData.errors) {
+                const firstError = errorData.errors[0];
+                throw new RpcError(
+                    response.status,
+                    'ValidationError',
+                    firstError?.message || 'Validation failed',
+                    errorData,
+                );
+            }
+
+            // Handle standard error format
             throw new RpcError(
                 response.status,
-                error.name,
-                error.message,
-                error,
+                errorData.name || 'Error',
+                errorData.message || 'An error occurred',
+                errorData,
             );
         } catch (err) {
             if (err instanceof RpcError) throw err;

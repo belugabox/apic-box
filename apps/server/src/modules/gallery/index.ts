@@ -3,58 +3,47 @@ import archiver from 'archiver';
 import { type } from 'arktype';
 import bcrypt from 'bcryptjs';
 import { Context, Hono } from 'hono';
-import { sign, verify } from 'hono/jwt';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'path';
 import sharp from 'sharp';
 import { addImageWatermark } from 'sharp-watermark';
-import {
-    AfterLoad,
-    Column,
-    DeepPartial,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    OneToMany,
-    PrimaryGeneratedColumn,
-    Repository,
-} from 'typeorm';
 
-import { AuthRole } from '@server/auth';
-import { authManager } from '@server/core';
-import { AppDataSource } from '@server/db';
+import { db } from '@server/db';
 import { DATA_FILE_PATH, GALLERY_JWT_SECRET } from '@server/tools/env';
 import {
     BadRequestError,
     NotFoundError,
     UnauthorizedError,
-    errorHandler,
 } from '@server/tools/errorHandler';
 import { generateExcel } from '@server/tools/excel';
 import { logger } from '@server/tools/logger';
 
-import { BaseModule, EntityWithDefaultColumns } from '../base.module';
+import { Module, ModuleRepository } from '..';
+import { UserRole } from '../auth/types';
 import { EntityStatus } from '../shared.types';
+import { Utils } from '../utils';
+import { Album, Gallery, Image } from './types';
 
 const GALLERY_DIR = path.resolve(DATA_FILE_PATH, 'gallery');
 const THUMBNAIL_DIR = 'thumbnails';
 const WATERMARK_PATH = path.resolve('./assets/watermark.png');
 const IMAGE_THUMBNAIL_SIZE = 500;
 
-export class GalleryModule extends BaseModule<Gallery> {
-    private albumRepo!: Repository<Album>;
-    private imageRepo!: Repository<Image>;
+export class GalleryModule implements Module {
+    name = 'Gallery';
 
-    constructor() {
-        super('Gallery', Gallery, GalleryAddSchema, GalleryEditSchema);
-    }
+    repo = () => {
+        return new ModuleRepository<Gallery>(db.getRepository(Gallery));
+    };
+    repoAlbum = () => {
+        return new ModuleRepository<Album>(db.getRepository(Album));
+    };
+    repoImage = () => {
+        return new ModuleRepository<Image>(db.getRepository(Image));
+    };
 
-    async init() {
-        await super.init();
-        this.albumRepo = AppDataSource.getRepository(Album);
-        this.imageRepo = AppDataSource.getRepository(Image);
-
+    init = async () => {
         // Ensure gallery directory exists
         await mkdir(GALLERY_DIR, { recursive: true });
 
@@ -64,47 +53,412 @@ export class GalleryModule extends BaseModule<Gallery> {
                 `Watermark image not found at ${WATERMARK_PATH}, skipping watermarking`,
             );
         }
+    };
+
+    health = async () => {
+        await this.repo().count();
+    };
+
+    routes = () => {
+        return new Hono()
+            .get('/all', async (c) => {
+                const isAdmin = await Utils.authIsAdmin(c);
+                return c.json({
+                    galleries: (await this.all(isAdmin)).map((g) => g.toDTO()),
+                });
+            })
+            .get('/latest', async (c) => {
+                const isAdmin = await Utils.authIsAdmin(c);
+                return c.json({
+                    gallery: (await this.latest(isAdmin))?.toDTO(),
+                });
+            })
+            .get(
+                '/:galleryId',
+                this.checkAccess(),
+                arktypeValidator(
+                    'param',
+                    type({ galleryId: 'string.integer.parse' }),
+                ),
+                async (c) => {
+                    const { galleryId } = c.req.valid('param');
+                    const isAdmin = await Utils.authIsAdmin(c);
+                    const gallery = await this.get(galleryId, isAdmin);
+                    if (!gallery) {
+                        throw new NotFoundError(
+                            `Gallery ${galleryId} not found`,
+                        );
+                    }
+                    return c.json({ gallery: gallery.toDTO() });
+                },
+            )
+            .post(
+                '/add',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'form',
+                    type({
+                        name: 'string',
+                        description: 'string',
+                        status: type.valueOf(EntityStatus),
+                    }),
+                ),
+                async (c) => {
+                    const { name, description, status } = c.req.valid('form');
+                    return c.json({
+                        gallery: (
+                            await this.add({ name, description, status })
+                        ).toDTO(),
+                    });
+                },
+            )
+            .patch(
+                '/:galleryId',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ galleryId: 'string.integer.parse' }),
+                ),
+                arktypeValidator(
+                    'form',
+                    type({
+                        name: 'string',
+                        description: 'string',
+                        status: type.valueOf(EntityStatus),
+                    }),
+                ),
+                async (c) => {
+                    const { galleryId } = c.req.valid('param');
+                    const { name, description, status } = c.req.valid('form');
+                    const updated = await this.edit(galleryId, {
+                        name,
+                        description,
+                        status,
+                    });
+                    if (!updated) {
+                        throw new NotFoundError(
+                            `Gallery ${galleryId} not found`,
+                        );
+                    }
+                    return c.json({ gallery: updated.toDTO() });
+                },
+            )
+            .delete(
+                '/:galleryId',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ galleryId: 'string.integer.parse' }),
+                ),
+                async (c) => {
+                    const { galleryId } = c.req.valid('param');
+                    const success = await this.delete(galleryId);
+                    if (!success) {
+                        throw new NotFoundError(
+                            `Gallery ${galleryId} not found`,
+                        );
+                    }
+                    return c.json({ success });
+                },
+            )
+            .post(
+                '/:galleryId/updatePassword',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ galleryId: 'string.integer.parse' }),
+                ),
+                arktypeValidator(
+                    'form',
+                    type({
+                        password: 'string | null',
+                    }),
+                ),
+                async (c) => {
+                    const { galleryId } = c.req.valid('param');
+                    const { password } = c.req.valid('form');
+                    if (!password || password === '') {
+                        await this.removePassword(galleryId);
+                        return c.json({ message: 'Password removed' });
+                    }
+                    await this.setPassword(galleryId, password);
+                    return c.json({ message: 'Password updated' });
+                },
+            )
+            .post(
+                '/:galleryId/updateCover',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ galleryId: 'string.integer.parse' }),
+                ),
+                arktypeValidator(
+                    'form',
+                    type({
+                        file: 'File',
+                    }),
+                ),
+                async (c) => {
+                    const { galleryId } = c.req.valid('param');
+                    const { file } = c.req.valid('form');
+                    await this.setCover(Number(galleryId), file);
+                    return c.json({ message: 'Cover updated' });
+                },
+            )
+            .get(
+                '/:galleryId/cover',
+                this.checkAccess(),
+                arktypeValidator(
+                    'param',
+                    type({ galleryId: 'string.numeric' }),
+                ),
+                async (c) => {
+                    const { galleryId } = c.req.valid('param');
+                    const isAdmin = await Utils.authIsAdmin(c);
+                    const gallery = await this.repo().get(
+                        Number(galleryId),
+                        !isAdmin
+                            ? { status: EntityStatus.PUBLISHED }
+                            : undefined,
+                    );
+                    if (!gallery) {
+                        throw new NotFoundError('Gallery not found');
+                    }
+                    const coverPath = gallery.pathCover!();
+                    const coverBuffer = await readFile(coverPath);
+                    c.header('Content-Type', 'image/png');
+                    c.header(
+                        'Cache-Control',
+                        'public, max-age=31536000, immutable',
+                    );
+                    return c.body(coverBuffer);
+                },
+            )
+            .post(
+                '/:galleryId/login',
+                arktypeValidator(
+                    'param',
+                    type({ galleryId: 'string.integer.parse' }),
+                ),
+                arktypeValidator(
+                    'form',
+                    type({
+                        password: 'string',
+                    }),
+                ),
+                async (c) => {
+                    const { galleryId } = c.req.valid('param');
+                    const { password } = c.req.valid('form');
+                    const token = await this.login(galleryId, password);
+                    if (!token) {
+                        throw new BadRequestError('Code secret invalide');
+                    }
+                    return c.json({ token });
+                },
+            )
+            .get(
+                '/:galleryId/export',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ galleryId: 'string.integer.parse' }),
+                ),
+                async (c) => {
+                    const { galleryId } = c.req.valid('param');
+                    const result = await this.export(galleryId);
+                    if (!result || !result.blob) {
+                        throw new NotFoundError('Export failed');
+                    }
+                    c.header(
+                        'Content-Disposition',
+                        `attachment; filename="gallery.zip"`,
+                    );
+                    c.header('Content-Type', 'application/zip');
+                    c.header(
+                        'Cache-Control',
+                        'public, max-age=31536000, immutable',
+                    );
+                    const arrayBuffer = await result.blob.arrayBuffer();
+                    return c.body(arrayBuffer);
+                },
+            )
+            .post(
+                '/:galleryId/reorderAlbums',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ galleryId: 'string.integer.parse' }),
+                ),
+                arktypeValidator(
+                    'form',
+                    type({
+                        albumOrders: type({
+                            albumId: 'number',
+                            orderIndex: 'number',
+                        }).array(),
+                    }),
+                ),
+                async (c) => {
+                    const { galleryId } = c.req.valid('param');
+                    const { albumOrders } = c.req.valid('form');
+                    await this.reorderAlbums(Number(galleryId), albumOrders);
+                    return c.json({ message: 'Albums reordered' });
+                },
+            )
+            .post(
+                '/:galleryId/addAlbum',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ galleryId: 'string.numeric' }),
+                ),
+                arktypeValidator(
+                    'form',
+                    type({
+                        name: 'string',
+                        code: 'string',
+                    }),
+                ),
+                async (c) => {
+                    const { galleryId } = c.req.valid('param');
+                    const { name, code } = c.req.valid('form');
+                    await this.addAlbum(Number(galleryId), { name, code });
+                    return c.json({ message: 'Album added' });
+                },
+            )
+            .patch(
+                '/album/:albumId',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ albumId: 'string.integer.parse' }),
+                ),
+                arktypeValidator(
+                    'form',
+                    type({
+                        name: 'string',
+                        code: 'string',
+                    }),
+                ),
+                async (c) => {
+                    const { albumId } = c.req.valid('param');
+                    const { name, code } = c.req.valid('form');
+                    await this.editAlbum(albumId, { name, code });
+                    return c.json({ message: 'Album updated' });
+                },
+            )
+            .delete(
+                '/album/:albumId',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ albumId: 'string.integer.parse' }),
+                ),
+                async (c) => {
+                    const { albumId } = c.req.valid('param');
+                    await this.deleteAlbum(albumId);
+                    return c.json({ message: 'Album deleted' });
+                },
+            )
+            .get(
+                '/image/:imageId',
+                this.checkAccess(),
+                arktypeValidator(
+                    'param',
+                    type({ imageId: 'string.integer.parse' }),
+                ),
+                async (c) => {
+                    const { imageId } = c.req.valid('param');
+                    const image = await this.getImage(Number(imageId));
+                    if (!image) {
+                        throw new NotFoundError('Image not found');
+                    }
+                    const thumbnail = await readFile(image.path!(true));
+                    c.header('Content-Type', 'image/jpeg');
+                    c.header(
+                        'Cache-Control',
+                        'public, max-age=31536000, immutable',
+                    );
+                    return c.body(thumbnail);
+                },
+            )
+            .post(
+                '/album/:albumId/addImages',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ albumId: 'string.integer.parse' }),
+                ),
+                arktypeValidator(
+                    'form',
+                    type({
+                        files: 'File | File[]',
+                    }),
+                ),
+                async (c) => {
+                    const { albumId } = c.req.valid('param');
+                    const { files } = c.req.valid('form');
+                    const fileArray = Array.isArray(files) ? files : [files];
+                    if (!fileArray || fileArray.length === 0) {
+                        throw new BadRequestError('Aucun fichier fourni');
+                    }
+                    await this.addImages(albumId, fileArray);
+                    return c.json({ message: 'Images added' });
+                },
+            )
+            .delete(
+                '/image/:imageId',
+                Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator(
+                    'param',
+                    type({ imageId: 'string.integer.parse' }),
+                ),
+                async (c) => {
+                    const { imageId } = c.req.valid('param');
+                    const success = await this.deleteImage(imageId);
+                    if (!success) {
+                        throw new NotFoundError(`Image ${imageId} not found`);
+                    }
+                    return c.json({ success });
+                },
+            );
+    };
+
+    // ---
+    private wherePublished(isAdmin?: boolean) {
+        return !isAdmin ? { status: EntityStatus.PUBLISHED } : {};
     }
 
     // ---
     all = async (isAdmin?: boolean): Promise<Gallery[]> => {
-        const galleries = await this.repo.find({
+        return await this.repo().find({
             relations: ['albums', 'albums.images', 'albums.images.album'],
+            where: this.wherePublished(isAdmin),
+            order: { createdAt: 'DESC' },
         });
-        return galleries
-            .filter(
-                (gallery) =>
-                    isAdmin || gallery.status === EntityStatus.PUBLISHED,
-            )
-            .map((gallery) => ({
-                ...gallery,
-                password: undefined,
-                albums: gallery.albums?.sort(
-                    (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0),
-                ),
-            }));
+    };
+
+    latest = async (isAdmin?: boolean): Promise<Gallery | null> => {
+        return await this.repo().findOne({
+            relations: ['albums', 'albums.images', 'albums.images.album'],
+            where: this.wherePublished(isAdmin),
+            order: { createdAt: 'DESC' },
+        });
     };
 
     get = async (id: number, isAdmin?: boolean): Promise<Gallery | null> => {
-        const gallery = await this.repo.findOne({
-            where: { id },
+        return await await this.repo().findOne({
             relations: ['albums', 'albums.images', 'albums.images.album'],
+            where: { id, ...this.wherePublished(isAdmin) },
         });
-        return gallery && (isAdmin || gallery.status === EntityStatus.PUBLISHED)
-            ? {
-                  ...gallery,
-                  password: undefined,
-                  albums: gallery?.albums?.sort(
-                      (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0),
-                  ),
-              }
-            : null;
     };
 
-    add = async (
-        item: Omit<Gallery, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>,
-    ): Promise<Gallery> => {
-        const newGallery = await super.add(item);
+    add = async (item: {
+        name: string;
+        description: string;
+        status: EntityStatus;
+    }): Promise<Gallery> => {
+        const newGallery = await this.repo().add(item);
 
         // Create gallery directory
         await mkdir(newGallery.path!(), { recursive: true });
@@ -112,8 +466,19 @@ export class GalleryModule extends BaseModule<Gallery> {
         return newGallery;
     };
 
+    edit = async (
+        id: number,
+        item: {
+            name: string;
+            description: string;
+            status: EntityStatus;
+        },
+    ): Promise<Gallery | null> => {
+        return await this.repo().edit(id, item);
+    };
+
     delete = async (id: number): Promise<boolean> => {
-        const gallery = await this.get(id, true);
+        const gallery = await this.repo().get(id);
         if (!gallery) {
             return false;
         }
@@ -121,25 +486,23 @@ export class GalleryModule extends BaseModule<Gallery> {
         // Remove gallery directory
         await rm(gallery.path!(), { recursive: true, force: true });
 
-        return super.delete(id);
+        return await this.repo().deleteById(id);
     };
 
     // Password
-    removePassword = async (galleryId: number): Promise<void> => {
-        await this.repo.update(galleryId, { password: '' });
-    };
+    async setPassword(galleryId: number, password: string): Promise<void> {
+        await this.repo().edit(galleryId, {
+            password: await Utils.hashPassword(password),
+        });
+    }
 
-    setPassword = async (
-        galleryId: number,
-        password: string,
-    ): Promise<void> => {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await this.repo.update(galleryId, { password: hashedPassword });
-    };
+    async removePassword(galleryId: number): Promise<void> {
+        await this.repo().edit(galleryId, { password: '' });
+    }
 
     // Cover
     setCover = async (galleryId: number, file: File): Promise<void> => {
-        const gallery = await this.get(galleryId);
+        const gallery = await this.repo().get(galleryId);
         if (!gallery) {
             return;
         }
@@ -150,14 +513,189 @@ export class GalleryModule extends BaseModule<Gallery> {
             600,
         );
 
-        await this.repo.update(galleryId, {
-            updatedAt: new Date().toISOString(),
+        await this.repo().edit(galleryId, {});
+    };
+
+    // Albums
+    addAlbum = async (
+        galleryId: number,
+        album: {
+            name: string;
+            code: string;
+        },
+    ): Promise<Album> => {
+        // Add album into database
+        const gallery = await this.repo().get(galleryId);
+        if (!gallery) {
+            throw new Error('Gallery not found');
+        }
+
+        const nextOrderIndex = await this.repoAlbum().countBy({
+            gallery: { id: galleryId },
         });
+
+        const newAlbum = await this.repoAlbum().add({
+            ...album,
+            code: album.code?.toUpperCase(),
+            gallery: gallery,
+            orderIndex: nextOrderIndex,
+        });
+
+        // Create album directory if not exists
+        await mkdir(newAlbum.path!(), { recursive: true });
+
+        return newAlbum;
+    };
+    editAlbum = async (
+        albumId: number,
+        album: Partial<
+            Omit<Album, 'id' | 'createdAt' | 'updatedAt' | 'toDTO' | 'gallery'>
+        >,
+    ): Promise<Album | null> => {
+        // Update album into database
+        const updatedAlbum = await this.repoAlbum().edit(albumId, {
+            ...album,
+            code: album.code?.toUpperCase(),
+        });
+
+        return updatedAlbum;
+    };
+
+    deleteAlbum = async (albumId: number): Promise<boolean> => {
+        // ---
+        const album = await this.repoAlbum().findOne({
+            where: { id: albumId },
+            relations: ['gallery', 'images'],
+        });
+        if (!album) {
+            logger.warn(`Album ${albumId} not found for delete`);
+            return false;
+        }
+
+        // Delete all images first (to respect foreign key constraints)
+        if (album.images && album.images.length > 0) {
+            await this.repoImage().remove(album.images);
+        }
+
+        // Remove album directory
+        await rm(album.path!(), { recursive: true, force: true });
+
+        // Delete album from database
+        await this.repoAlbum().remove(album);
+
+        return true;
+    };
+
+    reorderAlbums = async (
+        _galleryId: number,
+        albumOrders: Array<{ albumId: number; orderIndex: number }>,
+    ): Promise<void> => {
+        for (const { albumId, orderIndex } of albumOrders) {
+            await this.editAlbum(albumId, { orderIndex });
+        }
+    };
+
+    getImage = async (imageId: number): Promise<Image | null> => {
+        return await this.repoImage().findOne({
+            where: { id: imageId },
+            relations: ['album', 'album.gallery'],
+        });
+    };
+
+    addImages = async (albumId: number, files: File[]): Promise<void> => {
+        const album = await this.repoAlbum().findOne({
+            where: { id: albumId },
+            relations: ['gallery', 'images'],
+        });
+        if (!album) {
+            throw new Error(`Album ${albumId} not found`);
+        }
+        for (const file of files) {
+            await this.addImage(album.id, file);
+        }
+    };
+
+    addImage = async (albumId: number, file: File): Promise<void> => {
+        // calculate image ratio
+        const ratio = await sharp(await file.arrayBuffer())
+            .metadata()
+            .then((metadata) => {
+                if (metadata.width && metadata.height) {
+                    return (
+                        Math.round((metadata.width / metadata.height) * 100) /
+                        100
+                    );
+                }
+                return 1;
+            });
+
+        // find next image name
+        const album = await this.repoAlbum().findOne({
+            where: { id: albumId },
+            relations: ['gallery'],
+        });
+        if (!album) {
+            throw new Error(`Album ${albumId} not found`);
+        }
+        const albumPath = album.path!();
+        const existingFiles = await readdir(albumPath).catch(() => []);
+        let maxIndex = 0;
+        for (const galleryItem of existingFiles) {
+            // Skip thumbnails directory
+            if (galleryItem === THUMBNAIL_DIR) {
+                continue;
+            }
+            const match = galleryItem.match(/^(\d+)\.[a-zA-Z0-9]+$/i);
+            if (match) {
+                const index = parseInt(match[1], 10);
+                if (index > maxIndex) {
+                    maxIndex = index;
+                }
+            }
+        }
+        const currentIndex = maxIndex + 1;
+
+        // generate code
+        const shortCode = `${String(currentIndex).padStart(3, '0')}`;
+        const code = `${shortCode}`;
+        const filename = `${shortCode}${path.extname(file.name)}`;
+
+        // add image to database
+        const newImage = await this.repoImage().add({
+            filename,
+            code,
+            ratio,
+            album,
+        });
+
+        // save image file
+        await saveImageBuffer(await file.arrayBuffer(), newImage.path!());
+
+        // generate thumbnail
+        await mkdir(path.join(albumPath, THUMBNAIL_DIR), { recursive: true });
+        await generateThumbnail(await file.arrayBuffer(), newImage.path!(true));
+    };
+
+    deleteImage = async (imageId: number): Promise<boolean> => {
+        const image = await this.repoImage().findOne({
+            where: { id: imageId },
+            relations: ['album', 'album.gallery'],
+        });
+        if (!image) {
+            return false;
+        }
+        // Remove image file
+        await rm(image.path!(), { force: true });
+        // Remove thumbnail file
+        await rm(image.path!(true), { force: true });
+        // Delete image from database
+        await this.repoImage().remove(image);
+        return true;
     };
 
     // Login
     async login(galleryId: number, password: string): Promise<string | null> {
-        const gallery = await this.repo.findOneBy({
+        const gallery = await this.repo().findOneBy({
             id: galleryId,
         });
         if (!gallery?.password) {
@@ -171,26 +709,33 @@ export class GalleryModule extends BaseModule<Gallery> {
         }
 
         // Générer un token JWT
-        const token = await sign({ galleryId }, GALLERY_JWT_SECRET);
-        logger.info(`Gallery ${galleryId} unlocked`);
+        const token = await Utils.signToken({ galleryId }, GALLERY_JWT_SECRET);
         return token;
     }
 
-    async verifyToken(token: string): Promise<{ galleryId: number } | null> {
-        try {
-            const payload = await verify(token, GALLERY_JWT_SECRET);
-            return payload as { galleryId: number };
-        } catch (err) {
-            logger.error(err, 'Gallery token verification failed');
-            return null;
-        }
-    }
-
     checkAccess = () => async (c: Context, next: () => Promise<void>) => {
-        const galleryId = Number(c.req.param('id'));
+        // Récupérer le galleryId depuis le paramètre de route
+        let galleryId: number;
+
+        // Si c'est une route d'image, récupérer l'image d'abord pour obtenir le galleryId
+        const imageIdParam = c.req.param('imageId');
+        if (imageIdParam) {
+            const image = await this.repoImage().findOne({
+                where: { id: Number(imageIdParam) },
+                relations: ['album', 'album.gallery'],
+            });
+            if (!image) {
+                throw new NotFoundError('Image not found');
+            }
+            galleryId = image.album.gallery.id;
+        } else {
+            // Sinon, récupérer directement le galleryId
+            galleryId = Number(c.req.param('galleryId'));
+        }
+
         const token = c.req.header('X-Gallery-Token');
 
-        const gallery = await this.repo.findOneBy({
+        const gallery = await this.repo().findOneBy({
             id: galleryId,
         });
         if (!gallery?.password) {
@@ -200,11 +745,14 @@ export class GalleryModule extends BaseModule<Gallery> {
 
         // Galerie protégée, vérifier le token
         if (!token) {
-            return await authManager.authMiddleware(AuthRole.ADMIN)(c, next);
+            return await Utils.authMiddleware(UserRole.ADMIN)(c, next);
             //throw new UnauthorizedError('No token provided');
         }
 
-        const payload = await this.verifyToken(token);
+        const payload = await Utils.verifyToken<{ galleryId: number }>(
+            token,
+            GALLERY_JWT_SECRET,
+        );
         if (!payload || payload.galleryId !== galleryId) {
             throw new UnauthorizedError('Invalid or expired token');
         }
@@ -217,7 +765,7 @@ export class GalleryModule extends BaseModule<Gallery> {
     export = async (
         galleryId: number,
     ): Promise<{ gallery: Gallery; blob: Blob } | null> => {
-        const gallery = await this.repo.findOne({
+        const gallery = await this.repo().findOne({
             where: { id: galleryId },
             relations: [
                 'albums',
@@ -311,523 +859,6 @@ export class GalleryModule extends BaseModule<Gallery> {
             archive.finalize();
         });
     };
-
-    // Album
-    addAlbum = async (
-        galleryId: number,
-        album: Omit<
-            Album,
-            | 'id'
-            | 'createdAt'
-            | 'updatedAt'
-            | 'gallery'
-            | 'orderIndex'
-            | 'toDTO'
-        >,
-    ): Promise<Album> => {
-        // Add album into database
-        const gallery = await this.get(galleryId, true);
-        if (!gallery) {
-            throw new Error('Gallery not found');
-        }
-
-        const nextOrderIndex = await this.albumRepo.countBy({
-            gallery: { id: galleryId },
-        });
-
-        const newAlbum = this.albumRepo.create({
-            ...album,
-            code: album.code?.toUpperCase(),
-            gallery: gallery,
-            orderIndex: nextOrderIndex,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        } as DeepPartial<Album>);
-        const savedAlbum = await this.albumRepo.save(newAlbum);
-
-        // Create album directory if not exists
-        await mkdir(savedAlbum.path!(), { recursive: true });
-
-        logger.info({ item: savedAlbum }, `GalleryModule > addAlbum`);
-        return savedAlbum;
-    };
-
-    updateAlbum = async (
-        albumId: number,
-        album: Partial<
-            Omit<Album, 'id' | 'createdAt' | 'updatedAt' | 'toDTO' | 'gallery'>
-        >,
-    ): Promise<Album | null> => {
-        // Update album into database
-        const existingAlbum = await this.albumRepo.findOneBy({ id: albumId });
-        if (!existingAlbum) {
-            logger.warn(`Album ${albumId} not found for update`);
-            return null;
-        }
-        const updatedAlbum = this.albumRepo.merge(existingAlbum, {
-            ...album,
-            code: album.code?.toUpperCase() ?? existingAlbum.code,
-            updatedAt: new Date(),
-        });
-        const savedAlbum = await this.albumRepo.save(updatedAlbum);
-
-        logger.info({ item: savedAlbum }, `GalleryModule > updateAlbum`);
-        return savedAlbum;
-    };
-
-    deleteAlbum = async (albumId: number): Promise<boolean> => {
-        // ---
-        const album = await this.albumRepo.findOne({
-            where: { id: albumId },
-            relations: ['gallery', 'images'],
-        });
-        if (!album) {
-            logger.warn(`Album ${albumId} not found for delete`);
-            return false;
-        }
-
-        // Delete all images first (to respect foreign key constraints)
-        if (album.images && album.images.length > 0) {
-            await this.imageRepo.remove(album.images);
-        }
-
-        // Remove album directory
-        await rm(album.path!(), { recursive: true, force: true });
-
-        // Delete album from database
-        await this.albumRepo.remove(album);
-
-        logger.info({ item: album }, `GalleryModule > deleteAlbum`);
-        return true;
-    };
-
-    reorderAlbums = async (
-        galleryId: number,
-        albumOrders: Array<{ albumId: number; orderIndex: number }>,
-    ): Promise<void> => {
-        logger.info(`Reordering albums for gallery ${galleryId}`);
-        for (const { albumId, orderIndex } of albumOrders) {
-            logger.info(
-                ` - Setting album ${albumId} to order index ${orderIndex}`,
-            );
-            await this.updateAlbum(albumId, { orderIndex });
-        }
-        logger.info(`Albums reordered for gallery ${galleryId}`);
-    };
-
-    addImages = async (albumId: number, files: File[]): Promise<void> => {
-        const album = await this.albumRepo.findOne({
-            where: { id: albumId },
-            relations: ['gallery', 'images'],
-        });
-        if (!album) {
-            throw new Error(`Album ${albumId} not found`);
-        }
-        logger.info(`Adding ${files.length} images to album ${albumId}`);
-        for (const file of files) {
-            await this.addImage(album.id, file);
-        }
-    };
-
-    addImage = async (albumId: number, file: File): Promise<void> => {
-        logger.info(`Adding image to album ${albumId}: ${file.name}`);
-
-        // calculate image ratio
-        const ratio = await sharp(await file.arrayBuffer())
-            .metadata()
-            .then((metadata) => {
-                if (metadata.width && metadata.height) {
-                    return (
-                        Math.round((metadata.width / metadata.height) * 100) /
-                        100
-                    );
-                }
-                return 1;
-            });
-
-        // find next image name
-        const album = await this.albumRepo.findOne({
-            where: { id: albumId },
-            relations: ['gallery'],
-        });
-        if (!album) {
-            throw new Error(`Album ${albumId} not found`);
-        }
-        const albumPath = album.path!();
-        const existingFiles = await readdir(albumPath).catch(() => []);
-        let maxIndex = 0;
-        for (const galleryItem of existingFiles) {
-            // Skip thumbnails directory
-            if (galleryItem === THUMBNAIL_DIR) {
-                continue;
-            }
-            const match = galleryItem.match(/^(\d+)\.[a-zA-Z0-9]+$/i);
-            if (match) {
-                const index = parseInt(match[1], 10);
-                if (index > maxIndex) {
-                    maxIndex = index;
-                }
-            }
-        }
-        const currentIndex = maxIndex + 1;
-
-        // generate code
-        const shortCode = `${String(currentIndex).padStart(3, '0')}`;
-        const code = `${shortCode}`;
-        const filename = `${shortCode}${path.extname(file.name)}`;
-
-        // add image to database
-        const newImage = await this.imageRepo.create({
-            filename,
-            code,
-            ratio,
-            album,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        } as DeepPartial<Image>);
-        const savedImage = await this.imageRepo.save(newImage);
-        const imageId = savedImage.id;
-        if (!imageId) {
-            logger.error(`Failed to create image in album ${albumId}`);
-            throw new Error('Failed to create image');
-        }
-
-        // save image file
-        await saveImageBuffer(await file.arrayBuffer(), savedImage.path!());
-
-        // generate thumbnail
-        await mkdir(path.join(albumPath, THUMBNAIL_DIR), { recursive: true });
-        await generateThumbnail(
-            await file.arrayBuffer(),
-            savedImage.path!(true),
-        );
-
-        logger.info(`Image added with ID: ${imageId}, code: ${code}`);
-    };
-
-    deleteImage = async (imageId: number): Promise<boolean> => {
-        const image = await this.imageRepo.findOne({
-            where: { id: imageId },
-            relations: ['album', 'album.gallery'],
-        });
-        if (!image) {
-            logger.warn(`Image ${imageId} not found for delete`);
-            return false;
-        }
-        // Remove image file
-        await rm(image.path!(), { force: true });
-        // Remove thumbnail file
-        await rm(image.path!(true), { force: true });
-        // Delete image from database
-        await this.imageRepo.remove(image);
-        return true;
-    };
-
-    // ---
-    routes() {
-        return new Hono()
-            .onError(errorHandler)
-            .all('/', async (c) => {
-                const items = await this.all(await authManager.isAdmin(c));
-                return c.json(items);
-            })
-            .get('/all', async (c) => {
-                const items = await this.all(await authManager.isAdmin(c));
-                return c.json(items);
-            })
-            .get('/latest', async (c) => {
-                const items = await this.all(await authManager.isAdmin(c));
-                const sortedItems = items.sort(
-                    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-                );
-                const latestBlog = sortedItems[0];
-                return c.json(latestBlog);
-            })
-            .get('/:id', this.checkAccess(), async (c) => {
-                const id = Number(c.req.param('id'));
-                const item = await this.get(id, await authManager.isAdmin(c));
-                if (!item) {
-                    throw new NotFoundError(
-                        `Item ${this.name} ${id} not found`,
-                    );
-                }
-                return c.json(item);
-            })
-            .post(
-                '/add',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                arktypeValidator('form', GalleryAddSchema),
-                async (c) => {
-                    const formData = c.req.valid('form');
-                    const newItem = await this.add(formData);
-                    return c.json({ message: 'Item added', item: newItem });
-                },
-            )
-            .patch(
-                '/:id',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                arktypeValidator('form', GalleryEditSchema),
-                async (c) => {
-                    const formData = c.req.valid('form');
-                    const id = Number(c.req.param('id'));
-                    const updatedItem = await this.edit(id, formData);
-                    if (!updatedItem) {
-                        throw new NotFoundError(
-                            `Item ${this.name} ${id} not found`,
-                        );
-                    }
-                    return c.json({
-                        message: 'Item edited',
-                        item: updatedItem,
-                    });
-                },
-            )
-            .delete(
-                '/:id',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                async (c) => {
-                    const id = Number(c.req.param('id'));
-                    const success = await this.delete(id);
-                    if (!success) {
-                        throw new NotFoundError(
-                            `Item ${this.name} ${id} not found`,
-                        );
-                    }
-                    return c.json({ message: 'Item deleted' });
-                },
-            )
-            .post(
-                '/:galleryId/updatePassword',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                arktypeValidator(
-                    'form',
-                    type({
-                        password: 'string | null',
-                    }),
-                ),
-                async (c) => {
-                    const galleryId = Number(c.req.param('galleryId'));
-                    const { password } = c.req.valid('form');
-                    if (!password || password === '') {
-                        await this.removePassword(galleryId);
-                        return c.json({ message: 'Password removed' });
-                    }
-                    await this.setPassword(galleryId, password);
-                    return c.json({ message: 'Password updated' });
-                },
-            )
-
-            .post(
-                '/:galleryId/updateCover',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                arktypeValidator(
-                    'form',
-                    type({
-                        file: 'File',
-                    }),
-                ),
-                async (c) => {
-                    const galleryId = Number(c.req.param('galleryId'));
-                    const { file } = c.req.valid('form');
-                    await this.setCover(galleryId, file);
-                    return c.json({ message: 'Images added' });
-                },
-            )
-            .get('/:galleryId/cover', async (c) => {
-                const galleryId = Number(c.req.param('galleryId'));
-                const gallery = await this.repo.findOne({
-                    where: { id: galleryId },
-                });
-                if (!gallery) {
-                    throw new NotFoundError(
-                        `Cover for gallery ${galleryId} not found`,
-                    );
-                }
-                const cover = await readFile(gallery.pathCover!());
-                c.header('Content-Type', 'image/png');
-                c.header(
-                    'Cache-Control',
-                    'public, max-age=31536000, immutable',
-                );
-                return c.body(new Uint8Array(cover));
-            })
-
-            .post(
-                '/:galleryId/login',
-                arktypeValidator(
-                    'form',
-                    type({
-                        password: 'string',
-                    }),
-                ),
-                async (c) => {
-                    const galleryId = Number(c.req.param('galleryId'));
-                    const { password } = c.req.valid('form');
-                    const token = await this.login(galleryId, password);
-                    if (!token) {
-                        throw new BadRequestError('Code secret invalide');
-                    }
-                    return c.json({ token });
-                },
-            )
-            .get(
-                '/:galleryId/export',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                async (c) => {
-                    const galleryId = Number(c.req.param('galleryId'));
-                    const result = await this.export(galleryId);
-                    if (!result) {
-                        throw new NotFoundError(
-                            `Gallery ${galleryId} not found or has no images`,
-                        );
-                    }
-                    const { gallery, blob } = result;
-                    if (!blob) {
-                        throw new NotFoundError(
-                            `Gallery ${galleryId} not found or has no images`,
-                        );
-                    }
-                    c.header(
-                        'Content-Disposition',
-                        `attachment; filename="${gallery.name}.zip"`,
-                    );
-                    c.header('Content-Type', 'application/zip');
-                    // Convertir Blob en Buffer
-                    const buffer = await blob.arrayBuffer();
-                    return c.body(buffer);
-                },
-            )
-            .post(
-                '/:galleryId/reorderAlbums',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                arktypeValidator(
-                    'json',
-                    type({
-                        albumOrders: type({
-                            albumId: 'number',
-                            orderIndex: 'number',
-                        }).array(),
-                    }),
-                ),
-                async (c) => {
-                    const galleryId = Number(c.req.param('galleryId'));
-                    const { albumOrders } = c.req.valid('json');
-                    await this.reorderAlbums(galleryId, albumOrders);
-                    return c.json({ message: 'Albums reordered' });
-                },
-            )
-            .post(
-                '/:galleryId/addAlbum',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                arktypeValidator(
-                    'form',
-                    type({
-                        code: 'string',
-                        name: 'string',
-                    }),
-                ),
-                async (c) => {
-                    const formData = c.req.valid('form');
-                    const galleryId = Number(c.req.param('galleryId'));
-
-                    const newAlbum = await this.addAlbum(galleryId, formData);
-                    return c.json({ message: 'Album added', item: newAlbum });
-                },
-            )
-            .patch(
-                '/album/:albumId',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                arktypeValidator(
-                    'form',
-                    type({
-                        code: 'string',
-                        name: 'string',
-                        'orderIndex?': 'number',
-                    }),
-                ),
-                async (c) => {
-                    const formData = c.req.valid('form');
-                    const albumId = Number(c.req.param('albumId'));
-                    const updatedAlbum = await this.updateAlbum(
-                        albumId,
-                        formData,
-                    );
-                    if (!updatedAlbum) {
-                        throw new NotFoundError(`Album ${albumId} not found`);
-                    }
-                    return c.json({
-                        message: 'Album updated',
-                        item: updatedAlbum,
-                    });
-                },
-            )
-            .delete(
-                '/album/:albumId',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                async (c) => {
-                    const albumId = Number(c.req.param('albumId'));
-                    const success = await this.deleteAlbum(albumId);
-                    if (!success) {
-                        throw new NotFoundError(`Album ${albumId} not found`);
-                    }
-                    return c.json({ message: 'Album deleted' });
-                },
-            )
-            .get('/image/:imageId', async (c) => {
-                const imageId = Number(c.req.param('imageId'));
-                const image = await this.imageRepo.findOne({
-                    where: { id: imageId },
-                    relations: ['album', 'album.gallery'],
-                });
-                if (!image) {
-                    throw new NotFoundError(
-                        `Thumbnail for image ${imageId} not found`,
-                    );
-                }
-                const thumbnail = await readFile(image.path!(true));
-                c.header('Content-Type', 'image/jpeg');
-                c.header(
-                    'Cache-Control',
-                    'public, max-age=31536000, immutable',
-                );
-                return c.body(new Uint8Array(thumbnail));
-            })
-            .post(
-                '/album/:albumId/addImages',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                arktypeValidator(
-                    'form',
-                    type({
-                        // Accepter soit un seul File soit un tableau de File
-                        files: 'File | File[]',
-                    }),
-                ),
-                async (c) => {
-                    const albumId = Number(c.req.param('albumId'));
-                    const { files } = c.req.valid('form') as {
-                        files: File | File[];
-                    };
-                    const fileArray = Array.isArray(files) ? files : [files];
-                    if (!fileArray || fileArray.length === 0) {
-                        throw new BadRequestError('Aucun fichier fourni');
-                    }
-                    await this.addImages(albumId, fileArray);
-                    return c.json({ message: 'Images added' });
-                },
-            )
-            .delete(
-                '/image/:imageId',
-                authManager.authMiddleware(AuthRole.ADMIN),
-                async (c) => {
-                    const imageId = Number(c.req.param('imageId'));
-                    const success = await this.deleteImage(imageId);
-                    if (!success) {
-                        throw new NotFoundError(`Image ${imageId} not found`);
-                    }
-                    return c.json({ message: 'Image deleted' });
-                },
-            );
-    }
 }
 
 // Utils
@@ -883,183 +914,3 @@ const saveImageBuffer = async (
     const { writeFile } = await import('node:fs/promises');
     await writeFile(imagePath, Buffer.from(buffer));
 };
-
-// Types and Schemas
-@Entity('galleries')
-export class Gallery implements EntityWithDefaultColumns {
-    @PrimaryGeneratedColumn()
-    id!: number;
-
-    @Column('datetime', { nullable: false })
-    createdAt: Date = new Date();
-
-    @Column('datetime', { nullable: false })
-    updatedAt: Date = new Date();
-
-    @Column('text', { nullable: false })
-    name: string = '';
-
-    @Column('text', { nullable: false })
-    description: string = '';
-
-    @Column('text', { nullable: false })
-    status: EntityStatus = EntityStatus.DRAFT;
-
-    @Column('text', { nullable: true })
-    password?: string;
-
-    @OneToMany(() => Album, (album) => album.gallery, {
-        eager: true,
-        onDelete: 'CASCADE',
-    })
-    albums?: Album[];
-
-    // ---
-    isProtected?: boolean = false;
-    @AfterLoad()
-    updateIsProtected? = () => {
-        this.isProtected = !!this.password;
-    };
-
-    path? = () => {
-        return path.join(GALLERY_DIR, this.id.toString());
-    };
-
-    pathCover? = () => {
-        return path.join(GALLERY_DIR, this.id.toString(), 'cover.png');
-    };
-
-    toDTO = () => {
-        return {
-            id: this.id,
-            name: this.name,
-            description: this.description,
-            status: this.status,
-            isProtected: !!this.password,
-            albums: this.albums?.map((album) => album.toDTO()),
-            createdAt: this.createdAt.toISOString(),
-            updatedAt: this.updatedAt.toISOString(),
-        };
-    };
-}
-
-@Entity('galleries_albums')
-export class Album implements EntityWithDefaultColumns {
-    @PrimaryGeneratedColumn()
-    id!: number;
-
-    @Column('datetime', { nullable: false })
-    createdAt: Date = new Date();
-
-    @Column('datetime', { nullable: false })
-    updatedAt: Date = new Date();
-
-    @ManyToOne(() => Gallery, (gallery) => gallery.albums, {
-        onDelete: 'CASCADE',
-    })
-    @JoinColumn({ name: 'galleryId' })
-    gallery: Gallery = new Gallery();
-
-    @Column('int', { nullable: false })
-    orderIndex: number = 0;
-
-    @Column('text', { nullable: false })
-    code: string = '';
-
-    @Column('text', { nullable: false })
-    name: string = '';
-
-    @OneToMany(() => Image, (image) => image.album, { eager: true })
-    images?: Image[];
-
-    // ---
-    path? = () => {
-        return path.join(
-            GALLERY_DIR,
-            this.gallery.id.toString(),
-            this.id.toString(),
-        );
-    };
-
-    toDTO = () => {
-        return {
-            id: this.id,
-            code: this.code,
-            name: this.name,
-            orderIndex: this.orderIndex,
-            galleryId: this.gallery.id,
-            images: this.images?.map((image) => image.toDTO()),
-            createdAt: this.createdAt.toISOString(),
-            updatedAt: this.updatedAt.toISOString(),
-        };
-    };
-}
-
-@Entity('galleries_albums_images')
-export class Image implements EntityWithDefaultColumns {
-    @PrimaryGeneratedColumn()
-    id!: number;
-
-    @Column('datetime', { nullable: false })
-    createdAt: Date = new Date();
-
-    @Column('datetime', { nullable: false })
-    updatedAt: Date = new Date();
-
-    @ManyToOne(() => Album, (album) => album.images)
-    @JoinColumn({ name: 'albumId' })
-    album: Album = new Album();
-
-    @Column('text', { nullable: false })
-    code: string = '';
-
-    @Column('text', { nullable: false })
-    filename: string = '';
-
-    @Column('float', { nullable: false })
-    ratio: number = 1.0;
-
-    // ---
-    fullcode!: string;
-    @AfterLoad()
-    updateFullcode() {
-        this.fullcode = this.album?.code
-            ? `${this.album.code}${this.code}`
-            : this.code;
-    }
-
-    path? = (thumbnail: boolean = false) => {
-        return path.join(
-            GALLERY_DIR,
-            this.album.gallery.id.toString(),
-            this.album.id.toString(),
-            thumbnail ? THUMBNAIL_DIR : '',
-            this.filename,
-        );
-    };
-
-    toDTO = () => {
-        return {
-            id: this.id,
-            code: this.code,
-            filename: this.filename,
-            ratio: this.ratio,
-            albumId: this.album.id,
-            fullcode: `${this.album.code}${this.code}`,
-            createdAt: this.createdAt.toISOString(),
-            updatedAt: this.updatedAt.toISOString(),
-        };
-    };
-}
-
-const GalleryAddSchema = type({
-    name: 'string',
-    description: 'string',
-    status: type.valueOf(EntityStatus),
-});
-
-const GalleryEditSchema = type({
-    name: 'string',
-    description: 'string',
-    status: type.valueOf(EntityStatus),
-});
