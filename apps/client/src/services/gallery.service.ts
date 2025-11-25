@@ -289,29 +289,34 @@ class GalleryService extends BaseService {
     };
 
     addImages = async (albumId: number, files: File[]) => {
-        const formData = new FormData();
-        files.forEach((file) => {
-            formData.append('files', file);
-        });
-
+        const BATCH_SIZE = 3;
         const headers = authService.headers();
         delete headers['Content-Type'];
 
-        const response = await fetch(
-            `/api/gallery/album/${albumId}/addImages`,
-            {
-                method: 'POST',
-                body: formData,
-                headers,
-            },
-        );
+        // Process files in batches of 3
+        for (let i = 0; i < files.length; i += BATCH_SIZE) {
+            const batch = files.slice(i, i + BATCH_SIZE);
+            const formData = new FormData();
+            batch.forEach((file) => {
+                formData.append('files', file);
+            });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw error;
+            const response = await fetch(
+                `/api/gallery/album/${albumId}/addImages`,
+                {
+                    method: 'POST',
+                    body: formData,
+                    headers,
+                },
+            );
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw error;
+            }
         }
 
-        return response.json();
+        return { message: 'All images added successfully' };
     };
 }
 
