@@ -24,10 +24,11 @@ export const AdminGalleryAlbumAdd = ({
         defaultValues: {
             name: '',
             code: '',
+            description: '',
         },
     });
-    const onSubmit = async (data: { name: string; code: string }) => {
-        await addAlbum({ name: data.name, code: data.code }).then(() => {
+    const onSubmit = async (data: { name: string; code: string; description: string }) => {
+        await addAlbum({ name: data.name, code: data.code, description: data.description }).then(() => {
             reset();
             onSuccess?.();
             onClose?.();
@@ -76,6 +77,13 @@ export const AdminGalleryAlbumAdd = ({
                     />
                     <label>Code (3 lettres)</label>
                     <span className="error">{errors.code?.message}</span>
+                </div>
+                <div className="field label border">
+                    <textarea
+                        id="description"
+                        {...register('description')}
+                    />
+                    <label>Description</label>
                 </div>
                 <span className="error-text">{error?.message}</span>
                 <nav className="right-align">

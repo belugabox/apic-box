@@ -25,6 +25,9 @@ export const AlbumCard = ({
             <div className="row top-align">
                 <div className="max">
                     <h5>{album.name}</h5>
+                    <span className="secondary-text">
+                        {album.description}
+                    </span>
                     <div className="grid">
                         {album.images?.slice(0, 4).map((image) => (
                             <div className="s3" key={image.id}>

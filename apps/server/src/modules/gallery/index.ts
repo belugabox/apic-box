@@ -292,12 +292,17 @@ export class GalleryModule implements Module {
                     type({
                         name: 'string',
                         code: 'string',
+                        description: 'string?',
                     }),
                 ),
                 async (c) => {
                     const { id } = c.req.valid('param');
-                    const { name, code } = c.req.valid('form');
-                    await this.addAlbum(Number(id), { name, code });
+                    const { name, code, description } = c.req.valid('form');
+                    await this.addAlbum(Number(id), {
+                        name,
+                        code,
+                        description,
+                    });
                     return c.json({ message: 'Album added' });
                 },
             )
@@ -310,12 +315,13 @@ export class GalleryModule implements Module {
                     type({
                         name: 'string',
                         code: 'string',
+                        description: 'string?',
                     }),
                 ),
                 async (c) => {
                     const { id } = c.req.valid('param');
-                    const { name, code } = c.req.valid('form');
-                    await this.editAlbum(id, { name, code });
+                    const { name, code, description } = c.req.valid('form');
+                    await this.editAlbum(id, { name, code, description });
                     return c.json({ message: 'Album updated' });
                 },
             )
@@ -522,6 +528,7 @@ export class GalleryModule implements Module {
         album: {
             name: string;
             code: string;
+            description?: string;
         },
     ): Promise<Album> => {
         // Add album into database

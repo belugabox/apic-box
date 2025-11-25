@@ -103,6 +103,9 @@ export class Album implements EntityWithDefaultColumns {
     @Column('text', { nullable: false })
     name: string = '';
 
+    @Column('text', { nullable: true })
+    description?: string;
+
     @OneToMany(() => Image, (image) => image.album, { eager: true })
     images?: Image[];
 
@@ -120,6 +123,7 @@ export class Album implements EntityWithDefaultColumns {
             id: this.id,
             code: this.code,
             name: this.name,
+            description: this.description,
             orderIndex: this.orderIndex,
             galleryId: this.gallery.id,
             images: this.images?.map((image) => image.toDTO()),

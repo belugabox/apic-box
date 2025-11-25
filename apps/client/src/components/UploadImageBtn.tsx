@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 
 interface UploadImageBtnProps {
     useFunc: () => [
-        (files: File[]) => Promise<string | void>,
+        (files: File[]) => Promise<string | void | {message:string}>,
         boolean,
         Error | undefined,
     ];
