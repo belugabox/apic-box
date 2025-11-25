@@ -425,7 +425,7 @@ export class GalleryModule implements Module {
 
     get = async (id: number, isAdmin?: boolean): Promise<Gallery | null> => {
         return await await this.repo().findOne({
-            relations: ['albums'],
+            relations: ['albums', 'albums.images.album'],
             where: { id, ...this.wherePublished(isAdmin) },
         });
     };
