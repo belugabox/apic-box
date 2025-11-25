@@ -2,6 +2,7 @@
 import { Gallery, Image } from '@server/modules/shared.types';
 
 import { usePromise, usePromiseFunc } from '@/utils/Hooks';
+import { BlobURLCache } from '@/utils/cache';
 import { callRpc } from '@/utils/rpc';
 
 import { authService } from './auth.service';
@@ -9,6 +10,9 @@ import { BaseService } from './base.service';
 import { serverApi } from './server';
 
 class GalleryService extends BaseService {
+    private imageCache = new BlobURLCache(200);
+    private coverCache = new BlobURLCache(200);
+
     constructor() {
         super();
     }
@@ -168,6 +172,15 @@ class GalleryService extends BaseService {
         imageId: number,
         updatedAt?: string,
     ): Promise<string> => {
+        // Clé de cache unique basée sur imageId et updatedAt
+        const cacheKey = `img_${imageId}_${updatedAt || '0'}`;
+
+        // Vérifier le cache
+        const cached = this.imageCache.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
         let url = `/api/gallery/image/${imageId}`;
         if (updatedAt) {
             // Ajouter un query parameter pour invalider le cache lors d'une mise à jour
@@ -187,13 +200,27 @@ class GalleryService extends BaseService {
         }
 
         const blob = await response.blob();
-        return URL.createObjectURL(blob);
+        const objectUrl = URL.createObjectURL(blob);
+
+        // Stocker dans le cache
+        this.imageCache.set(cacheKey, objectUrl);
+
+        return objectUrl;
     };
 
     cover = async (
         galleryId: number,
         updatedAt?: string,
     ): Promise<string | undefined> => {
+        // Clé de cache unique basée sur galleryId et updatedAt
+        const cacheKey = `cover_${galleryId}_${updatedAt || '0'}`;
+
+        // Vérifier le cache
+        const cached = this.coverCache.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
         let url = `/api/gallery/${galleryId}/cover`;
         if (updatedAt) {
             // Ajouter un query parameter pour invalider le cache lors d'une mise à jour
@@ -210,7 +237,13 @@ class GalleryService extends BaseService {
         if (blob.size === 0) {
             return undefined;
         }
-        return URL.createObjectURL(blob);
+
+        const objectUrl = URL.createObjectURL(blob);
+
+        // Stocker dans le cache
+        this.coverCache.set(cacheKey, objectUrl);
+
+        return objectUrl;
     };
 
     export = async (galleryId: number): Promise<Blob> => {
