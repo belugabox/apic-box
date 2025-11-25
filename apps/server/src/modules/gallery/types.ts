@@ -153,6 +153,9 @@ export class Image implements EntityWithDefaultColumns {
     @Column('float', { nullable: false })
     ratio: number = 1.0;
 
+    @Column('text', { nullable: true })
+    thumbnailOptionsHash?: string; // Track thumbnail generation options for regeneration
+
     // ---
     fullcode!: string;
     @AfterLoad()

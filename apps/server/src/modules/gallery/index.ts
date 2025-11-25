@@ -12,7 +12,14 @@ import { addImageWatermark } from 'sharp-watermark';
 import { db } from '@server/db';
 import { isRequestAborted } from '@server/tools/abortMiddleware';
 import { MemoryCache } from '@server/tools/cache';
-import { DATA_FILE_PATH, GALLERY_JWT_SECRET } from '@server/tools/env';
+import {
+    DATA_FILE_PATH,
+    GALLERY_JWT_SECRET,
+    THUMBNAIL_QUALITY,
+    THUMBNAIL_SIZE,
+    THUMBNAIL_WITH_WATERMARK,
+    getThumbnailOptionsHash,
+} from '@server/tools/env';
 import {
     BadRequestError,
     NotFoundError,
@@ -30,7 +37,6 @@ import { Album, Gallery, Image } from './types';
 const GALLERY_DIR = path.resolve(DATA_FILE_PATH, 'gallery');
 const THUMBNAIL_DIR = 'thumbnails';
 const WATERMARK_PATH = path.resolve('./assets/watermark.png');
-const IMAGE_THUMBNAIL_SIZE = 500;
 
 export class GalleryModule implements Module {
     name = 'Gallery';
@@ -55,6 +61,14 @@ export class GalleryModule implements Module {
         if ((await existsSync(WATERMARK_PATH)) === false) {
             logger.warn(
                 `Watermark image not found at ${WATERMARK_PATH}, skipping watermarking`,
+            );
+        }
+
+        // Regenerate thumbnails if configuration changed
+        const regeneratedCount = await this.regenerateThumbnails();
+        if (regeneratedCount > 0) {
+            logger.info(
+                `Regenerated ${regeneratedCount} thumbnails on startup`,
             );
         }
     };
@@ -399,6 +413,14 @@ export class GalleryModule implements Module {
                     }
                     return c.json({ success });
                 },
+            )
+            .post(
+                '/regenerateThumbnails',
+                Utils.authMiddleware(UserRole.ADMIN),
+                async (c) => {
+                    const count = await this.regenerateThumbnails();
+                    return c.json({ message: 'Thumbnails regenerated', count });
+                },
             );
     };
 
@@ -644,12 +666,14 @@ export class GalleryModule implements Module {
         const code = `${shortCode}`;
         const filename = `${shortCode}${path.extname(file.name)}`;
 
-        // add image to database
+        // add image to database with thumbnail options hash
+        const thumbnailOptionsHash = getThumbnailOptionsHash();
         const newImage = await this.repoImage().add({
             filename,
             code,
             ratio,
             album,
+            thumbnailOptionsHash,
         });
 
         // save image file and generate thumbnail in parallel
@@ -675,6 +699,45 @@ export class GalleryModule implements Module {
         // Delete image from database
         await this.repoImage().remove(image);
         return true;
+    };
+
+    regenerateThumbnails = async (): Promise<number> => {
+        const currentHash = getThumbnailOptionsHash();
+        const images = await this.repoImage().find({
+            relations: ['album', 'album.gallery'],
+        });
+
+        let regeneratedCount = 0;
+
+        for (const image of images) {
+            // Check if thumbnail options have changed
+            if (image.thumbnailOptionsHash !== currentHash) {
+                try {
+                    const buffer = await readFile(image.path!());
+                    // Convert Uint8Array to ArrayBuffer
+                    const arrayBuffer = buffer.buffer.slice(
+                        buffer.byteOffset,
+                        buffer.byteOffset + buffer.byteLength,
+                    );
+                    await mkdir(path.join(image.album.path!(), THUMBNAIL_DIR), {
+                        recursive: true,
+                    });
+                    await generateThumbnail(arrayBuffer, image.path!(true));
+                    // Update hash in database
+                    await this.repoImage().edit(image.id, {
+                        thumbnailOptionsHash: currentHash,
+                    });
+                    regeneratedCount++;
+                } catch (err) {
+                    logger.warn(
+                        err,
+                        `Failed to regenerate thumbnail for image ${image.id}`,
+                    );
+                }
+            }
+        }
+
+        return regeneratedCount;
     };
 
     // Login
@@ -855,18 +918,16 @@ const generateThumbnail = async (
     // Detect if this is a cover image based on the path
     const isCover = thumbnailPath.includes('cover.png');
     const format = isCover ? 'png' : 'jpeg';
+    const thumbnailSize = size || THUMBNAIL_SIZE;
+    const useWatermark = watermark && THUMBNAIL_WITH_WATERMARK;
 
-    const resized = sharp(buffer).resize(
-        size || IMAGE_THUMBNAIL_SIZE,
-        size || IMAGE_THUMBNAIL_SIZE,
-        {
-            fit: 'inside',
-        },
-    );
+    const resized = sharp(buffer).resize(thumbnailSize, thumbnailSize, {
+        fit: 'inside',
+    });
 
     const thumbnailBuffer = await (format === 'png'
         ? resized.png().toBuffer()
-        : resized.jpeg({ quality: 90 }).toBuffer());
+        : resized.jpeg({ quality: THUMBNAIL_QUALITY }).toBuffer());
 
     if ((await existsSync(WATERMARK_PATH)) === false) {
         logger.warn(
@@ -876,7 +937,7 @@ const generateThumbnail = async (
         return;
     }
 
-    if (!watermark) {
+    if (!useWatermark) {
         await sharp(thumbnailBuffer).toFile(thumbnailPath);
         return;
     }

@@ -52,6 +52,20 @@ if (!process.env.GALLERY_JWT_SECRET) {
 }
 export const GALLERY_JWT_SECRET = process.env.GALLERY_JWT_SECRET;
 
+// Thumbnail generation options
+export const THUMBNAIL_SIZE = parseInt(process.env.THUMBNAIL_SIZE || '500', 10);
+export const THUMBNAIL_QUALITY = parseInt(
+    process.env.THUMBNAIL_QUALITY || '90',
+    10,
+);
+export const THUMBNAIL_WITH_WATERMARK =
+    process.env.THUMBNAIL_WITH_WATERMARK !== 'false';
+
+// Create a hash of thumbnail options for change detection
+export const getThumbnailOptionsHash = (): string => {
+    return `${THUMBNAIL_SIZE}-${THUMBNAIL_QUALITY}-${THUMBNAIL_WITH_WATERMARK}`;
+};
+
 // ============================================================================
 // ENVIRONMENT SUMMARY (for debugging)
 // ============================================================================
