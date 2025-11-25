@@ -193,12 +193,7 @@ export class GalleryModule implements Module {
                 async (c) => {
                     const { id } = c.req.valid('param');
                     const isAdmin = await Utils.authIsAdmin(c);
-                    const gallery = await this.repo().get(
-                        Number(id),
-                        !isAdmin
-                            ? { status: EntityStatus.PUBLISHED }
-                            : undefined,
-                    );
+                    const gallery = await this.repo().get(Number(id));
                     if (!gallery) {
                         throw new NotFoundError('Gallery not found');
                     }
