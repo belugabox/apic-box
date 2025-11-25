@@ -192,7 +192,6 @@ export class GalleryModule implements Module {
                 arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 async (c) => {
                     const { id } = c.req.valid('param');
-                    const isAdmin = await Utils.authIsAdmin(c);
                     const gallery = await this.repo().get(Number(id));
                     if (!gallery) {
                         throw new NotFoundError('Gallery not found');
