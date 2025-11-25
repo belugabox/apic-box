@@ -130,13 +130,14 @@ class GalleryService extends BaseService {
         fromAdmin?: boolean,
     ) =>
         usePromise(
-            () =>
+            (signal) =>
                 image
                     ? galleryService.image(
                           galleryId,
                           fromAdmin,
                           image.id,
                           image.updatedAt,
+                          signal,
                       )
                     : Promise.resolve(undefined),
             [image?.id, image?.updatedAt],
@@ -171,6 +172,7 @@ class GalleryService extends BaseService {
         fromAdmin: boolean | undefined,
         imageId: number,
         updatedAt?: string,
+        signal?: AbortSignal,
     ): Promise<string> => {
         // Clé de cache unique basée sur imageId et updatedAt
         const cacheKey = `img_${imageId}_${updatedAt || '0'}`;
@@ -188,10 +190,10 @@ class GalleryService extends BaseService {
             url += `?v=${timestamp}`;
         }
 
-        const response = await fetch(
-            url,
-            this.getHeaders(fromAdmin, galleryId),
-        );
+        const response = await fetch(url, {
+            signal,
+            ...this.getHeaders(fromAdmin, galleryId),
+        });
 
         if (!response.ok) {
             throw new Error(

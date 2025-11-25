@@ -103,7 +103,7 @@ export class BlobURLCache {
     private cache: LRUCache<string>;
 
     constructor(maxSize: number = 50) {
-        this.cache = new LRUCache<string>(maxSize, (key, url) => {
+        this.cache = new LRUCache<string>(maxSize, (_key, url) => {
             // Cleanup: revoke the blob URL when evicted
             URL.revokeObjectURL(url);
         });

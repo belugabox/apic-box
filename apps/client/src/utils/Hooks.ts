@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable, distinctUntilChanged } from 'rxjs';
 import { Wrapper } from './wrapperObs';
 
 export function usePromise<T>(
-    promise: () => Promise<T>,
+    promise: (signal?: AbortSignal) => Promise<T>,
     deps: React.DependencyList = [],
 ): [T | undefined, boolean, Error | undefined] {
     const [state, setState] = useState<T>();
@@ -12,20 +12,36 @@ export function usePromise<T>(
     const [error, setError] = useState<Error>();
 
     useEffect(() => {
+        const abortController = new AbortController();
         setLoading(true);
         setError(undefined);
-        promise()
+
+        promise(abortController.signal)
             .then((value) => {
-                setState(value);
-                setLoading(false);
+                if (!abortController.signal.aborted) {
+                    setState(value);
+                    setLoading(false);
+                }
             })
             .catch((err) => {
-                setError(err);
-                setLoading(false);
+                // Ignorer les erreurs d'annulation (normales lors d'un cleanup)
+                if (err instanceof Error && err.name === 'AbortError') {
+                    return;
+                }
+                if (!abortController.signal.aborted) {
+                    setError(err);
+                    setLoading(false);
+                }
             })
             .finally(() => {
-                setLoading(false);
+                if (!abortController.signal.aborted) {
+                    setLoading(false);
+                }
             });
+
+        return () => {
+            abortController.abort();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [...deps]);
 

@@ -43,9 +43,10 @@ export abstract class BaseService {
         fromAdmin?: boolean,
         deps?: React.DependencyList,
     ) {
-        return usePromise(async () => {
+        return usePromise(async (signal) => {
             const response = await callRpc<ResponseType>(
                 endpoint.$get({}, this.getHeaders(fromAdmin)),
+                signal,
             );
             return wrapper(response);
         }, this.normalizeDeps(deps));
@@ -67,12 +68,13 @@ export abstract class BaseService {
         fromAdmin?: boolean,
         deps?: React.DependencyList,
     ) {
-        return usePromise(async () => {
+        return usePromise(async (signal) => {
             const response = await callRpc<ResponseType>(
                 endpoint.$get(
                     { param: this.idParam(id) },
                     this.getHeaders(fromAdmin, id),
                 ),
+                signal,
             );
             return wrapper(response);
         }, this.normalizeDeps(deps));

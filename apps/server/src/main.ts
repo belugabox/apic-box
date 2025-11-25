@@ -7,6 +7,7 @@ import { join } from 'path';
 import 'reflect-metadata';
 
 import { health, init, routes } from './core';
+import { abortMiddleware } from './tools/abortMiddleware';
 // Load and validate environment variables
 import './tools/env';
 import { logger } from './tools/logger';
@@ -25,6 +26,7 @@ const app = new Hono();
 
 // ---
 app.use('/api/*', cors());
+app.use('/api/*', abortMiddleware());
 app.use('/api/*', requestLoggerMiddleware());
 app.use('/api/*', timeoutMiddleware(120000));
 const appRoutes = app.basePath('/api').route('/', routes());

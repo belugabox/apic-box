@@ -10,6 +10,8 @@ import sharp from 'sharp';
 import { addImageWatermark } from 'sharp-watermark';
 
 import { db } from '@server/db';
+import { isRequestAborted } from '@server/tools/abortMiddleware';
+import { MemoryCache } from '@server/tools/cache';
 import { DATA_FILE_PATH, GALLERY_JWT_SECRET } from '@server/tools/env';
 import {
     BadRequestError,
@@ -32,6 +34,7 @@ const IMAGE_THUMBNAIL_SIZE = 500;
 
 export class GalleryModule implements Module {
     name = 'Gallery';
+    private imageCache = new MemoryCache<Buffer>(30 * 60 * 1000); // 30 minutes
 
     repo = () => {
         return new ModuleRepository<Gallery>(db.getRepository(Gallery));
@@ -326,18 +329,47 @@ export class GalleryModule implements Module {
                     type({ imageId: 'string.integer.parse' }),
                 ),
                 async (c) => {
-                    const { imageId } = c.req.valid('param');
-                    const image = await this.getImage(Number(imageId));
+                    const startTime = Date.now();
+
+                    if (isRequestAborted(c)) {
+                        return c.json({ error: 'Request aborted' }, 408);
+                    }
+
+                    const { imageId: parsedId } = c.req.valid('param');
+
+                    // Get image from DB
+                    const getImageStart = Date.now();
+                    const image = await this.getImage(Number(parsedId));
+                    const getImageDuration = Date.now() - getImageStart;
+
                     if (!image) {
                         throw new NotFoundError('Image not found');
                     }
-                    const thumbnail = await readFile(image.path!(true));
+
+                    if (isRequestAborted(c)) {
+                        return c.json({ error: 'Request aborted' }, 408);
+                    }
+
+                    // Read file from disk (with cache)
+                    const readFileStart = Date.now();
+                    const thumbnail = await this.imageCache.get(
+                        Number(parsedId),
+                        () => readFile(image.path!(true)),
+                    );
+                    const readFileDuration = Date.now() - readFileStart;
+
                     c.header('Content-Type', 'image/jpeg');
                     c.header(
                         'Cache-Control',
                         'public, max-age=31536000, immutable',
                     );
-                    return c.body(thumbnail);
+
+                    const totalDuration = Date.now() - startTime;
+                    logger.debug(
+                        `Image request completed (DB: ${getImageDuration}ms, IO: ${readFileDuration}ms, Total: ${totalDuration}ms)`,
+                    );
+
+                    return c.body(new Uint8Array(thumbnail));
                 },
             )
             .post(

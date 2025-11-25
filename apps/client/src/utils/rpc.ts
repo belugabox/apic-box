@@ -40,7 +40,13 @@ const isBinaryResponse = (contentType: string | null): boolean =>
 
 export const callRpc = async <T>(
     rpc: Promise<ClientResponse<T>>,
+    signal?: AbortSignal,
 ): Promise<T> => {
+    // Vérifier si déjà annulé avant de commencer
+    if (signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+    }
+
     const response = await rpc;
     console.log('RPC Response:', response);
     if (!response.ok) {
