@@ -1,13 +1,13 @@
 import { Link, Outlet, useLocation } from 'react-router';
 
-import { useLogout, useUser } from '../../services/auth';
 import { Login } from './Login';
+import { authService } from '@/services/auth.service';
 
 export const AdminHome = () => {
     const location = useLocation();
     const page = location.pathname;
-    const [user] = useUser();
-    const [logout] = useLogout();
+    const [user] = authService.useUser();
+    const [logout] = authService.useLogout();
 
     if (user?.role !== 'admin') {
         return <Login />;

@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 
-import { useGalleryAddAlbum } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 
 interface AdminGalleryAlbumAddProps {
     galleryId: number;
@@ -13,7 +13,7 @@ export const AdminGalleryAlbumAdd = ({
     onClose,
     onSuccess,
 }: AdminGalleryAlbumAddProps) => {
-    const [addAlbum, loading, error] = useGalleryAddAlbum(galleryId);
+    const [addAlbum, loading, error] = galleryService.useAddAlbum(galleryId);
 
     const {
         register,
@@ -27,7 +27,7 @@ export const AdminGalleryAlbumAdd = ({
         },
     });
     const onSubmit = async (data: { name: string; code: string }) => {
-        await addAlbum(data.name, data.code).then(() => {
+        await addAlbum({ name: data.name, code: data.code }).then(() => {
             reset();
             onSuccess?.();
             onClose?.();

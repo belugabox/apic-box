@@ -5,8 +5,8 @@ import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { SubNavigation } from '@/components/SubNavigation';
-import { useGallery } from '@/services/gallery';
 import { useSpinner } from '@/services/spinner';
+import { galleryService } from '@/services/gallery.service';
 
 import { GalleryLogin } from './Login';
 
@@ -17,7 +17,7 @@ export const Gallery = () => {
 
     const galleryId = parseInt(params.galleryId || '', 10);
 
-    const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
+    const [gallery, loading, error] = galleryService.useGet(galleryId, false, [refresh]);
     useSpinner('Gallery', loading);
     if (loading) return;
     if (error?.name === 'NotFoundError' || !params.galleryId) {

@@ -26,7 +26,7 @@ const app = new Hono();
 // ---
 app.use('/api/*', cors());
 app.use('/api/*', requestLoggerMiddleware());
-app.use('/api/*', timeoutMiddleware(30000));
+app.use('/api/*', timeoutMiddleware(120000));
 const appRoutes = app.basePath('/api').route('/', routes());
 export type ServerType = typeof appRoutes;
 

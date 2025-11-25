@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 
 import type { Album } from '@shared';
 
-import { useGalleryUpdateAlbum } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 
 interface AdminGalleryAlbumAddProps {
     album: Album;
@@ -15,7 +15,7 @@ export const AdminGalleryAlbumEdit = ({
     onClose,
     onSuccess,
 }: AdminGalleryAlbumAddProps) => {
-    const [updateAlbum, loading, error] = useGalleryUpdateAlbum(album.id);
+    const [updateAlbum, loading, error] = galleryService.useEditAlbum(album.id);
 
     const {
         register,
@@ -29,7 +29,7 @@ export const AdminGalleryAlbumEdit = ({
         },
     });
     const onSubmit = async (data: { name: string; code: string }) => {
-        await updateAlbum(data.name, data.code).then(() => {
+        await updateAlbum({ name: data.name, code: data.code }).then(() => {
             reset();
             onSuccess?.();
             onClose?.();

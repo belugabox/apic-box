@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router';
 
 import { GalleryCard } from '@/components/GalleryCard';
-import { useLatestGallery } from '@/services/gallery';
 import '@/style.css';
 import { blogService } from '@/services/blog.service';
+import { galleryService } from '@/services/gallery.service';
 
 export const Home = () => {
     const navigate = useNavigate();
-    const [latestGallery] = useLatestGallery();
+    const [latestGallery] = galleryService.useLatest();
     const [latestBlog] = blogService.useLatest();
 
     return (

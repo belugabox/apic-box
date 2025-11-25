@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 
 
-import { useGalleryUpdate } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 import { Gallery, EntityStatus } from '@shared';
 
 interface AdminGalleryEditProps {
@@ -15,7 +15,7 @@ export const AdminGalleryEdit = ({
     onClose,
     onSuccess,
 }: AdminGalleryEditProps) => {
-    const [updateGallery, loading, error] = useGalleryUpdate();
+    const [updateGallery, loading, error] = galleryService.useEdit();
 
     const {
         register,
@@ -36,7 +36,7 @@ export const AdminGalleryEdit = ({
     });
 
     const onSubmit = async (gallery: Gallery) => {
-        await updateGallery(gallery).then(() => {
+        await updateGallery(gallery.id, gallery).then(() => {
             reset();
             onSuccess?.();
             onClose?.();

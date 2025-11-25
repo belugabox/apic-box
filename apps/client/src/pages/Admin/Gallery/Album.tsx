@@ -9,7 +9,7 @@ import { ImageCard } from '@/components/ImageCard';
 import { Mansory } from '@/components/Mansonry';
 import { SubNavigation } from '@/components/SubNavigation';
 import { UploadImageBtn } from '@/components/UploadImageBtn';
-import { useGallery, useGalleryAddImages } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 import { useSpinner } from '@/services/spinner';
 
 import { AdminGalleryAlbumEdit } from './AlbumEdit';
@@ -22,9 +22,9 @@ export const AdminAlbum = () => {
     const [imageToDelete, setImageToDelete] = useState<Image | null>(null);
     const [albumToEdit, setAlbumToEdit] = useState<Album | null>(null);
     const galleryId = parseInt(params.galleryId || '', 10);
-    const [gallery, loading, error] = useGallery(galleryId, true, [refresh]);
+    const [gallery, loading, error] = galleryService.useGet(galleryId, true, [refresh]);
     const albumId = parseInt(params.albumId || '', 10);
-    const addImages = useGalleryAddImages(albumId);
+    const addImages = galleryService.useAddImages(albumId);
 
     useSpinner('AdminAlbum', loading);
     if (loading) return;

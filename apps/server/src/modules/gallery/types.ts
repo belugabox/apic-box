@@ -68,7 +68,9 @@ export class Gallery implements EntityWithDefaultColumns {
             description: this.description,
             status: this.status,
             isProtected: !!this.password,
-            albums: this.albums?.map((album) => album.toDTO()),
+            albums: this.albums
+                ?.map((album) => album.toDTO())
+                .sort((a, b) => a.orderIndex - b.orderIndex),
             createdAt: this.createdAt.toISOString(),
             updatedAt: this.updatedAt.toISOString(),
         };

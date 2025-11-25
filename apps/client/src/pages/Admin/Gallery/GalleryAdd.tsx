@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 
-import { useGalleryAdd } from '@/services/gallery';
 import { Gallery, EntityStatus } from '@shared';
+import { galleryService } from '@/services/gallery.service';
 
 interface AdminGalleryAddProps {
     onClose?: () => void;
@@ -12,7 +12,7 @@ export const AdminGalleryAdd = ({
     onClose,
     onSuccess,
 }: AdminGalleryAddProps) => {
-    const [addGallery, loading, error] = useGalleryAdd();
+    const [addGallery, loading, error] = galleryService.useAdd();
 
     const {
         register,

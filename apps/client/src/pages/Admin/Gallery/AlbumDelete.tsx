@@ -1,6 +1,6 @@
 import type { Album } from '@shared';
 
-import { useGalleryDeleteAlbum } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 
 interface AdminGalleryAlbumDeleteProps {
     album?: Album;
@@ -13,7 +13,7 @@ export const AdminGalleryAlbumDelete = ({
     onClose,
     onSuccess,
 }: AdminGalleryAlbumDeleteProps) => {
-    const [deleteAlbum, loading, error] = useGalleryDeleteAlbum();
+    const [deleteAlbum, loading, error] = galleryService.useDeleteAlbum();
 
     const handleConfirmDelete = async () => {
         try {

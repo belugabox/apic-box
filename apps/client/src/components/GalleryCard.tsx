@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 
 import type { Gallery } from '@shared';
 
-import { useGalleryCover } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 
 import { CardBtn } from './CardBtn';
 
@@ -19,7 +19,7 @@ export const GalleryCard = ({
     className,
     onClick,
 }: GalleryCardProps) => {
-    const [cover] = useGalleryCover(gallery);
+    const [cover] = galleryService.useCover(gallery);
 
     return (
         <CardBtn className={`no-padding ${className}`} onClick={onClick}>

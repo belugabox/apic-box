@@ -74,20 +74,15 @@ export class GalleryModule implements Module {
                 });
             })
             .get(
-                '/:galleryId',
+                '/:id',
                 this.checkAccess(),
-                arktypeValidator(
-                    'param',
-                    type({ galleryId: 'string.integer.parse' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 async (c) => {
-                    const { galleryId } = c.req.valid('param');
+                    const { id } = c.req.valid('param');
                     const isAdmin = await Utils.authIsAdmin(c);
-                    const gallery = await this.get(galleryId, isAdmin);
+                    const gallery = await this.get(id, isAdmin);
                     if (!gallery) {
-                        throw new NotFoundError(
-                            `Gallery ${galleryId} not found`,
-                        );
+                        throw new NotFoundError(`Gallery ${id} not found`);
                     }
                     return c.json({ gallery: gallery.toDTO() });
                 },
@@ -113,12 +108,9 @@ export class GalleryModule implements Module {
                 },
             )
             .patch(
-                '/:galleryId',
+                '/:id',
                 Utils.authMiddleware(UserRole.ADMIN),
-                arktypeValidator(
-                    'param',
-                    type({ galleryId: 'string.integer.parse' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 arktypeValidator(
                     'form',
                     type({
@@ -128,46 +120,36 @@ export class GalleryModule implements Module {
                     }),
                 ),
                 async (c) => {
-                    const { galleryId } = c.req.valid('param');
+                    const { id } = c.req.valid('param');
                     const { name, description, status } = c.req.valid('form');
-                    const updated = await this.edit(galleryId, {
+                    const updated = await this.edit(id, {
                         name,
                         description,
                         status,
                     });
                     if (!updated) {
-                        throw new NotFoundError(
-                            `Gallery ${galleryId} not found`,
-                        );
+                        throw new NotFoundError(`Gallery ${id} not found`);
                     }
                     return c.json({ gallery: updated.toDTO() });
                 },
             )
             .delete(
-                '/:galleryId',
+                '/:id',
                 Utils.authMiddleware(UserRole.ADMIN),
-                arktypeValidator(
-                    'param',
-                    type({ galleryId: 'string.integer.parse' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 async (c) => {
-                    const { galleryId } = c.req.valid('param');
-                    const success = await this.delete(galleryId);
+                    const { id } = c.req.valid('param');
+                    const success = await this.delete(id);
                     if (!success) {
-                        throw new NotFoundError(
-                            `Gallery ${galleryId} not found`,
-                        );
+                        throw new NotFoundError(`Gallery ${id} not found`);
                     }
                     return c.json({ success });
                 },
             )
-            .post(
-                '/:galleryId/updatePassword',
+            .patch(
+                '/:id/updatePassword',
                 Utils.authMiddleware(UserRole.ADMIN),
-                arktypeValidator(
-                    'param',
-                    type({ galleryId: 'string.integer.parse' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 arktypeValidator(
                     'form',
                     type({
@@ -175,23 +157,20 @@ export class GalleryModule implements Module {
                     }),
                 ),
                 async (c) => {
-                    const { galleryId } = c.req.valid('param');
+                    const { id } = c.req.valid('param');
                     const { password } = c.req.valid('form');
                     if (!password || password === '') {
-                        await this.removePassword(galleryId);
+                        await this.removePassword(id);
                         return c.json({ message: 'Password removed' });
                     }
-                    await this.setPassword(galleryId, password);
+                    await this.setPassword(id, password);
                     return c.json({ message: 'Password updated' });
                 },
             )
             .post(
-                '/:galleryId/updateCover',
+                '/:id/updateCover',
                 Utils.authMiddleware(UserRole.ADMIN),
-                arktypeValidator(
-                    'param',
-                    type({ galleryId: 'string.integer.parse' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 arktypeValidator(
                     'form',
                     type({
@@ -199,24 +178,21 @@ export class GalleryModule implements Module {
                     }),
                 ),
                 async (c) => {
-                    const { galleryId } = c.req.valid('param');
+                    const { id } = c.req.valid('param');
                     const { file } = c.req.valid('form');
-                    await this.setCover(Number(galleryId), file);
+                    await this.setCover(Number(id), file);
                     return c.json({ message: 'Cover updated' });
                 },
             )
             .get(
-                '/:galleryId/cover',
+                '/:id/cover',
                 this.checkAccess(),
-                arktypeValidator(
-                    'param',
-                    type({ galleryId: 'string.numeric' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 async (c) => {
-                    const { galleryId } = c.req.valid('param');
+                    const { id } = c.req.valid('param');
                     const isAdmin = await Utils.authIsAdmin(c);
                     const gallery = await this.repo().get(
-                        Number(galleryId),
+                        Number(id),
                         !isAdmin
                             ? { status: EntityStatus.PUBLISHED }
                             : undefined,
@@ -235,11 +211,8 @@ export class GalleryModule implements Module {
                 },
             )
             .post(
-                '/:galleryId/login',
-                arktypeValidator(
-                    'param',
-                    type({ galleryId: 'string.integer.parse' }),
-                ),
+                '/:id/login',
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 arktypeValidator(
                     'form',
                     type({
@@ -247,9 +220,9 @@ export class GalleryModule implements Module {
                     }),
                 ),
                 async (c) => {
-                    const { galleryId } = c.req.valid('param');
+                    const { id } = c.req.valid('param');
                     const { password } = c.req.valid('form');
-                    const token = await this.login(galleryId, password);
+                    const token = await this.login(id, password);
                     if (!token) {
                         throw new BadRequestError('Code secret invalide');
                     }
@@ -257,15 +230,12 @@ export class GalleryModule implements Module {
                 },
             )
             .get(
-                '/:galleryId/export',
+                '/:id/export',
                 Utils.authMiddleware(UserRole.ADMIN),
-                arktypeValidator(
-                    'param',
-                    type({ galleryId: 'string.integer.parse' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 async (c) => {
-                    const { galleryId } = c.req.valid('param');
-                    const result = await this.export(galleryId);
+                    const { id } = c.req.valid('param');
+                    const result = await this.export(id);
                     if (!result || !result.blob) {
                         throw new NotFoundError('Export failed');
                     }
@@ -283,14 +253,11 @@ export class GalleryModule implements Module {
                 },
             )
             .post(
-                '/:galleryId/reorderAlbums',
+                '/:id/reorderAlbums',
                 Utils.authMiddleware(UserRole.ADMIN),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 arktypeValidator(
-                    'param',
-                    type({ galleryId: 'string.integer.parse' }),
-                ),
-                arktypeValidator(
-                    'form',
+                    'json',
                     type({
                         albumOrders: type({
                             albumId: 'number',
@@ -299,19 +266,16 @@ export class GalleryModule implements Module {
                     }),
                 ),
                 async (c) => {
-                    const { galleryId } = c.req.valid('param');
-                    const { albumOrders } = c.req.valid('form');
-                    await this.reorderAlbums(Number(galleryId), albumOrders);
+                    const { id } = c.req.valid('param');
+                    const { albumOrders } = c.req.valid('json');
+                    await this.reorderAlbums(Number(id), albumOrders);
                     return c.json({ message: 'Albums reordered' });
                 },
             )
             .post(
-                '/:galleryId/addAlbum',
+                '/:id/addAlbum',
                 Utils.authMiddleware(UserRole.ADMIN),
-                arktypeValidator(
-                    'param',
-                    type({ galleryId: 'string.numeric' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.numeric' })),
                 arktypeValidator(
                     'form',
                     type({
@@ -320,19 +284,16 @@ export class GalleryModule implements Module {
                     }),
                 ),
                 async (c) => {
-                    const { galleryId } = c.req.valid('param');
+                    const { id } = c.req.valid('param');
                     const { name, code } = c.req.valid('form');
-                    await this.addAlbum(Number(galleryId), { name, code });
+                    await this.addAlbum(Number(id), { name, code });
                     return c.json({ message: 'Album added' });
                 },
             )
             .patch(
-                '/album/:albumId',
+                '/album/:id',
                 Utils.authMiddleware(UserRole.ADMIN),
-                arktypeValidator(
-                    'param',
-                    type({ albumId: 'string.integer.parse' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 arktypeValidator(
                     'form',
                     type({
@@ -341,22 +302,19 @@ export class GalleryModule implements Module {
                     }),
                 ),
                 async (c) => {
-                    const { albumId } = c.req.valid('param');
+                    const { id } = c.req.valid('param');
                     const { name, code } = c.req.valid('form');
-                    await this.editAlbum(albumId, { name, code });
+                    await this.editAlbum(id, { name, code });
                     return c.json({ message: 'Album updated' });
                 },
             )
             .delete(
-                '/album/:albumId',
+                '/album/:id',
                 Utils.authMiddleware(UserRole.ADMIN),
-                arktypeValidator(
-                    'param',
-                    type({ albumId: 'string.integer.parse' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 async (c) => {
-                    const { albumId } = c.req.valid('param');
-                    await this.deleteAlbum(albumId);
+                    const { id } = c.req.valid('param');
+                    await this.deleteAlbum(id);
                     return c.json({ message: 'Album deleted' });
                 },
             )
@@ -383,12 +341,9 @@ export class GalleryModule implements Module {
                 },
             )
             .post(
-                '/album/:albumId/addImages',
+                '/album/:id/addImages',
                 Utils.authMiddleware(UserRole.ADMIN),
-                arktypeValidator(
-                    'param',
-                    type({ albumId: 'string.integer.parse' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 arktypeValidator(
                     'form',
                     type({
@@ -396,28 +351,25 @@ export class GalleryModule implements Module {
                     }),
                 ),
                 async (c) => {
-                    const { albumId } = c.req.valid('param');
+                    const { id } = c.req.valid('param');
                     const { files } = c.req.valid('form');
                     const fileArray = Array.isArray(files) ? files : [files];
                     if (!fileArray || fileArray.length === 0) {
                         throw new BadRequestError('Aucun fichier fourni');
                     }
-                    await this.addImages(albumId, fileArray);
+                    await this.addImages(id, fileArray);
                     return c.json({ message: 'Images added' });
                 },
             )
             .delete(
-                '/image/:imageId',
+                '/image/:id',
                 Utils.authMiddleware(UserRole.ADMIN),
-                arktypeValidator(
-                    'param',
-                    type({ imageId: 'string.integer.parse' }),
-                ),
+                arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 async (c) => {
-                    const { imageId } = c.req.valid('param');
-                    const success = await this.deleteImage(imageId);
+                    const { id } = c.req.valid('param');
+                    const success = await this.deleteImage(id);
                     if (!success) {
-                        throw new NotFoundError(`Image ${imageId} not found`);
+                        throw new NotFoundError(`Image ${id} not found`);
                     }
                     return c.json({ success });
                 },
@@ -730,7 +682,7 @@ export class GalleryModule implements Module {
             galleryId = image.album.gallery.id;
         } else {
             // Sinon, récupérer directement le galleryId
-            galleryId = Number(c.req.param('galleryId'));
+            galleryId = Number(c.req.param('id'));
         }
 
         const token = c.req.header('X-Gallery-Token');

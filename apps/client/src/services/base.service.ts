@@ -1,12 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/rules-of-hooks */
-import { ClientRequestOptions } from 'hono';
 import { ClientResponse } from 'hono/client';
-import { ContentfulStatusCode } from 'hono/utils/http-status';
 
 import { usePromise, usePromiseFunc } from '@/utils/Hooks';
 import { callRpc } from '@/utils/rpc';
 
-import { authService } from './auth';
+import { authService } from './auth.service';
 
 export interface EntityWithDefaults {
     id: number;
@@ -14,183 +13,162 @@ export interface EntityWithDefaults {
     updatedAt: string;
 }
 
-export interface ServiceWithDefaults<T> {
-    $all: (
-        args?: object | undefined,
-        options?: ClientRequestOptions<unknown> | undefined,
-    ) => Promise<ClientResponse<T[], ContentfulStatusCode, 'json'>>;
+export abstract class BaseService {
+    constructor() {}
 
-    all: {
-        $get: (
-            args?: object | undefined,
-            options?: ClientRequestOptions<unknown> | undefined,
-        ) => Promise<ClientResponse<T[], ContentfulStatusCode, 'json'>>;
-    };
+    // Utilitaires
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getHeaders = (fromAdmin?: boolean, _id?: number) => ({
+        headers: fromAdmin ? authService.headers() : {},
+    });
 
-    latest: {
-        $get: (
-            args?: object | undefined,
-            options?: ClientRequestOptions<unknown> | undefined,
-        ) => Promise<ClientResponse<T, ContentfulStatusCode, 'json'>>;
-    };
+    protected normalizeDeps = (deps?: React.DependencyList) => [
+        ...(deps || []),
+    ];
 
-    add: {
-        $post: (
-            args: {
-                form: Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>;
-            },
-            options?: ClientRequestOptions<unknown> | undefined,
-        ) => Promise<
-            ClientResponse<
-                { message: string; item: T },
-                ContentfulStatusCode,
-                'json'
-            >
-        >;
-    };
+    protected idParam = (id: number) => ({ id: id.toString() });
 
-    ':id': {
-        $get: (
-            args: {
-                param: { id: string };
-            },
-            options?: ClientRequestOptions<unknown> | undefined,
-        ) => Promise<ClientResponse<T, ContentfulStatusCode, 'json'>>;
-        $patch: (
-            args: {
-                param: { id: string };
-                form: Partial<
-                    Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>
-                >;
-            },
-            options?: ClientRequestOptions<unknown> | undefined,
-        ) => Promise<
-            ClientResponse<
-                { message: string; item: T },
-                ContentfulStatusCode,
-                'json'
-            >
-        >;
-        $delete: (
-            args: {
-                param: { id: string };
-            },
-            options?: ClientRequestOptions<unknown> | undefined,
-        ) => Promise<
-            ClientResponse<{ message: string }, ContentfulStatusCode, 'json'>
-        >;
-    };
-}
+    /**
+     * Crée un hook générique pour les opérations GET (liste)
+     * Utilisation : this.createAllHook(serverApi.blog.all.$get)
+     */
+    protected createGetHook<ResponseType, ReturnType = ResponseType>(
+        endpoint: {
+            $get: (
+                params: any,
+                headers: any,
+            ) => Promise<ClientResponse<ResponseType>>;
+        },
+        wrapper: (data: ResponseType) => ReturnType,
+        fromAdmin?: boolean,
+        deps?: React.DependencyList,
+    ) {
+        return usePromise(async () => {
+            const response = await callRpc<ResponseType>(
+                endpoint.$get({}, this.getHeaders(fromAdmin)),
+            );
+            return wrapper(response);
+        }, this.normalizeDeps(deps));
+    }
 
-export abstract class BaseService<T extends EntityWithDefaults> {
-    constructor(private api: ServiceWithDefaults<T>) {}
-
-    // CRUD Operations
-    all = async (fromAdmin?: boolean) => {
-        return callRpc(
-            this.api.all.$get(
-                {},
-                {
-                    headers: fromAdmin ? authService.headers() : {},
-                },
-            ),
-        );
-    };
-
-    latest = async (fromAdmin?: boolean) => {
-        return await callRpc(
-            this.api.latest.$get(
-                {},
-                {
-                    headers: fromAdmin ? authService.headers() : {},
-                },
-            ),
-        );
-    };
-
-    get = async (id: number, fromAdmin?: boolean) => {
-        return await callRpc(
-            this.api[':id'].$get(
-                {
-                    param: { id: id.toString() },
-                },
-                {
-                    headers: fromAdmin ? authService.headers() : {},
-                },
-            ),
-        );
-    };
-
-    add = async (
-        item: Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>,
-    ): Promise<void> => {
-        await callRpc(
-            this.api.add.$post(
-                {
-                    form: item,
-                },
-                {
-                    headers: authService.headers(),
-                },
-            ),
-        );
-    };
-
-    edit = async (
+    /**
+     * Crée un hook générique pour les opérations GET (par ID)
+     * Utilisation : this.createGetHook(serverApi.blog[':id'].$get)
+     */
+    protected createGetByIdHook<ResponseType, ReturnType = ResponseType>(
+        endpoint: {
+            $get: (
+                params: { param: { id: string } },
+                headers: any,
+            ) => Promise<ClientResponse<ResponseType>>;
+        },
+        wrapper: (data: ResponseType) => ReturnType,
         id: number,
-        item: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>>,
-    ): Promise<void> => {
-        await callRpc(
-            this.api[':id'].$patch(
-                {
-                    param: { id: id.toString() },
-                    form: item,
-                },
-                {
-                    headers: authService.headers(),
-                },
-            ),
-        );
-    };
+        fromAdmin?: boolean,
+        deps?: React.DependencyList,
+    ) {
+        return usePromise(async () => {
+            const response = await callRpc<ResponseType>(
+                endpoint.$get(
+                    { param: this.idParam(id) },
+                    this.getHeaders(fromAdmin, id),
+                ),
+            );
+            return wrapper(response);
+        }, this.normalizeDeps(deps));
+    }
 
-    delete = async (id: number): Promise<void> => {
-        await callRpc(
-            this.api[':id'].$delete(
-                {
-                    param: { id: id.toString() },
-                },
-                {
-                    headers: authService.headers(),
-                },
-            ),
-        );
-    };
+    /**
+     * Crée un hook générique pour les opérations POST (création)
+     * Utilisation : this.createPostHook(serverApi.blog.add)
+     */
+    protected createPostHook<
+        E extends { $post: (...args: any) => any },
+        FormType = ExtractFormType<E['$post']>,
+    >(endpoint: E) {
+        return usePromiseFunc(async (form: FormType) => {
+            await callRpc(endpoint.$post({ form }, this.getHeaders(true)));
+        });
+    }
+    protected createPostHookWithId<
+        E extends { $post: (...args: any) => any },
+        FormType = ExtractFormType<E['$post']>,
+    >(endpoint: E, id: number) {
+        return usePromiseFunc(async (form: FormType) => {
+            await callRpc(
+                endpoint.$post(
+                    { param: this.idParam(id), form },
+                    this.getHeaders(true),
+                ),
+            );
+        });
+    }
 
-    // Hooks
-    useAll = (fromAdmin?: boolean, deps?: React.DependencyList) =>
-        usePromise<T[]>(() => this.all(fromAdmin), [...(deps || [])]);
+    /**
+     * Crée un hook générique pour les opérations PATCH (modification)
+     * Utilisation : this.createPatchHook(serverApi.blog[':id'])
+     */
+    protected createPatchHook<
+        E extends { $patch: (...args: any) => any },
+        FormType = ExtractPatchFormType<E['$patch']>,
+    >(endpoint: E) {
+        return usePromiseFunc(async (id: number, form: FormType) => {
+            await callRpc(
+                endpoint.$patch(
+                    {
+                        param: this.idParam(id),
+                        form,
+                    },
+                    this.getHeaders(true),
+                ),
+            );
+        });
+    }
+    protected createPatchHookWithId<
+        E extends { $patch: (...args: any) => any },
+        FormType = ExtractPatchFormType<E['$patch']>,
+    >(endpoint: E, id: number) {
+        return usePromiseFunc(async (form: FormType) => {
+            await callRpc(
+                endpoint.$patch(
+                    {
+                        param: this.idParam(id),
+                        form,
+                    },
+                    this.getHeaders(true),
+                ),
+            );
+        });
+    }
 
-    useLatest = (fromAdmin?: boolean, deps?: React.DependencyList) =>
-        usePromise<T>(() => this.latest(fromAdmin), [...(deps || [])]);
-
-    useGet = (id: number, fromAdmin?: boolean, deps?: React.DependencyList) =>
-        usePromise<T>(() => this.get(id, fromAdmin), [...(deps || [])]);
-
-    useAdd = () =>
-        usePromiseFunc(
-            (item: Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>) =>
-                this.add(item),
-        );
-
-    useEdit = () =>
-        usePromiseFunc(
-            (
-                id: number,
-                item: Partial<
-                    Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'toDTO'>
-                >,
-            ) => this.edit(id, item),
-        );
-
-    useDelete = () => usePromiseFunc((id: number) => this.delete(id));
+    /**
+     * Crée un hook générique pour les opérations DELETE
+     * Utilisation : this.createDeleteHook(serverApi.blog[':id'])
+     */
+    protected createDeleteHook<E extends { $delete: (...args: any) => any }>(
+        endpoint: E,
+    ) {
+        return usePromiseFunc(async (id: number): Promise<void> => {
+            await callRpc(
+                endpoint.$delete(
+                    { param: this.idParam(id) },
+                    this.getHeaders(true),
+                ),
+            );
+        });
+    }
 }
+
+/**
+ * Extrait le type du form d'une fonction POST/PUT
+ * @example type BlogForm = ExtractFormType<typeof serverApi.blog.add.$post>;
+ */
+type ExtractFormType<T extends (...args: any) => any> =
+    Parameters<T>[0]['form'];
+
+/**
+ * Extrait le type du form d'une fonction PATCH
+ * @example type BlogEditForm = ExtractPatchFormType<typeof serverApi.blog[':id'].$patch>;
+ */
+type ExtractPatchFormType<T extends (...args: any) => any> =
+    Parameters<T>[0]['form'];
