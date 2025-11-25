@@ -189,7 +189,6 @@ export class GalleryModule implements Module {
             )
             .get(
                 '/:id/cover',
-                this.checkAccess(),
                 arktypeValidator('param', type({ id: 'string.integer.parse' })),
                 async (c) => {
                     const { id } = c.req.valid('param');

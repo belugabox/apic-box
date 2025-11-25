@@ -48,7 +48,6 @@ export const callRpc = async <T>(
     }
 
     const response = await rpc;
-    console.log('RPC Response:', response);
     if (!response.ok) {
         try {
             const errorData = (await response.json()) as ErrorResponse;
