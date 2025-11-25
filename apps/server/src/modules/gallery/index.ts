@@ -35,6 +35,7 @@ const IMAGE_THUMBNAIL_SIZE = 500;
 export class GalleryModule implements Module {
     name = 'Gallery';
     private imageCache = new MemoryCache<Buffer>(30 * 60 * 1000); // 30 minutes
+    private albumImageCounters = new Map<number, number>(); // Track max index per album to avoid race conditions
 
     repo = () => {
         return new ModuleRepository<Gallery>(db.getRepository(Gallery));
@@ -587,14 +588,39 @@ export class GalleryModule implements Module {
         if (!album) {
             throw new Error(`Album ${albumId} not found`);
         }
-        for (const file of files) {
-            await this.addImage(album.id, file);
+
+        // Initialize counter for this album if not already done
+        if (!this.albumImageCounters.has(albumId)) {
+            const albumPath = album.path!();
+            const existingFiles = await readdir(albumPath).catch(() => []);
+            let maxIndex = 0;
+            for (const file of existingFiles) {
+                if (file === THUMBNAIL_DIR) continue;
+                const match = file.match(/^(\d+)\.[a-zA-Z0-9]+$/i);
+                if (match) {
+                    const index = parseInt(match[1], 10);
+                    if (index > maxIndex) maxIndex = index;
+                }
+            }
+            this.albumImageCounters.set(albumId, maxIndex);
         }
+
+        // Process files with concurrency limit (5 parallel operations)
+        const CONCURRENT_LIMIT = 5;
+        for (let i = 0; i < files.length; i += CONCURRENT_LIMIT) {
+            const batch = files.slice(i, i + CONCURRENT_LIMIT);
+            await Promise.all(batch.map((file) => this.addImage(album, file)));
+        }
+
+        // Clean up counter after done
+        this.albumImageCounters.delete(albumId);
     };
 
-    addImage = async (albumId: number, file: File): Promise<void> => {
+    addImage = async (album: Album, file: File): Promise<void> => {
+        const buffer = await file.arrayBuffer();
+
         // calculate image ratio
-        const ratio = await sharp(await file.arrayBuffer())
+        const ratio = await sharp(buffer)
             .metadata()
             .then((metadata) => {
                 if (metadata.width && metadata.height) {
@@ -606,31 +632,12 @@ export class GalleryModule implements Module {
                 return 1;
             });
 
-        // find next image name
-        const album = await this.repoAlbum().findOne({
-            where: { id: albumId },
-            relations: ['gallery'],
-        });
-        if (!album) {
-            throw new Error(`Album ${albumId} not found`);
-        }
+        // Get next image index from counter (atomic increment)
+        const currentCount = this.albumImageCounters.get(album.id) ?? 0;
+        const currentIndex = currentCount + 1;
+        this.albumImageCounters.set(album.id, currentIndex);
+
         const albumPath = album.path!();
-        const existingFiles = await readdir(albumPath).catch(() => []);
-        let maxIndex = 0;
-        for (const galleryItem of existingFiles) {
-            // Skip thumbnails directory
-            if (galleryItem === THUMBNAIL_DIR) {
-                continue;
-            }
-            const match = galleryItem.match(/^(\d+)\.[a-zA-Z0-9]+$/i);
-            if (match) {
-                const index = parseInt(match[1], 10);
-                if (index > maxIndex) {
-                    maxIndex = index;
-                }
-            }
-        }
-        const currentIndex = maxIndex + 1;
 
         // generate code
         const shortCode = `${String(currentIndex).padStart(3, '0')}`;
@@ -645,12 +652,12 @@ export class GalleryModule implements Module {
             album,
         });
 
-        // save image file
-        await saveImageBuffer(await file.arrayBuffer(), newImage.path!());
-
-        // generate thumbnail
+        // save image file and generate thumbnail in parallel
         await mkdir(path.join(albumPath, THUMBNAIL_DIR), { recursive: true });
-        await generateThumbnail(await file.arrayBuffer(), newImage.path!(true));
+        await Promise.all([
+            saveImageBuffer(buffer, newImage.path!()),
+            generateThumbnail(buffer, newImage.path!(true)),
+        ]);
     };
 
     deleteImage = async (imageId: number): Promise<boolean> => {
