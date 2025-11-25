@@ -384,7 +384,7 @@ export class GalleryModule implements Module {
     // ---
     all = async (isAdmin?: boolean): Promise<Gallery[]> => {
         return await this.repo().find({
-            relations: ['albums', 'albums.images', 'albums.images.album'],
+            relations: ['albums'],
             where: this.wherePublished(isAdmin),
             order: { createdAt: 'DESC' },
         });
@@ -392,7 +392,7 @@ export class GalleryModule implements Module {
 
     latest = async (isAdmin?: boolean): Promise<Gallery | null> => {
         return await this.repo().findOne({
-            relations: ['albums', 'albums.images', 'albums.images.album'],
+            relations: ['albums'],
             where: this.wherePublished(isAdmin),
             order: { createdAt: 'DESC' },
         });
@@ -400,7 +400,7 @@ export class GalleryModule implements Module {
 
     get = async (id: number, isAdmin?: boolean): Promise<Gallery | null> => {
         return await await this.repo().findOne({
-            relations: ['albums', 'albums.images', 'albums.images.album'],
+            relations: ['albums'],
             where: { id, ...this.wherePublished(isAdmin) },
         });
     };
