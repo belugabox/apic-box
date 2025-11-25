@@ -42,8 +42,6 @@ export class BadRequestError extends AppError {
 }
 
 export const errorHandler = (err: Error, c: Context) => {
-    logger.error(err, 'Request error');
-
     // Gestion des erreurs Zod (validation)
     if (err instanceof ZodError) {
         return c.json(
@@ -67,6 +65,7 @@ export const errorHandler = (err: Error, c: Context) => {
     }
 
     // Gestion des erreurs par défaut
+    logger.error(err, err.name || 'InternalServerError');
     return c.json(
         {
             name: err.name || 'InternalServerError',

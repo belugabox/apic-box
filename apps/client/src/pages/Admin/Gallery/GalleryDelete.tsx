@@ -1,6 +1,6 @@
-import { Gallery } from '@server/gallery/gallery.types';
+import type { Gallery } from '@shared';
 
-import { useGalleryDelete } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 
 interface AdminGalleryDeleteProps {
     gallery?: Gallery;
@@ -13,12 +13,12 @@ export const AdminGalleryDelete = ({
     onClose,
     onSuccess,
 }: AdminGalleryDeleteProps) => {
-    const [deleteGallery, loading, error] = useGalleryDelete();
+    const [deleteGallery, loading, error] = galleryService.useDelete();
 
     const handleConfirmDelete = async () => {
         try {
             if (gallery) {
-                await deleteGallery(gallery);
+                await deleteGallery(gallery.id);
             }
             onSuccess();
             onClose();

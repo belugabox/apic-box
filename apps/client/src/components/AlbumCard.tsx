@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-import { Album } from '@server/gallery/gallery.types';
+import type { Album } from '@shared';
 
 import { CardBtn } from './CardBtn';
 import { ImageCard } from './ImageCard';
@@ -26,7 +26,7 @@ export const AlbumCard = ({
                 <div className="max">
                     <h5>{album.name}</h5>
                     <div className="grid">
-                        {album.images.slice(0, 4).map((image) => (
+                        {album.images?.slice(0, 4).map((image) => (
                             <div className="s3" key={image.id}>
                                 <ImageCard
                                     galleryId={galleryId}
@@ -35,7 +35,7 @@ export const AlbumCard = ({
                                 />
                             </div>
                         ))}
-                        {album.images.length === 0 && (
+                        {album.images?.length === 0 && (
                             <div className="s3" key={album.id}>
                                 <ImageCard galleryId={galleryId} square />
                             </div>

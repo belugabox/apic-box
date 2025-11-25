@@ -15,6 +15,9 @@
         "noEmit": true,
         "jsx": "react-jsx",
 
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+
         /* Linting */
         "strict": true,
         "noUnusedLocals": true,
@@ -25,7 +28,8 @@
         "baseUrl": "./", // Lets you set a base directory to resolve non-absolute module names.
         "paths": {
             "@/*": ["src/*"],
-            "@server/*": ["../server/src/*"]
+            "@server/*": ["../server/src/*"],
+            "@shared": ["../server/src/modules/shared.types.ts"]
         },
         "types": ["vite/client"]
     },

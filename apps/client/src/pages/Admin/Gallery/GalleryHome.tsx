@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Gallery } from '@server/gallery/gallery.types';
+import type { Gallery } from '@shared';
 
 import { ErrorMessage } from '@/components/Error';
 import { GalleryCard } from '@/components/GalleryCard';
 import { StatusTag } from '@/components/StatusTag';
-import { useGalleries } from '@/services/gallery';
 import { useSpinner } from '@/services/spinner';
 
 import { AdminGalleryAdd } from './GalleryAdd';
 import { AdminGalleryDelete } from './GalleryDelete';
+import { galleryService } from '@/services/gallery.service';
 
 export const AdminGalleryHome = () => {
     const navigate = useNavigate();
@@ -19,7 +19,7 @@ export const AdminGalleryHome = () => {
     const [selectedGallery, setSelectedGallery] = useState<
         Gallery | undefined
     >();
-    const [galleries, loading, error] = useGalleries(true, [
+    const [galleries, loading, error] = galleryService.useAll(true, [
         showAdd,
         showDelete,
     ]);
@@ -44,7 +44,7 @@ export const AdminGalleryHome = () => {
         setShowDelete(false);
         setSelectedGallery(undefined);
     };
-
+    
     return (
         <div>
             <div className="grid">

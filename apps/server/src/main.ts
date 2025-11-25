@@ -4,9 +4,10 @@ import * as fs from 'fs';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { join } from 'path';
+import 'reflect-metadata';
 
-import { health, init, start } from './core';
-import { router } from './router';
+import { health, init, routes } from './core';
+import { abortMiddleware } from './tools/abortMiddleware';
 // Load and validate environment variables
 import './tools/env';
 import { logger } from './tools/logger';
@@ -25,10 +26,11 @@ const app = new Hono();
 
 // ---
 app.use('/api/*', cors());
+app.use('/api/*', abortMiddleware());
 app.use('/api/*', requestLoggerMiddleware());
-app.use('/api/*', timeoutMiddleware(30000));
-const routes = app.basePath('/api').route('/', router());
-export type ServerType = typeof routes;
+app.use('/api/*', timeoutMiddleware(120000));
+const appRoutes = app.basePath('/api').route('/', routes());
+export type ServerType = typeof appRoutes;
 
 // ---
 app.use(
@@ -58,7 +60,6 @@ const startServer = () => {
 (async () => {
     await init();
     await health();
-    await start();
     startServer();
 })().catch((err) => {
     logger.error(err, 'Failed to start server');

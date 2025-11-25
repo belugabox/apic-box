@@ -1,5 +1,5 @@
 import { UploadImageBtn } from '@/components/UploadImageBtn';
-import { useGalleryAddImages } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 
 interface AdminGalleryImagesAddProps {
     albumId: number;
@@ -13,7 +13,7 @@ export const AdminGalleryImagesButton = ({
     onSuccess,
 }: AdminGalleryImagesAddProps) => {
     // Call hook at component level, not in callback
-    const addImages = useGalleryAddImages(albumId);
+    const addImages = galleryService.useAddImages(albumId);
     
     return (
         <UploadImageBtn

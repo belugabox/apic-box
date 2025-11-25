@@ -1,25 +1,20 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { Album, Gallery } from '@server/gallery/gallery.types';
+import type { Album, Gallery } from '@shared';
 
 import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { SubNavigation } from '@/components/SubNavigation';
 import { UploadImageBtn } from '@/components/UploadImageBtn';
-import {
-    useGallery,
-    useGalleryExport,
-    useGalleryUpdateCover,
-} from '@/services/gallery';
-import { galleryService } from '@/services/gallery/gallery';
 import { useSpinner } from '@/services/spinner';
 
 import { AdminGalleryAlbumAdd } from './AlbumAdd';
 import { AdminGalleryAlbumDelete } from './AlbumDelete';
 import { AdminGalleryEdit } from './GalleryEdit';
 import { AdminGalleryProtect } from './GalleryProtect';
+import { galleryService } from '@/services/gallery.service';
 
 type ModalType = 'edit' | 'protect' | 'addAlbum' | 'deleteAlbum';
 
@@ -35,12 +30,13 @@ export const AdminGallery = () => {
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const galleryFetchId = galleryId > 0 ? galleryId : undefined;
-    const [gallery, loading, error] = useGallery(galleryFetchId, true, [
+    const [gallery, loading, error] = galleryService.useGet(galleryFetchId ?? 0, true, [
         show,
         refreshTrigger,
     ]);
-    const [exportGallery, exportLoading] = useGalleryExport();
-    const updateCoverFunc = useGalleryUpdateCover(galleryId);
+    const [exportGallery, exportLoading] = galleryService.useExport();
+    const updateCoverFunc = galleryService.useUpdateCover(galleryId);
+    const [reorderAlbums] = galleryService.useReorderAlbums(galleryId);
 
     useSpinner('AdminGallery', loading);
 
@@ -50,7 +46,7 @@ export const AdminGallery = () => {
         );
 
     if (loading) return;
-    if (error?.message === 'NotFoundError' || !gallery) {
+    if (error?.name === 'NotFoundError' || !gallery) {
         return (
             <EmptyState icon="photo_album" title="La galerie n'existe pas" />
         );
@@ -95,13 +91,11 @@ export const AdminGallery = () => {
 
         setIsReordering(true);
         try {
-            await galleryService.reorderAlbums(
-                galleryId,
-                newAlbums.map((album, index) => ({
-                    albumId: album.id,
-                    orderIndex: index,
-                })),
-            );
+            const albumOrders = newAlbums.map((album, index) => ({
+                albumId: Number(album.id),
+                orderIndex: Number(index),
+            }));
+            await reorderAlbums({ albumOrders });
             setRefreshTrigger((prev) => prev + 1);
         } finally {
             setIsReordering(false);
@@ -126,7 +120,9 @@ export const AdminGallery = () => {
             <SubNavigation onClickBack={() => navigate('/admin/gallery')}>
                 {gallery.name}
             </SubNavigation>
-
+            {albums.length === 0 && (
+                <EmptyState icon="photo_album" title={`La galerie est vide`} />
+            )}
             <div className="grid">
                 {albums.map((album) => (
                     <div

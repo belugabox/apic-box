@@ -17,6 +17,7 @@ dist-ssr
 *.local
 
 .env
+*~lock~
 
 # Editor directories and files
 .vscode/*

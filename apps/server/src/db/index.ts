@@ -1,10 +1,18 @@
-/**
- * Module DB - Exports centralisés
- * Utilisation : import { db, DbManager, Repository } from '@server/db'
- */
+import path from 'path';
+import { DataSource } from 'typeorm';
 
-export { db, createDbInstance, getDb } from './singleton';
-export { DbManager } from './manager';
-export { Repository, MappedRepository } from './repositories';
-export type { RunResult } from './types';
-export { migrations } from './migrations';
+import { User } from '../modules/auth/types';
+import { Blog } from '../modules/blog/types';
+import { Album, Gallery, Image } from '../modules/gallery/types';
+import { DATA_FILE_PATH } from '../tools/env';
+
+export const db = new DataSource({
+    type: 'better-sqlite3',
+    database: path.resolve(DATA_FILE_PATH, 'db_typeorm.sqlite'),
+    synchronize: true,
+    logging: false,
+    entities: [User, Blog, Gallery, Album, Image],
+    migrationsRun: false,
+    migrationsTableName: 'migrations',
+    migrationsTransactionMode: 'all',
+});

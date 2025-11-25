@@ -1,6 +1,6 @@
-import { Album } from '@server/gallery/gallery.types';
+import type { Album } from '@shared';
 
-import { useGalleryDeleteAlbum } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 
 interface AdminGalleryAlbumDeleteProps {
     album?: Album;
@@ -13,7 +13,7 @@ export const AdminGalleryAlbumDelete = ({
     onClose,
     onSuccess,
 }: AdminGalleryAlbumDeleteProps) => {
-    const [deleteAlbum, loading, error] = useGalleryDeleteAlbum();
+    const [deleteAlbum, loading, error] = galleryService.useDeleteAlbum();
 
     const handleConfirmDelete = async () => {
         try {
@@ -32,7 +32,7 @@ export const AdminGalleryAlbumDelete = ({
             <h5>Confirmer la suppression</h5>
             <p>
                 Êtes-vous sûr de vouloir supprimer l'album{' '}
-                <strong>"{album?.name}"</strong> ({album?.images.length} photos)
+                <strong>"{album?.name}"</strong> ({album?.images?.length} photos)
                 ?
             </p>
             <span className="error-text">{error?.message}</span>

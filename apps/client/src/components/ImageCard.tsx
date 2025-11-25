@@ -1,8 +1,8 @@
 import { ReactNode, useState } from 'react';
 
-import { Image } from '@server/gallery/gallery.types';
+import type { Image } from '@shared';
 
-import { useGalleryImage } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 
 interface ImageCardProps {
     galleryId: number;
@@ -24,7 +24,7 @@ export const ImageCard = ({
     className,
 }: ImageCardProps) => {
     const [isZoomed, setIsZoomed] = useState(false);
-    const [imageData, loading, error] = useGalleryImage(
+    const [imageData, loading, error] = galleryService.useImage(
         galleryId,
         image,
         fromAdmin,

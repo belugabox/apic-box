@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 
-import { useGalleryLogin } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 
 interface GalleryLoginProps {
     galleryId: number;
@@ -8,7 +8,7 @@ interface GalleryLoginProps {
 }
 
 export const GalleryLogin = ({ galleryId, onSuccess }: GalleryLoginProps) => {
-    const [login, loading, loginError] = useGalleryLogin(galleryId);
+    const [login, loading, loginError] = galleryService.useLogin(galleryId);
     const {
         register,
         handleSubmit,

@@ -1,9 +1,9 @@
 import { useForm } from 'react-hook-form';
 
-import { useLogin } from '@/services/auth';
+import { authService } from '@/services/auth.service';
 
 export const Login = () => {
-    const [login, loading, loginError] = useLogin();
+    const [login, loading, loginError] = authService.useLogin();
 
     const {
         register,

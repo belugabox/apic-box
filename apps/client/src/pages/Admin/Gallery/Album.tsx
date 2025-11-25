@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { Album, Image } from '@server/gallery/gallery.types';
+import type { Album, Image } from '@shared';
 
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
@@ -9,7 +9,7 @@ import { ImageCard } from '@/components/ImageCard';
 import { Mansory } from '@/components/Mansonry';
 import { SubNavigation } from '@/components/SubNavigation';
 import { UploadImageBtn } from '@/components/UploadImageBtn';
-import { useGallery, useGalleryAddImages } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 import { useSpinner } from '@/services/spinner';
 
 import { AdminGalleryAlbumEdit } from './AlbumEdit';
@@ -22,19 +22,19 @@ export const AdminAlbum = () => {
     const [imageToDelete, setImageToDelete] = useState<Image | null>(null);
     const [albumToEdit, setAlbumToEdit] = useState<Album | null>(null);
     const galleryId = parseInt(params.galleryId || '', 10);
-    const [gallery, loading, error] = useGallery(galleryId, true, [refresh]);
+    const [gallery, loading, error] = galleryService.useGet(galleryId, true, [refresh]);
     const albumId = parseInt(params.albumId || '', 10);
-    const addImages = useGalleryAddImages(albumId);
+    const addImages = galleryService.useAddImages(albumId);
 
     useSpinner('AdminAlbum', loading);
     if (loading) return;
-    if (error?.message === 'NotFoundError' || !gallery) {
+    if (error?.name === 'NotFoundError' || !gallery) {
         return (
             <EmptyState icon="photo_album" title={`La galerie n'existe pas`} />
         );
     }
     if (error) return <ErrorMessage error={error} />;
-    const album = gallery?.albums.find((a) => a.id === albumId);
+    const album = gallery?.albums?.find((a) => a.id === albumId);
     if (!album) {
         return <EmptyState icon="photo_album" title={`L'album n'existe pas`} />;
     }
@@ -46,10 +46,10 @@ export const AdminAlbum = () => {
             >
                 {gallery.name} - {album.name} ({album.code})
             </SubNavigation>
-            {album.images.length === 0 && (
+            {album.images?.length === 0 && (
                 <EmptyState icon="photo_album" title={`L'album est vide`} />
             )}
-            {album.images.length > 0 && (
+            {album.images && album.images.length > 0 && (
                 <Mansory>
                     {album.images.map((image) => (
                         <ImageCard

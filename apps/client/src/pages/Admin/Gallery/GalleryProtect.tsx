@@ -1,8 +1,8 @@
 import { useForm } from 'react-hook-form';
 
-import { Gallery } from '@server/gallery/gallery.types';
+import type { Gallery } from '@shared';
 
-import { useGalleryUpdatePassword } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
 
 interface AdminGalleryProtectProps {
     gallery: Gallery;
@@ -15,9 +15,10 @@ export const AdminGalleryProtect = ({
     onClose,
     onSuccess,
 }: AdminGalleryProtectProps) => {
-    const [updatePassword, loading, error] = useGalleryUpdatePassword(
-        gallery.id,
+    const [updatePassword, loading, error] = galleryService.useUpdatePassword(
+        
     );
+    const galleryId = gallery.id;
 
     const {
         register,
@@ -33,7 +34,7 @@ export const AdminGalleryProtect = ({
 
     const passwordValue = watch('password');
     const onSubmit = async (gallery: { password: string }) => {
-        await updatePassword(gallery.password).then(() => {
+        await updatePassword(galleryId, { password: gallery.password }).then(() => {
             reset();
             onSuccess?.();
             onClose?.();

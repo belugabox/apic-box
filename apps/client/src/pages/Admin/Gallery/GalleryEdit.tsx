@@ -1,8 +1,8 @@
 import { useForm } from 'react-hook-form';
 
-import { Gallery, GalleryStatus } from '@server/gallery/gallery.types';
 
-import { useGalleryUpdate } from '@/services/gallery';
+import { galleryService } from '@/services/gallery.service';
+import { Gallery, EntityStatus } from '@shared';
 
 interface AdminGalleryEditProps {
     gallery: Gallery;
@@ -15,7 +15,7 @@ export const AdminGalleryEdit = ({
     onClose,
     onSuccess,
 }: AdminGalleryEditProps) => {
-    const [updateGallery, loading, error] = useGalleryUpdate();
+    const [updateGallery, loading, error] = galleryService.useEdit();
 
     const {
         register,
@@ -36,7 +36,7 @@ export const AdminGalleryEdit = ({
     });
 
     const onSubmit = async (gallery: Gallery) => {
-        await updateGallery(gallery).then(() => {
+        await updateGallery(gallery.id, gallery).then(() => {
             reset();
             onSuccess?.();
             onClose?.();
@@ -83,9 +83,9 @@ export const AdminGalleryEdit = ({
                         })}
                         className={errors.status ? 'invalid' : ''}
                     >
-                        <option value={GalleryStatus.DRAFT}>Brouillon</option>
-                        <option value={GalleryStatus.PUBLISHED}>Publié</option>
-                        <option value={GalleryStatus.ARCHIVED}>Archivé</option>
+                        <option value={EntityStatus.DRAFT}>Brouillon</option>
+                        <option value={EntityStatus.PUBLISHED}>Publié</option>
+                        <option value={EntityStatus.ARCHIVED}>Archivé</option>
                     </select>
                     <label>Statut</label>
                     <span className="error">{errors.status?.message}</span>

@@ -4,12 +4,12 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { GalleryCard } from '@/components/GalleryCard';
 import { SubNavigation } from '@/components/SubNavigation';
-import { useGalleries } from '@/services/gallery';
 import { useSpinner } from '@/services/spinner';
+import { galleryService } from '@/services/gallery.service';
 
 export const GalleryHome = () => {
     const navigate = useNavigate();
-    const [galleries, loading, error] = useGalleries();
+    const [galleries, loading, error] = galleryService.useAll();
 
     useSpinner('GalleryHome', loading);
     if (loading) return;

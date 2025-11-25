@@ -1,17 +1,17 @@
-import { GalleryStatus } from '@server/gallery/gallery.types';
+import { EntityStatus } from '@shared';
 
 interface StatusTagProps {
-    status: GalleryStatus;
+    status: EntityStatus | EntityStatus;
     className?: string;
 }
 
 export const StatusTag = ({ status, className = '' }: StatusTagProps) => {
     let icon = 'experiment';
     switch (status) {
-        case GalleryStatus.PUBLISHED:
+        case EntityStatus.PUBLISHED:
             icon = 'public';
             break;
-        case GalleryStatus.ARCHIVED:
+        case EntityStatus.ARCHIVED:
             icon = 'archive';
             break;
     }
@@ -20,9 +20,9 @@ export const StatusTag = ({ status, className = '' }: StatusTagProps) => {
         <span className={className}>
             <i className="">{icon}</i>
             <div className="tooltip right">
-                {status === GalleryStatus.PUBLISHED ? (
+                {status === EntityStatus.PUBLISHED ? (
                     <div>Publié</div>
-                ) : status === GalleryStatus.ARCHIVED ? (
+                ) : status === EntityStatus.ARCHIVED ? (
                     <div>Archivé</div>
                 ) : (
                     <div>Brouillon</div>

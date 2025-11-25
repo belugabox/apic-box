@@ -6,8 +6,8 @@ import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
 import { Mansory } from '@/components/Mansonry';
 import { SubNavigation } from '@/components/SubNavigation';
-import { useGallery } from '@/services/gallery';
 import { useSpinner } from '@/services/spinner';
+import { galleryService } from '@/services/gallery.service';
 
 import { GalleryLogin } from './Login';
 
@@ -17,10 +17,10 @@ export const Album = () => {
     const [refresh, setRefresh] = useState(false);
 
     const galleryId = parseInt(params.galleryId || '', 10);
-    const [gallery, loading, error] = useGallery(galleryId, false, [refresh]);
+    const [gallery, loading, error] = galleryService.useGet(galleryId, false, [refresh]);
     useSpinner('Album', loading);
     if (loading) return;
-    if (error?.message === 'UnauthorizedError') {
+    if (error?.name === 'UnauthorizedError') {
         return (
             <GalleryLogin
                 galleryId={galleryId}
@@ -44,7 +44,7 @@ export const Album = () => {
         return <EmptyState icon="photo_album" title={`L'album n'existe pas`} />;
     }
     const albumId = parseInt(params.albumId, 10);
-    const album = gallery?.albums.find((a) => a.id === albumId);
+    const album = gallery?.albums?.find((a) => a.id === albumId);
     if (!album) {
         return <EmptyState icon="photo_album" title={`L'album n'existe pas`} />;
     }
@@ -117,12 +117,12 @@ export const Album = () => {
                 
                 */}
 
-            {album.images.length === 0 && (
+            {album.images?.length === 0 && (
                 <EmptyState icon="no_photography" title={`L'album est vide`} />
             )}
-            {album.images.length > 0 && (
+            {album.images && album.images?.length > 0 && (
                 <Mansory>
-                    {album.images.map((image) => (
+                    {album.images?.map((image) => (
                         <ImageCard
                             key={image.id}
                             galleryId={galleryId}
