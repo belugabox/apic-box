@@ -57,6 +57,7 @@ export const AdminAlbum = () => {
                             galleryId={galleryId}
                             image={image}
                             zoomable={true}
+                            fromAdmin={true}
                         >
                             <div className="max">{image.fullcode}</div>
                             <button

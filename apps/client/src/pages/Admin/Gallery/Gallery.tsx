@@ -147,6 +147,7 @@ export const AdminGallery = () => {
                             className="s12"
                             galleryId={galleryId}
                             album={album}
+                            fromAdmin={true}
                         >
                             <nav>
                                 <button

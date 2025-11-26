@@ -10,6 +10,7 @@ interface AlbumCardProps {
     album: Album;
     children?: ReactNode;
     className?: string;
+    fromAdmin?: boolean;
     onClick?: () => void;
 }
 
@@ -18,6 +19,7 @@ export const AlbumCard = ({
     album,
     children,
     className,
+    fromAdmin = false,
     onClick,
 }: AlbumCardProps) => {
     return (
@@ -35,12 +37,13 @@ export const AlbumCard = ({
                                     galleryId={galleryId}
                                     image={image}
                                     square
+                                    fromAdmin={fromAdmin}
                                 />
                             </div>
                         ))}
                         {album.images?.length === 0 && (
                             <div className="s3" key={album.id}>
-                                <ImageCard galleryId={galleryId} square />
+                                <ImageCard galleryId={galleryId} square fromAdmin={fromAdmin} />
                             </div>
                         )}
                     </div>
