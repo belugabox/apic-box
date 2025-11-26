@@ -135,6 +135,9 @@ importers:
       pino-pretty:
         specifier: ^13.1.2
         version: 13.1.2
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
@@ -163,9 +166,6 @@ importers:
       '@types/node':
         specifier: ^24.10.0
         version: 24.10.0
-      reflect-metadata:
-        specifier: ^0.2.2
-        version: 0.2.2
       tsc-alias:
         specifier: ^1.8.16
         version: 1.8.16

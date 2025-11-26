@@ -1,0 +1,24 @@
+# Robots.txt for APIC Box
+# Controls search engine crawler access
+
+# Block crawlers from indexing API and admin routes
+User-agent: *
+Disallow: /api/
+Disallow: /admin/
+Disallow: /Auth
+Allow: /
+
+# Allow specific search engine bots
+User-agent: Googlebot
+Disallow: /api/
+Disallow: /admin/
+
+User-agent: Bingbot
+Disallow: /api/
+Disallow: /admin/
+
+# Crawl delay to prevent server overload
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://www.apic-sentelette.net/sitemap.xml
