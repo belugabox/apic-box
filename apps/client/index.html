@@ -1,12 +1,57 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
     <head>
         <meta charset="UTF-8" />
-        <meta name="robots" content="index, follow" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- SEO Basics -->
+        <title>APIC Sentelette - Association de Parents Inter-Communale</title>
+        <meta
+            name="description"
+            content="APIC Sentelette : Association des parents d'élèves de Sains-en-Amienois, Saint-Fuscien et Estrées-sur-Noye. Informations, blog et galerie photos."
+        />
+        <meta
+            name="keywords"
+            content="APIC, association parents, Sains-en-Amienois, Saint-Fuscien, Estrées-sur-Noye, association parents élèves"
+        />
+        <meta name="author" content="APIC Sentelette" />
+
+        <!-- Robots and Indexing -->
+        <meta
+            name="robots"
+            content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+        />
         <meta
             name="googlebot"
             content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
         />
+
+        <!-- Open Graph / Social Media -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://apic-sentelette.net" />
+        <meta
+            property="og:title"
+            content="APIC Sentelette - Association de Parents Inter-Communale"
+        />
+        <meta
+            property="og:description"
+            content="Association des parents d'élèves de Sains-en-Amienois, Saint-Fuscien et Estrées-sur-Noye."
+        />
+        <meta property="og:locale" content="fr_FR" />
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="https://apic-sentelette.net" />
+        <meta name="twitter:title" content="APIC Sentelette" />
+        <meta
+            name="twitter:description"
+            content="Association des parents d'élèves de Sains-en-Amienois, Saint-Fuscien et Estrées-sur-Noye."
+        />
+
+        <!-- Canonical -->
+        <link rel="canonical" href="https://apic-sentelette.net" />
+
+        <!-- Icons -->
         <link
             rel="icon"
             type="image/png"
@@ -21,8 +66,28 @@
             href="/apple-touch-icon.png"
         />
         <link rel="manifest" href="/site.webmanifest" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>APIC Sentelette</title>
+
+        <!-- Schema.org Structured Data -->
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                "name": "APIC Sentelette",
+                "url": "https://apic-sentelette.net",
+                "description": "Association de Parents Inter-Communale",
+                "areaServed": [
+                    "Sains-en-Amienois",
+                    "Saint-Fuscien",
+                    "Estrées-sur-Noye"
+                ],
+                "logo": "https://apic-sentelette.net/logo.svg",
+                "contactPoint": {
+                    "@type": "ContactPoint",
+                    "contactType": "Customer Service",
+                    "areaServed": ["FR"]
+                }
+            }
+        </script>
     </head>
     <body class="light">
         <div id="root"></div>
