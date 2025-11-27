@@ -2,7 +2,7 @@ import { Outlet } from 'react-router';
 
 import { Navigation } from './components/Navigation';
 import { Spinner } from './components/Spinner';
-import { useLoadingState } from './services/spinner';
+import { useLoadingState } from './utils/spinner';
 
 export const App = () => {
     const loading = useLoadingState();

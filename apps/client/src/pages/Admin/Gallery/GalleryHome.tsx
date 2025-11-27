@@ -6,7 +6,7 @@ import type { Gallery } from '@shared';
 import { ErrorMessage } from '@/components/Error';
 import { GalleryCard } from '@/components/GalleryCard';
 import { StatusTag } from '@/components/StatusTag';
-import { useSpinner } from '@/services/spinner';
+import { useSpinner } from '@/utils/spinner';
 
 import { AdminGalleryAdd } from './GalleryAdd';
 import { AdminGalleryDelete } from './GalleryDelete';
