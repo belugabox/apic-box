@@ -11,7 +11,11 @@
         "dev:client": "pnpm --filter=client dev",
         "dev:server": "pnpm --filter=server dev",
         "dev": "pnpm -parallel dev",
+        "dev:test": "cross-env NODE_ENV=test pnpm --filter=server dev",
         "start": "pnpm --filter=server start",
+        "test": "pnpm exec playwright test",
+        "test:headed": "pnpm exec playwright test --headed",
+        "test:report": "pnpm exec playwright show-report",
         "docker:build": "docker build -t beuuun/apic-box:latest ."
     },
     "keywords": [],
@@ -23,7 +27,10 @@
         ]
     },
     "devDependencies": {
+        "@playwright/test": "^1.57.0",
         "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+        "@types/node": "^24.10.0",
+        "cross-env": "^10.1.0",
         "prettier": "^3.5.3",
         "reflect-metadata": "^0.2.2"
     }
