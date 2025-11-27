@@ -3,7 +3,11 @@ import { Gallery, Image } from '@server/modules/shared.types';
 
 import { usePromise, usePromiseFunc } from '@/utils/Hooks';
 import { BlobURLCache } from '@/utils/cache';
-import { callRpc } from '@/utils/rpc';
+import {
+    buildUrlWithTimestamp,
+    callRpc,
+    fetchBlobWithCache,
+} from '@/utils/rpc';
 
 import { authService } from './auth.service';
 import { BaseService } from './base.service';
@@ -28,6 +32,12 @@ class GalleryService extends BaseService {
         return {
             headers,
         };
+    };
+
+    private getAuthHeaders = (): Record<string, string> => {
+        const headers = authService.headers();
+        delete headers['Content-Type'];
+        return headers;
     };
 
     // Galerie
@@ -102,7 +112,7 @@ class GalleryService extends BaseService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...authService.headers(),
+                    ...this.getAuthHeaders(),
                 },
                 body: JSON.stringify({ albumOrders }),
             },
@@ -164,7 +174,6 @@ class GalleryService extends BaseService {
             localStorage.setItem(`gallery_${galleryId}_token`, data.token);
             return data.token;
         }
-        return;
     };
 
     image = async (
@@ -174,87 +183,41 @@ class GalleryService extends BaseService {
         updatedAt?: string,
         signal?: AbortSignal,
     ): Promise<string> => {
-        // Clé de cache unique basée sur imageId et updatedAt
         const cacheKey = `img_${imageId}_${updatedAt || '0'}`;
+        const url = buildUrlWithTimestamp(
+            `/api/gallery/image/${imageId}`,
+            updatedAt,
+        );
 
-        // Vérifier le cache
-        const cached = this.imageCache.get(cacheKey);
-        if (cached) {
-            return cached;
-        }
-
-        let url = `/api/gallery/image/${imageId}`;
-        if (updatedAt) {
-            // Ajouter un query parameter pour invalider le cache lors d'une mise à jour
-            const timestamp = new Date(updatedAt).getTime();
-            url += `?v=${timestamp}`;
-        }
-
-        const response = await fetch(url, {
-            signal,
-            ...this.getHeaders(fromAdmin, galleryId),
-        });
-
-        if (!response.ok) {
-            throw new Error(
-                `Failed to fetch thumbnail: ${response.statusText}`,
-            );
-        }
-
-        const blob = await response.blob();
-        const objectUrl = URL.createObjectURL(blob);
-
-        // Stocker dans le cache
-        this.imageCache.set(cacheKey, objectUrl);
-
-        return objectUrl;
+        return fetchBlobWithCache(
+            url,
+            this.imageCache,
+            cacheKey,
+            {
+                signal,
+                ...this.getHeaders(fromAdmin, galleryId),
+            },
+            true,
+        ) as Promise<string>;
     };
 
     cover = async (
         galleryId: number,
         updatedAt?: string,
     ): Promise<string | undefined> => {
-        // Clé de cache unique basée sur galleryId et updatedAt
         const cacheKey = `cover_${galleryId}_${updatedAt || '0'}`;
+        const url = buildUrlWithTimestamp(
+            `/api/gallery/${galleryId}/cover`,
+            updatedAt,
+        );
 
-        // Vérifier le cache
-        const cached = this.coverCache.get(cacheKey);
-        if (cached) {
-            return cached;
-        }
-
-        let url = `/api/gallery/${galleryId}/cover`;
-        if (updatedAt) {
-            // Ajouter un query parameter pour invalider le cache lors d'une mise à jour
-            const timestamp = new Date(updatedAt).getTime();
-            url += `?v=${timestamp}`;
-        }
-
-        const response = await fetch(url);
-        if (!response || !response.ok) {
-            throw new Error(`Failed to fetch cover: ${response.statusText}`);
-        }
-
-        const blob = await response.blob();
-        if (blob.size === 0) {
-            return undefined;
-        }
-
-        const objectUrl = URL.createObjectURL(blob);
-
-        // Stocker dans le cache
-        this.coverCache.set(cacheKey, objectUrl);
-
-        return objectUrl;
+        return fetchBlobWithCache(url, this.coverCache, cacheKey);
     };
 
     export = async (galleryId: number): Promise<Blob> => {
-        const headers = authService.headers();
-        delete headers['Content-Type'];
-
         const response = await fetch(`/api/gallery/${galleryId}/export`, {
             method: 'GET',
-            headers,
+            headers: this.getAuthHeaders(),
         });
 
         if (!response.ok) {
@@ -271,13 +234,10 @@ class GalleryService extends BaseService {
         const formData = new FormData();
         if (file) formData.append('file', file);
 
-        const headers = authService.headers();
-        delete headers['Content-Type'];
-
         const response = await fetch(`/api/gallery/${galleryId}/updateCover`, {
             method: 'POST',
             body: formData,
-            headers,
+            headers: this.getAuthHeaders(),
         });
 
         if (!response.ok) {
@@ -290,8 +250,7 @@ class GalleryService extends BaseService {
 
     addImages = async (albumId: number, files: File[]) => {
         const BATCH_SIZE = 3;
-        const headers = authService.headers();
-        delete headers['Content-Type'];
+        const headers = this.getAuthHeaders();
 
         // Process files in batches of 3
         for (let i = 0; i < files.length; i += BATCH_SIZE) {
