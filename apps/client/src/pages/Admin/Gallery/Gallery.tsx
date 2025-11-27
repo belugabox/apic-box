@@ -104,15 +104,21 @@ export const AdminGallery = () => {
     };
 
     const handleExport = async () => {
-        const blob = await exportGallery(galleryId);
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${gallery.name}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
+        try {
+            const blob = await exportGallery(galleryId);
+            if (!blob || blob.size === 0) return;
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${gallery.name}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Export failed:', err);
+        }
     };
 
     return (

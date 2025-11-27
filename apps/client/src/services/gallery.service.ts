@@ -6,6 +6,7 @@ import { BlobURLCache } from '@/utils/cache';
 import {
     buildUrlWithTimestamp,
     callRpc,
+    fetch as fetchApi,
     fetchBlobWithCache,
 } from '@/utils/rpc';
 
@@ -35,7 +36,7 @@ class GalleryService extends BaseService {
     };
 
     private getAuthHeaders = (): Record<string, string> => {
-        const headers = authService.headers();
+        const headers = { ...authService.headers() };
         delete headers['Content-Type'];
         return headers;
     };
@@ -106,22 +107,14 @@ class GalleryService extends BaseService {
         galleryId: number,
         albumOrders: Array<{ albumId: number; orderIndex: number }>,
     ): Promise<void> => {
-        const response = await fetch(
-            `/api/gallery/${galleryId}/reorderAlbums`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...this.getAuthHeaders(),
-                },
-                body: JSON.stringify({ albumOrders }),
+        await fetchApi(`/api/gallery/${galleryId}/reorderAlbums`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...this.getAuthHeaders(),
             },
-        );
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Failed to reorder albums');
-        }
+            body: JSON.stringify({ albumOrders }),
+        });
     };
 
     useAddAlbum = (galleryId: number) =>
@@ -189,7 +182,7 @@ class GalleryService extends BaseService {
             updatedAt,
         );
 
-        return fetchBlobWithCache(
+        const result = await fetchBlobWithCache(
             url,
             this.imageCache,
             cacheKey,
@@ -198,7 +191,12 @@ class GalleryService extends BaseService {
                 ...this.getHeaders(fromAdmin, galleryId),
             },
             true,
-        ) as Promise<string>;
+        );
+
+        if (!result) {
+            throw new Error('Failed to load image');
+        }
+        return result;
     };
 
     cover = async (
@@ -215,37 +213,21 @@ class GalleryService extends BaseService {
     };
 
     export = async (galleryId: number): Promise<Blob> => {
-        const response = await fetch(`/api/gallery/${galleryId}/export`, {
+        return fetchApi<Blob>(`/api/gallery/${galleryId}/export`, {
             method: 'GET',
             headers: this.getAuthHeaders(),
         });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(
-                error.message || "Échec de l'exportation de la galerie",
-            );
-        }
-
-        return response.blob();
     };
 
     updateCover = async (galleryId: number, file?: File): Promise<string> => {
         const formData = new FormData();
         if (file) formData.append('file', file);
 
-        const response = await fetch(`/api/gallery/${galleryId}/updateCover`, {
+        return fetchApi<string>(`/api/gallery/${galleryId}/updateCover`, {
             method: 'POST',
             body: formData,
             headers: this.getAuthHeaders(),
         });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw error;
-        }
-
-        return response.json();
     };
 
     addImages = async (albumId: number, files: File[]) => {
@@ -260,19 +242,11 @@ class GalleryService extends BaseService {
                 formData.append('files', file);
             });
 
-            const response = await fetch(
-                `/api/gallery/album/${albumId}/addImages`,
-                {
-                    method: 'POST',
-                    body: formData,
-                    headers,
-                },
-            );
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw error;
-            }
+            await fetchApi(`/api/gallery/album/${albumId}/addImages`, {
+                method: 'POST',
+                body: formData,
+                headers,
+            });
         }
 
         return { message: 'All images added successfully' };

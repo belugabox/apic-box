@@ -18,38 +18,38 @@ export class RpcError extends Error {
     }
 }
 
-// Types utiles
+// Types
 type ErrorResponse = {
     success?: boolean;
-    errors?: Array<{
-        message: string;
-        [key: string]: unknown;
-    }>;
+    errors?: Array<{ message: string; [key: string]: unknown }>;
     name?: string;
     message?: string;
     [key: string]: unknown;
 };
+
 const BINARY_CONTENT_TYPES = [
     'image',
     'application/pdf',
     'application/octet-stream',
+    'application/zip',
 ];
 
-const isBinaryResponse = (contentType: string | null): boolean =>
+const isBlobContentType = (contentType: string | null): boolean =>
     contentType
-        ? BINARY_CONTENT_TYPES.some((type) => contentType.includes(type))
+        ? BINARY_CONTENT_TYPES.some((type) => contentType.includes(type)) ||
+          contentType.includes('application/octet-stream') ||
+          contentType.startsWith('image/') ||
+          contentType.includes('application/pdf')
         : false;
 
-export const callRpc = async <T>(
-    rpc: Promise<ClientResponse<T>>,
-    signal?: AbortSignal,
-): Promise<T> => {
-    // Vérifier si déjà annulé avant de commencer
-    if (signal?.aborted) {
-        throw new DOMException('Aborted', 'AbortError');
-    }
-
-    const response = await rpc;
+/**
+ * Core fetch handler - transforms Response to typed result
+ * Automatically detects JSON vs Blob based on Content-Type
+ * @param response - HTTP Response object
+ * @returns Parsed response based on content type
+ * @throws RpcError on validation or parse failure
+ */
+const handleResponse = async <T = unknown>(response: Response): Promise<T> => {
     if (!response.ok) {
         try {
             const errorData = (await response.json()) as ErrorResponse;
@@ -83,15 +83,66 @@ export const callRpc = async <T>(
         }
     }
 
-    // Déterminer le type de réponse
+    // Auto-detect response type from Content-Type header
     const contentType = response.headers.get('Content-Type');
-    if (isBinaryResponse(contentType)) {
-        const arrayBuffer = await response.arrayBuffer();
-        return new Uint8Array(arrayBuffer) as T;
+    if (isBlobContentType(contentType)) {
+        return (await response.blob()) as T;
     }
-
-    // Parser comme du JSON
     return (await response.json()) as T;
+};
+
+/**
+ * Generic fetch with automatic error handling and response type detection
+ * Automatically detects JSON vs Blob responses and handles all errors as RpcError
+ * @param url - The URL to fetch
+ * @param options - Fetch options (method, headers, body, signal, etc.)
+ * @returns Parsed response (auto-detects JSON vs Blob)
+ * @throws RpcError on fetch or validation failure
+ */
+export const fetch = async <T = unknown>(
+    url: string,
+    options?: RequestInit,
+): Promise<T> => {
+    if (options?.signal?.aborted)
+        throw new DOMException('Aborted', 'AbortError');
+
+    try {
+        return handleResponse<T>(await globalThis.fetch(url, options));
+    } catch (err) {
+        if (err instanceof RpcError || err instanceof DOMException) throw err;
+        throw new RpcError(
+            0,
+            'FetchError',
+            err instanceof Error ? err.message : 'Unknown fetch error',
+            { url, originalError: err },
+        );
+    }
+};
+
+/**
+ * Hono ClientResponse wrapper - uses central error handling
+ * @param rpc - Promise<ClientResponse> from Hono client
+ * @param signal - Optional AbortSignal for cancellation
+ * @returns Parsed response based on content type
+ * @throws RpcError on failure
+ */
+export const callRpc = async <T>(
+    rpc: Promise<ClientResponse<T>>,
+    signal?: AbortSignal,
+): Promise<T> => {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+
+    try {
+        return handleResponse<T>(await rpc);
+    } catch (err) {
+        if (err instanceof RpcError || err instanceof DOMException) throw err;
+        throw new RpcError(
+            0,
+            'FetchError',
+            err instanceof Error ? err.message : 'Unknown fetch error',
+            err,
+        );
+    }
 };
 
 /**
@@ -111,48 +162,18 @@ export const fetchBlobWithCache = async (
     options?: RequestInit,
     allowEmpty: boolean = false,
 ): Promise<string | undefined> => {
-    // Check cache first
+    // Return cached blob URL if available
     const cached = cache.get(cacheKey);
-    if (cached) {
-        return cached;
-    }
+    if (cached) return cached;
 
-    // Check if already aborted
-    if (options?.signal?.aborted) {
-        throw new DOMException('Aborted', 'AbortError');
-    }
+    // Fetch blob with central error handler
+    const blob = await fetch<Blob>(url, options);
+    if (blob.size === 0 && !allowEmpty) return undefined;
 
-    try {
-        // Fetch the blob
-        const response = await fetch(url, options);
-        if (!response || !response.ok) {
-            throw new RpcError(
-                response.status,
-                'FetchError',
-                `Failed to fetch blob: ${response.statusText}`,
-                { url, status: response.status },
-            );
-        }
-
-        const blob = await response.blob();
-        if (blob.size === 0 && !allowEmpty) {
-            return undefined;
-        }
-
-        // Create object URL and cache it
-        const objectUrl = URL.createObjectURL(blob);
-        cache.set(cacheKey, objectUrl);
-
-        return objectUrl;
-    } catch (err) {
-        if (err instanceof RpcError || err instanceof DOMException) throw err;
-        throw new RpcError(
-            0,
-            'FetchError',
-            err instanceof Error ? err.message : 'Unknown fetch error',
-            { url, originalError: err },
-        );
-    }
+    // Create and cache object URL
+    const objectUrl = URL.createObjectURL(blob);
+    cache.set(cacheKey, objectUrl);
+    return objectUrl;
 };
 
 /**
