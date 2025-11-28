@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '@/components/Error';
 import { StatusTag } from '@/components/StatusTag';
-import { useSpinner } from '@/services/spinner';
+import { useSpinner } from '@/utils/spinner';
 import { blogService } from '@/services/blog.service';
 import { Blog, EntityStatus } from '@shared';
 

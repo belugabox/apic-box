@@ -5,7 +5,7 @@ import { AlbumCard } from '@/components/AlbumCard';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessage } from '@/components/Error';
 import { SubNavigation } from '@/components/SubNavigation';
-import { useSpinner } from '@/services/spinner';
+import { useSpinner } from '@/utils/spinner';
 import { galleryService } from '@/services/gallery.service';
 
 import { GalleryLogin } from './Login';

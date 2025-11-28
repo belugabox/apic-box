@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
 
-dotenv.config({
-    quiet: true,
-});
+if (process.env.NODE_ENV === 'test') {
+    dotenv.config({ path: '../../tests/.env.test', quiet: false });
+} else {
+    dotenv.config({ path: '.env', quiet: true });
+}
 
 /**
  * Environment configuration loader

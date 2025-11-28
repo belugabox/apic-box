@@ -10,7 +10,7 @@ import { Mansory } from '@/components/Mansonry';
 import { SubNavigation } from '@/components/SubNavigation';
 import { UploadImageBtn } from '@/components/UploadImageBtn';
 import { galleryService } from '@/services/gallery.service';
-import { useSpinner } from '@/services/spinner';
+import { useSpinner } from '@/utils/spinner';
 
 import { AdminGalleryAlbumEdit } from './AlbumEdit';
 import { AdminGalleryImageDelete } from './ImageDelete';

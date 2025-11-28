@@ -6,7 +6,7 @@ import { ErrorMessage } from '@/components/Error';
 import { ImageCard } from '@/components/ImageCard';
 import { Mansory } from '@/components/Mansonry';
 import { SubNavigation } from '@/components/SubNavigation';
-import { useSpinner } from '@/services/spinner';
+import { useSpinner } from '@/utils/spinner';
 import { galleryService } from '@/services/gallery.service';
 
 import { GalleryLogin } from './Login';
