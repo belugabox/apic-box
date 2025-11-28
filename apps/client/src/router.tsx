@@ -8,7 +8,7 @@ import { Gallery } from './pages/Gallery';
 import { Album } from './pages/Gallery/Album';
 import { GalleryHome } from './pages/Gallery/GalleryHome';
 import { Home } from './pages/Home';
-import { NotFound } from './pages/NotFound/NotFound';
+import { NotFound } from './pages/NotFound';
 
 export const router = createBrowserRouter([
     {
