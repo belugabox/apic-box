@@ -15,35 +15,43 @@ export const AdminHome = () => {
 
     return (
         <>
-            <div className="tabs left-align">
-                <Link
-                    to="/admin/blog"
-                    className={page.startsWith('/admin/blog') ? 'active' : ''}
-                >
-                    Blog
-                </Link>
-                <Link
-                    to="/admin/gallery"
-                    className={
-                        page.startsWith('/admin/gallery') ? 'active' : ''
-                    }
-                >
-                    Galerie
-                </Link>
+            <div className='row'>
+                <div className="tabs left-align max">
+                    <Link
+                        to="/admin/blog"
+                        className={page.startsWith('/admin/blog') ? 'active' : ''}
+                    >
+                        Blog
+                    </Link>
+                    <Link
+                        to="/admin/gallery"
+                        className={
+                            page.startsWith('/admin/gallery') ? 'active' : ''
+                        }
+                    >
+                        Galerie
+                    </Link>
+                </div>
+                <span>
+                    <i className='small secondary-text'>deployed_code</i>
+                    <div className="tooltip left">
+                        <span>{new Date(_APP_BUILD_DATE).toLocaleString()}</span>
+                    </div>
+                </span>                
+                {user && user.role === 'admin' && (
+                    <button
+                        onClick={() => logout()}
+                        className="transparent circle"
+                    >
+                        <i>logout</i>
+                    </button>
+                )}
             </div>
 
             <div className="padding">
                 <Outlet />
             </div>
 
-            {user && user.role === 'admin' && (
-                <button
-                    onClick={() => logout()}
-                    className="absolute right top transparent circle"
-                >
-                    <i>logout</i>
-                </button>
-            )}
         </>
     );
 };

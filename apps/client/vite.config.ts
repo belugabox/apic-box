@@ -8,6 +8,7 @@ export default defineConfig({
     define: {
         _APP_NAME: JSON.stringify(name),
         _APP_VERSION: JSON.stringify(version),
+        _APP_BUILD_DATE: JSON.stringify(new Date().toISOString()),
     },
     plugins: [tsconfigPaths(), react()],
     server: {
