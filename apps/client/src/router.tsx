@@ -8,6 +8,7 @@ import { Gallery } from './pages/Gallery';
 import { Album } from './pages/Gallery/Album';
 import { GalleryHome } from './pages/Gallery/GalleryHome';
 import { Home } from './pages/Home';
+import { NotFound } from './pages/NotFound/NotFound';
 
 export const router = createBrowserRouter([
     {
@@ -62,7 +63,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: '*',
-                element: <Home />,
+                element: <NotFound />,
             },
         ],
     },
