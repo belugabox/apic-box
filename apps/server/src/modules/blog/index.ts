@@ -3,7 +3,7 @@ import { type } from 'arktype';
 import { Hono } from 'hono';
 
 import { db } from '@server/db';
-import { NotFoundError } from '@server/tools/errorHandler';
+import { NotFoundError } from '@server/utils/errorHandler';
 
 import { Module } from '..';
 import { UserRole } from '../auth/types';

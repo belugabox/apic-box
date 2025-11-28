@@ -2,8 +2,8 @@ import bcrypt from 'bcryptjs';
 import { Context } from 'hono';
 import { sign, verify } from 'hono/jwt';
 
-import { JWT_SECRET } from '@server/tools/env';
-import { ForbiddenError, UnauthorizedError } from '@server/tools/errorHandler';
+import { JWT_SECRET } from '@server/utils/env';
+import { ForbiddenError, UnauthorizedError } from '@server/utils/errorHandler';
 
 import { UserRole } from './auth/types';
 

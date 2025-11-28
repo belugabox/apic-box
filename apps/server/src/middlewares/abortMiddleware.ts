@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 
-import { logger } from './logger';
+import { logger } from '../utils/logger';
 
 /**
  * Middleware pour détecter et gérer les requêtes annulées par le client

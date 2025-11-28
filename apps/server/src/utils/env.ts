@@ -44,12 +44,8 @@ export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 // ============================================================================
 // RATE LIMITING CONFIGURATION
 // ============================================================================
-export const RATE_LIMIT_REQUESTS = parseInt(
-    process.env.RATE_LIMIT_REQUESTS || '100',
-);
-export const RATE_LIMIT_WINDOW_MS = parseInt(
-    process.env.RATE_LIMIT_WINDOW_MS || '60000',
-);
+export const RATE_LIMIT_REQUESTS = parseInt(process.env.RATE_LIMIT_REQUESTS || '100');
+export const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000');
 if (!process.env.GALLERY_JWT_SECRET) {
     throw new Error(
         'Missing required environment variable: GALLERY_JWT_SECRET',

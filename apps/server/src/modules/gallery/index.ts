@@ -10,8 +10,8 @@ import sharp from 'sharp';
 import { addImageWatermark } from 'sharp-watermark';
 
 import { db } from '@server/db';
-import { isRequestAborted } from '@server/tools/abortMiddleware';
-import { MemoryCache } from '@server/tools/cache';
+import { isRequestAborted } from '@server/middlewares/abortMiddleware';
+import { MemoryCache } from '@server/utils/cache';
 import {
     DATA_FILE_PATH,
     GALLERY_JWT_SECRET,
@@ -19,14 +19,14 @@ import {
     THUMBNAIL_SIZE,
     THUMBNAIL_WITH_WATERMARK,
     getThumbnailOptionsHash,
-} from '@server/tools/env';
+} from '@server/utils/env';
 import {
     BadRequestError,
     NotFoundError,
     UnauthorizedError,
-} from '@server/tools/errorHandler';
-import { generateExcel } from '@server/tools/excel';
-import { logger } from '@server/tools/logger';
+} from '@server/utils/errorHandler';
+import { generateExcel } from '@server/utils/excel';
+import { logger } from '@server/utils/logger';
 
 import { Module, ModuleRepository } from '..';
 import { UserRole } from '../auth/types';

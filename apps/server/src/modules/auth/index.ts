@@ -7,8 +7,8 @@ import {
     ADMIN_PASSWORD,
     JWT_REFRESH_SECRET,
     JWT_SECRET,
-} from '@server/tools/env';
-import { BadRequestError } from '@server/tools/errorHandler';
+} from '@server/utils/env';
+import { BadRequestError } from '@server/utils/errorHandler';
 
 import { Module, ModuleRepository } from '..';
 import { Utils } from '../utils';

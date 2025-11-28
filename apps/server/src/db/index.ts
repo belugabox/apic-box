@@ -4,7 +4,7 @@ import { DataSource } from 'typeorm';
 import { User } from '../modules/auth/types';
 import { Blog } from '../modules/blog/types';
 import { Album, Gallery, Image } from '../modules/gallery/types';
-import { DATA_FILE_PATH } from '../tools/env';
+import { DATA_FILE_PATH } from '../utils/env';
 
 export const db = new DataSource({
     type: 'better-sqlite3',

@@ -9,7 +9,7 @@ import {
     PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { DATA_FILE_PATH } from '@server/tools/env';
+import { DATA_FILE_PATH } from '@server/utils/env';
 
 import { EntityWithDefaultColumns } from '../base.module';
 import { EntityStatus } from '../shared.types';

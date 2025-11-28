@@ -7,12 +7,13 @@ import { join } from 'path';
 import 'reflect-metadata';
 
 import { health, init, routes } from './core';
-import { abortMiddleware } from './tools/abortMiddleware';
+import { abortMiddleware } from './middlewares/abortMiddleware';
+import { rateLimitMiddleware } from './middlewares/rateLimitMiddleware';
+import { requestLoggerMiddleware } from './middlewares/requestLoggerMiddleware';
+import { timeoutMiddleware } from './middlewares/timeoutMiddleware';
 // Load and validate environment variables
-import './tools/env';
-import { logger } from './tools/logger';
-import { requestLoggerMiddleware } from './tools/requestLoggerMiddleware';
-import { timeoutMiddleware } from './tools/timeoutMiddleware';
+import './utils/env';
+import { logger } from './utils/logger';
 
 // Handle unhandled rejections
 process.on('unhandledRejection', (err: Error) => {
@@ -26,6 +27,7 @@ const app = new Hono();
 
 // ---
 app.use('/api/*', cors());
+app.use('/api/*', rateLimitMiddleware);
 app.use('/api/*', abortMiddleware());
 app.use('/api/*', requestLoggerMiddleware());
 app.use('/api/*', timeoutMiddleware(120000));

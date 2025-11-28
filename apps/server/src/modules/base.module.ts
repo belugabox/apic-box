@@ -4,7 +4,7 @@ import { Hono } from 'hono';
 import { EntityTarget } from 'typeorm';
 
 import { db } from '@server/db';
-import { NotFoundError, errorHandler } from '@server/tools/errorHandler';
+import { NotFoundError, errorHandler } from '@server/utils/errorHandler';
 
 import { UserRole } from './auth/types';
 import { ModuleRepository } from './module-repository';

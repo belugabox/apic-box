@@ -5,8 +5,8 @@ import { Module } from './modules';
 import { AuthModule } from './modules/auth';
 import { BlogModule } from './modules/blog';
 import { GalleryModule } from './modules/gallery';
-import { errorHandler } from './tools/errorHandler';
-import { logger } from './tools/logger';
+import { errorHandler } from './utils/errorHandler';
+import { logger } from './utils/logger';
 
 export const authModule = new AuthModule();
 const blogModule = new BlogModule();
