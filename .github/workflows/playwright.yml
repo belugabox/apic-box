@@ -19,6 +19,11 @@ jobs:
               run: pnpm exec playwright install --with-deps
             - name: Build
               run: pnpm build
+            - name: Load .env.test into environment
+              run: |
+                  if [ -f tests/.env.test ]; then
+                    grep -v '^\s*#' tests/.env.test >> $GITHUB_ENV
+                  fi
             - name: Run Playwright tests
               run: pnpm test
             - uses: actions/upload-artifact@v4
