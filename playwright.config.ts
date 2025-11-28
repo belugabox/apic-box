@@ -33,7 +33,7 @@ export default defineConfig({
         trace: 'on-first-retry',
     },
     webServer: {
-        command: 'cross-env NODE_ENV=test pnpm --filter=server dev',
+        command: 'cross-env NODE_ENV=test pnpm --filter=server start',
         url: 'http://localhost:3001',
         reuseExistingServer: !process.env.CI,
     },
